@@ -11,7 +11,10 @@ export const products: Product[] = [
     collection: 'origo',
     concept: 'O que permanece. Arte, cultura e atitude.',
     shortDescription: 'Algodão premium de alta gramatura com modelagem Oversized/Boxy. Arte autoral conectando a herança clássica às coordenadas de Fortaleza.',
+    fullStory: 'A camisa VESTIGIUM representa o vestígio do que permanece incólume ao tempo. Construída em algodão encorpado de alta gramatura, une a monumentalidade romana ao corte contemporâneo boxy, projetado para durabilidade e caimento impecável na arena urbana.',
     fitDetails: 'Modelagem Oversized/Boxy de caimento estruturado e ombros deslocados.',
+    available: true,
+    variants: [],
     materials: [
       'Algodão premium de estrutura e conforto elevado',
       'Toque macio com pré-encolhimento de fábrica',
@@ -51,9 +54,12 @@ export const products: Product[] = [
     collection: 'origo',
     concept: 'Movimento, conforto e identidade.',
     shortDescription: 'Desenvolvida para alta mobilidade e intensidade. Tecido leve com secagem rápida, proteção UV e detalhes refletivos.',
+    fullStory: 'A linha FORZA foi desenvolvida sob o sol e o vento de Fortaleza. Utiliza tecidos de alta respirabilidade tecnológica, com secagem ultrarrápida (Dry) e proteção UV, garantindo resistência no esporte e presença na rua.',
     fitDetails: 'Modelagem relaxed de caimento premium anatômico com foco na liberdade corporal.',
+    available: true,
+    variants: [],
     materials: [
-      'Tecido leve e highly respirável',
+      'Tecido leve e altamente respirável',
       'Tratamento tecnológico de secagem rápida (Dry)',
       'Proteção solar UV integrada'
     ],
@@ -92,7 +98,10 @@ export const products: Product[] = [
     collection: 'origo',
     concept: 'Movimento sem restrição.',
     shortDescription: 'Cava estratégica projetada para amplitude total de movimento. A fusão exata entre lifestyle de praia e esporte de arena.',
+    fullStory: 'LIBERTAS representa a desconstrução das barreiras corporais. Projetada com cavas profundas sem fricção, oferece ventilação contínua e leveza absoluta nos treinos mais intensos.',
     fitDetails: 'Cava profunda e modelagem solta para mobilidade irrestrita.',
+    available: true,
+    variants: [],
     materials: [
       'Tecido técnico ultraleve e respirável',
       'Absorção e evaporação rápida de suor'
@@ -130,7 +139,10 @@ export const products: Product[] = [
     collection: 'origo',
     concept: 'O código visual.',
     shortDescription: 'Boné estruturado de abas curvas com bordado em alto relevo e fecho ajustável personalizado em metal.',
+    fullStory: 'O boné SIGNUM é a assinatura tátil da marca. Moldado em sarja encorpada com bordados de alta definição e fivela metálica customizada, ele sintetiza o código de identificação LaRomme.',
     fitDetails: 'Tamanho único ajustável com fecho em fivela metálica.',
+    available: true,
+    variants: [],
     materials: [
       '100% Sarja de Algodão Encorpada',
       'Bordado frontal e lateral de alta precisão'
