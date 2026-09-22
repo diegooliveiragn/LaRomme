@@ -151,7 +151,7 @@ export const products: Product[] = [
       { name: 'Preto', hex: '#111111', slug: 'preto' },
       { name: 'Off White', hex: '#F2F1ED', slug: 'offwhite' }
     ],
-    availableSizes: ['Único'],
+    availableSizes: ['UNICO'],
     images: [],
     featured: false,
   }
