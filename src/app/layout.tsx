@@ -1,41 +1,41 @@
 import type { Metadata } from 'next';
-import { Libre_Baskerville, Montserrat } from 'next/font/google';
-import { siteConfig } from '@/config/site';
+import { Cormorant_Garamond, Manrope, JetBrains_Mono } from 'next/font/google';
+import '@/styles/globals.css';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import { CartProvider } from '@/context/CartContext';
 import { CartDrawer } from '@/components/cart/CartDrawer';
-import '@/styles/globals.css';
 
-const libreBaskerville = Libre_Baskerville({
-  weight: ['400', '700'],
+// 1. EDITORIAL / ROMA (Permanência, Cultura, Emoção)
+const serif = Cormorant_Garamond({
   subsets: ['latin'],
-  variable: '--font-libre-baskerville',
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-serif',
   display: 'swap',
 });
 
-const montserrat = Montserrat({
+// 2. SYSTEM / FORTALEZA (Performance, Clareza, Movimento)
+const sans = Manrope({
   subsets: ['latin'],
-  variable: '--font-montserrat',
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+// 3. CODE / ARQUIVO (Precisão, Coordenadas, Assinatura)
+const mono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-mono',
   display: 'swap',
 });
 
 export const metadata: Metadata = {
   title: {
-    default: `${siteConfig.name} — ${siteConfig.tagline}`,
-    template: `%s | ${siteConfig.name}`,
+    template: '%s | LaRomme',
+    default: 'LaRomme | Estilo, Performance e Pertencimento',
   },
-  description: siteConfig.description,
-  keywords: ['LaRomme', 'Moda Praia', 'Sport Performance', 'Beach Sports', 'Lifestyle', 'Drop Origo'],
-  authors: [{ name: 'LaRomme' }],
-  openGraph: {
-    type: 'website',
-    locale: 'pt_BR',
-    url: 'https://laromme.com.br',
-    siteName: siteConfig.name,
-    title: `${siteConfig.name} — ${siteConfig.tagline}`,
-    description: siteConfig.description,
-  },
+  description: 'A interseção exata entre a força de Roma e a energia de Fortaleza.',
 };
 
 export default function RootLayout({
@@ -44,13 +44,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={`${libreBaskerville.variable} ${montserrat.variable}`}>
-      <body className="bg-brand-offwhite text-brand-black font-sans antialiased selection:bg-brand-red selection:text-white flex min-h-screen flex-col justify-between">
+    <html 
+      lang="pt-BR" 
+      className={`${serif.variable} ${sans.variable}${mono.variable} font-sans antialiased selection:bg-brand-red selection:text-white`}
+    >
+      <body className="bg-brand-black text-brand-offwhite flex flex-col min-h-screen">
         <CartProvider>
           <Header />
-          <main className="flex-1">{children}</main>
-          <CartDrawer />
+          <main className="flex-grow">{children}</main>
           <Footer />
+          <CartDrawer />
         </CartProvider>
       </body>
     </html>

@@ -1,30 +1,30 @@
-import type { Config } from 'tailwindcss';
+import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
       colors: {
         brand: {
-          red: '#8B1E1E',
-          black: '#111111',
-          gray: '#7A7A7A',
-          offwhite: '#F2F1ED',
-          pureWhite: '#FFFFFF',
+          black: "#111111",
+          offwhite: "#F2F1ED",
+          red: "#8B1E1E",
+          gray: "#7A7A7A",
         },
       },
       fontFamily: {
-        serif: ['var(--font-libre-baskerville)', 'Georgia', 'serif'],
-        sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
+        // Mapeamento exato da Tríade Tipográfica LaRomme
+        sans: ['var(--font-sans)', 'sans-serif'],
+        serif: ['var(--font-serif)', 'serif'],
+        mono: ['var(--font-mono)', 'monospace'],
       },
       letterSpacing: {
-        widest: '0.25em',
-        editorial: '0.15em',
-      },
+        editorial: '0.2em',
+      }
     },
   },
   plugins: [],

@@ -1,47 +1,59 @@
+'use client';
+
+import { motion } from 'framer-motion';
 import { siteConfig } from '@/config/site';
+import { EASINGS, DURATIONS } from '@/config/motion';
 
 export function ManifestoSection() {
-  const pillars = [
-    { title: 'Força', description: 'Atitude na arena e na vida.' },
-    { title: 'Disciplina', description: 'A constância que gera liberdade.' },
-    { title: 'Performance', description: 'Materiais de alta resposta técnica.' },
-    { title: 'Exclusividade', description: 'Drops com produção controlada.' },
-    { title: 'Pertencimento', description: 'A união entre esporte e cultura.' },
-  ];
-
   return (
-    <section className="bg-brand-black text-brand-offwhite py-24 border-y border-zinc-800">
-      <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-16">
-          <div className="space-y-6">
-            <span className="text-xs uppercase tracking-editorial font-bold text-brand-red block">
-              Manifesto LaRomme
-            </span>
-            <h2 className="font-serif text-3xl sm:text-5xl font-bold uppercase tracking-tight leading-tight">
-              {siteConfig.slogans.manifesto}
-            </h2>
-            <p className="text-xs sm:text-sm text-zinc-400 uppercase tracking-wider leading-relaxed">
-              {siteConfig.slogans.essence} A LaRomme ocupa o território exato entre o esporte de alta resposta e o estilo de vida contemporâneo. Menos produto, mais pertencimento.
-            </p>
-            <div className="text-xs font-mono text-zinc-500 tracking-widest pt-2">
-              ORIGEM: {siteConfig.coordinates}
-            </div>
-          </div>
+    <section className="py-36 sm:py-48 bg-brand-black text-brand-offwhite relative overflow-hidden border-y border-zinc-900">
+      <div className="max-w-4xl mx-auto px-6 text-center space-y-12 relative z-10">
+        
+        {/* Código de Arquivo */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: DURATIONS.slow, ease: EASINGS.cinematic }}
+          className="font-mono text-[10px] text-brand-red tracking-widest uppercase"
+        >
+          {siteConfig.coordinates} • {siteConfig.location}
+        </motion.div>
 
-          {/* Grade dos 5 Pilares */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            {pillars.map((pillar) => (
-              <div key={pillar.title} className="bg-zinc-900/60 border border-zinc-800 p-6 space-y-2">
-                <h3 className="font-serif text-lg font-bold uppercase tracking-wider text-brand-red">
-                  {pillar.title}
-                </h3>
-                <p className="text-xs text-zinc-400 uppercase tracking-wider">
-                  {pillar.description}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+        {/* Título do Manifesto */}
+        <motion.h2
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: DURATIONS.slow, ease: EASINGS.cinematic, delay: 0.1 }}
+          className="font-serif text-3xl sm:text-5xl lg:text-6xl font-light italic leading-tight text-zinc-200"
+        >
+          "{siteConfig.slogans.manifesto}"
+        </motion.h2>
+
+        {/* Texto do Manifesto */}
+        <motion.p
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: DURATIONS.slow, ease: EASINGS.cinematic, delay: 0.2 }}
+          className="text-xs sm:text-sm text-zinc-400 uppercase tracking-widest max-w-2xl mx-auto leading-relaxed font-sans"
+        >
+          Não construímos vestuário efêmero. Unimos a rigidez histórica de Roma ao movimento contínuo de Fortaleza. Criado para resistir ao tempo e ao desgaste da arena.
+        </motion.p>
+
+        {/* Selo do Código */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: DURATIONS.medium, ease: EASINGS.cinematic, delay: 0.3 }}
+          className="pt-6"
+        >
+          <span className="inline-block border border-zinc-800 text-zinc-500 font-mono text-[9px] uppercase px-4 py-2 tracking-widest">
+            CHAPTER 01 / PERMANENCE
+          </span>
+        </motion.div>
       </div>
     </section>
   );
