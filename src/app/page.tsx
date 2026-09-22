@@ -14,25 +14,23 @@ export default function Home() {
   return (
     <div className="bg-brand-black min-h-screen">
       
-      {/* 1. IMPACT (Hero com CINEMATIC VIDEO LOOP) */}
+      {/* 1. IMPACT (Hero com Vídeo em Loop Direto) */}
       <section className="relative h-screen flex flex-col items-center justify-center border-b border-zinc-900 overflow-hidden">
         
-        {/* Background Video (Muted, Autoplay, Looping, Mobile-friendly) */}
+        {/* Background Video Loop (CDN direto e estável) */}
         <video
           autoPlay
           loop
           muted
           playsInline
           poster="https://images.unsplash.com/photo-1505142468610-359e7d316be0?q=80&w=2070&auto=format&fit=crop"
-          className="absolute inset-0 w-full h-full object-cover grayscale opacity-30 mix-blend-luminosity scale-105"
+          className="absolute inset-0 w-full h-full object-cover grayscale opacity-35 mix-blend-luminosity scale-105"
         >
-          {/* Placeholder: Vídeo Royalty-Free de mar escuro/movimento */}
-          <source src="https://cdn.pixabay.com/video/2018/11/02/19001-300445579_large.mp4" type="video/mp4" />
-          <source src="https://cdn.pixabay.com/video/2020/05/25/40141-424855919_large.mp4" type="video/mp4" />
+          <source src="https://assets.mixkit.co/videos/preview/mixkit-dark-stormy-sea-waves-4257-large.mp4" type="video/mp4" />
         </video>
 
-        {/* Gradiente de Sombras para garantir 100% de leitura da tipografia */}
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-black/40 via-brand-black/60 to-brand-black" />
+        {/* Gradiente de Sombras para leitura perfeita */}
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-black/30 via-brand-black/60 to-brand-black" />
         
         <motion.div
           initial="hidden"
@@ -48,7 +46,7 @@ export default function Home() {
           </h1>
           <Link
             href="/colecao/origo"
-            className="inline-block bg-white text-brand-black px-10 py-5 font-mono text-[10px] uppercase tracking-widest hover:bg-brand-red hover:text-white transition-colors duration-500"
+            className="inline-block bg-white text-brand-black px-10 py-5 font-mono text-[10px] uppercase tracking-widest hover:bg-brand-red hover:text-white transition-colors duration-500 shadow-2xl"
           >
             Explorar o Arquivo
           </Link>
