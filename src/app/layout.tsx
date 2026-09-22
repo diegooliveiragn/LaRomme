@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Manrope, JetBrains_Mono } from "next/font/google";
-import "@/app/globals.css";
+import "@/styles/globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { siteConfig } from "@/config/site";
