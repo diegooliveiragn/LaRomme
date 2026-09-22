@@ -16,3 +16,22 @@
 .font-sans {
   font-family: var(--font-montserrat), sans-serif;
 }
+
+/* =========================================
+   LAROMME - CUSTOM SCROLLBAR (EDITORIAL)
+========================================= */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #111111;
+}
+::-webkit-scrollbar-thumb {
+  background: #27272a;
+  border-radius: 0px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8B1E1E;
+}
+/* ========================================= */

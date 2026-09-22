@@ -1,10 +1,8 @@
 import Link from 'next/link';
-import { siteConfig } from '@/config/site';
 
 export default function NotFound() {
   return (
     <div className="bg-brand-black text-brand-offwhite min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-6">
-      {/* Ruído de fundo */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'url("/noise.png")' }}></div>
       
       <div className="relative z-10 text-center space-y-8 max-w-lg mx-auto">
