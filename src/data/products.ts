@@ -10,21 +10,21 @@ export const products: Product[] = [
     category: 'lifestyle',
     collection: 'origo',
     concept: 'O que permanece. Arte, cultura e atitude.',
-    shortDescription: 'Algodão premium de alta gramatura com modelagem Oversized/Boxy. Arte autoral conectando a herança clássica às coordenadas de Fortaleza.',
-    fullStory: 'A camisa VESTIGIUM representa o vestígio do que permanece incólume ao tempo. Construída em algodão encorpado de alta gramatura, une a monumentalidade romana ao corte contemporâneo boxy, projetado para durabilidade e caimento impecável na arena urbana.',
-    fitDetails: 'Modelagem Oversized/Boxy de caimento estruturado e ombros deslocados.',
+    shortDescription: 'Construção em algodão de toque encorpado com modelagem Boxy / Oversized. Arte autoral conectando a herança clássica às coordenadas de Fortaleza.',
+    fullStory: 'A camisa VESTIGIUM representa o vestígio do que permanece incólume ao tempo. Projetada para unir a estrutura arquitetônica ao corte contemporâneo boxy, oferecendo caimento estruturado e ombros deslocados.',
+    fitDetails: 'Modelagem Boxy / Oversized com caimento estruturado e ombros deslocados.',
     available: true,
     variants: [],
     materials: [
-      'Algodão premium de estrutura e conforto elevado',
-      'Toque macio com pré-encolhimento de fábrica',
-      'Estampa autoral de alta definição e durabilidade'
+      'Algodão com caimento encorpado e toque macio',
+      'Estrutura com pré-encolhimento de fábrica',
+      'Estampa autoral de alta definição'
     ],
     features: [
-      'Algodão premium (estrutura e conforto)',
-      'Modelagem oversized/boxy',
+      'Algodão encorpado',
+      'Modelagem boxy / oversized',
       'Gola estruturada',
-      'Estampa de alta definição e durabilidade',
+      'Estampa autoral',
       'Etiqueta externa frontal',
       'Acabamento premium'
     ],
@@ -51,29 +51,28 @@ export const products: Product[] = [
     category: 'performance',
     collection: 'origo',
     concept: 'Movimento, conforto e identidade.',
-    shortDescription: 'Desenvolvida para alta mobilidade e intensidade. Tecido leve com secagem rápida, proteção UV e detalhes refletivos.',
-    fullStory: 'A linha FORZA foi desenvolvida sob o sol e o vento de Fortaleza. Utiliza tecidos de alta respirabilidade tecnológica, com secagem ultrarrápida (Dry) e proteção UV, garantindo resistência no esporte e presença na rua.',
-    fitDetails: 'Modelagem relaxed de caimento premium anatômico com foco na liberdade corporal.',
+    shortDescription: 'Desenvolvida para mobilidade corporal e atividade contínua. Tecido leve com foco em respirabilidade e detalhes refletivos.',
+    fullStory: 'A linha FORZA foi concebida sob o clima de Fortaleza. Utiliza tecidos leves com caimento anatômico relaxado, garantindo liberdade de movimento no esporte e presença na rua.',
+    fitDetails: 'Modelagem Relaxed Performance de caimento anatômico e foco em mobilidade corporal.',
     available: true,
     variants: [],
     materials: [
-      'Tecido leve e highly respirável',
-      'Tratamento tecnológico de secagem rápida (Dry)',
-      'Proteção solar UV integrada'
+      'Tecido leve e respirável',
+      'Fiação com foco em evaporação e conforto térmico',
+      'Aplicação de detalhes refletivos'
     ],
     features: [
-      'Tecido leve e respirável',
-      'Secagem rápida',
-      'Proteção UV',
-      'Modelagem relaxed com caimento premium',
-      'Detalhes refletivos de segurança',
+      'Tecido leve e altamente respirável',
+      'Modelagem relaxed performance',
+      'Caimento anatômico',
+      'Detalhes refletivos de visibilidade',
       'Etiqueta externa exclusiva'
     ],
     careInstructions: [
       'Lavar na máquina em ciclo esportivo/delicado',
       'Não usar amaciante nem alvejante',
-      'Secagem rápida ao ar livre',
-      'Não passar a ferro sobre as estampas e detalhes refletivos'
+      'Secagem ao ar livre',
+      'Não passar a ferro sobre estampas e detalhes refletivos'
     ],
     availableColors: [
       { name: 'Preto', hex: '#111111', slug: 'preto' },
@@ -93,20 +92,20 @@ export const products: Product[] = [
     category: 'performance',
     collection: 'origo',
     concept: 'Movimento sem restrição.',
-    shortDescription: 'Cava estratégica projetada para amplitude total de movimento. A fusão exata entre lifestyle de praia e esporte de arena.',
-    fullStory: 'LIBERTAS representa a desconstrução das barreiras corporais. Projetada com cavas profundas sem fricção, oferece ventilação contínua e leveza absoluta nos treinos mais intensos.',
-    fitDetails: 'Cava profunda e modelagem solta para mobilidade irrestrita.',
+    shortDescription: 'Cava profunda projetada para amplitude total de movimento. A união entre a atmosfera litorânea e a prática esportiva.',
+    fullStory: 'LIBERTAS representa a eliminação de barreiras corporais. Desenvolvida com cavas amplas sem fricção, proporciona ventilação contínua e leveza em treinos intensos.',
+    fitDetails: 'Modelagem Loose Fit com cava profunda para mobilidade irrestrita.',
     available: true,
     variants: [],
     materials: [
-      'Tecido técnico ultraleve e respirável',
-      'Absorção e evaporação rápida de suor'
+      'Tecido técnico ultraleve',
+      'Estrutura com foco em fluxo de ar e leveza'
     ],
     features: [
-      'Cava anatômica sem fricção',
-      'Toque gelado e respirabilidade máxima',
-      'Detalhes refletivos nas costas e ombros',
-      'Costuras reforçadas para alta intensidade'
+      'Cava anatômica profunda sem fricção',
+      'Ventilação contínua e leveza',
+      'Detalhes refletivos',
+      'Costuras reforçadas'
     ],
     careInstructions: [
       'Lavar com água fria',
@@ -130,18 +129,18 @@ export const products: Product[] = [
     category: 'lifestyle',
     collection: 'origo',
     concept: 'O código visual.',
-    shortDescription: 'Boné estruturado de abas curvas com bordado em alto relevo e fecho ajustável personalizado em metal.',
-    fullStory: 'O boné SIGNUM é a assinatura tátil da marca. Moldado em sarja encorpada com bordados de alta definição e fivela metálica customizada, ele sintetiza o código de identificação LaRomme.',
+    shortDescription: 'Boné estruturado de abas curvas com bordado em relevo e fecho ajustável personalizado em metal.',
+    fullStory: 'O boné SIGNUM é a assinatura tátil do ecossistema. Moldado em tecido encorpado com bordados de precisão e fivela metálica customizada, sintetiza o código LaRomme.',
     fitDetails: 'Tamanho único ajustável com fecho em fivela metálica.',
     available: true,
     variants: [],
     materials: [
-      '100% Sarja de Algodão Encorpada',
-      'Bordado frontal e lateral de alta precisão'
+      'Tecido encorpado de sarja',
+      'Bordado frontal e lateral de alta definição'
     ],
     features: [
-      'Fecho traseiro em metal com fivela personalizada LaRomme',
-      'Fita interna com código de origem',
+      'Fecho traseiro metálico personalizado',
+      'Fita interna personalizada com código de origem',
       'Bordado em alto relevo'
     ],
     careInstructions: [
@@ -152,7 +151,7 @@ export const products: Product[] = [
       { name: 'Preto', hex: '#111111', slug: 'preto' },
       { name: 'Off White', hex: '#F2F1ED', slug: 'offwhite' }
     ],
-    availableSizes: ['P'],
+    availableSizes: ['Único'],
     images: [],
     featured: false,
   }

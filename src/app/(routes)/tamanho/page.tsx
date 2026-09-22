@@ -2,26 +2,26 @@
 
 import { motion } from 'framer-motion';
 import { EASINGS, DURATIONS } from '@/config/motion';
-import { siteConfig } from '@/config/site';
 
 export default function TamanhoPage() {
   const tables = [
     {
       title: 'VESTIGIUM',
       subtitle: 'Camiseta Algodão (Modelagem Boxy / Oversized)',
-      description: 'Caimento estruturado com ombros deslocados. Construída em algodão heavyweight.',
+      description: 'Caimento estruturado com ombros deslocados. Medidas de peça final.',
       headers: ['Tamanho', 'Tórax (cm)', 'Comprimento (cm)', 'Manga (cm)'],
       rows: [
         ['P', '108', '72', '22'],
         ['M', '114', '75', '23'],
-        ['G', '128', '78', '24'],
-        ['GG', '126', '81', '25'],
-      ]
+        ['G', '128*', '78', '24'],
+        ['GG', '126*', '81', '25'],
+      ],
+      note: '* Gradação de tórax entre G e GG sob validação física final de amostragem.'
     },
     {
       title: 'FORZA',
       subtitle: 'Camiseta Sport (Relaxed Performance)',
-      description: 'Caimento anatômico livre para mobilidade. Tecido leve de secagem rápida.',
+      description: 'Caimento anatômico livre para mobilidade corporal.',
       headers: ['Tamanho', 'Tórax (cm)', 'Comprimento (cm)'],
       rows: [
         ['P', '104', '70'],
@@ -32,8 +32,8 @@ export default function TamanhoPage() {
     },
     {
       title: 'LIBERTAS',
-      subtitle: 'Regata Performance (Cava Profunda)',
-      description: 'Projetada para amplitude total de movimento sem restrições ou fricção.',
+      subtitle: 'Regata Performance (Loose / Cava Profunda)',
+      description: 'Projetada para amplitude total de movimento sem restrições.',
       headers: ['Tamanho', 'Tórax (cm)', 'Comprimento (cm)'],
       rows: [
         ['P', '102', '71'],
@@ -55,13 +55,13 @@ export default function TamanhoPage() {
           className="text-center space-y-4"
         >
           <span className="font-mono text-[10px] text-brand-red uppercase tracking-widest block">
-            Especificações Milimétricas
+            Especificações de Peça
           </span>
           <h1 className="font-serif text-3xl sm:text-5xl font-bold uppercase tracking-wider text-white">
             Estrutura & Medidas
           </h1>
           <p className="font-sans text-xs text-zinc-500 uppercase tracking-widest max-w-lg mx-auto leading-relaxed">
-            Consulte a matriz cartesiana abaixo para identificar a proporção exata para o seu corpo.
+            Consulte a tabela abaixo para identificar as proporções exatas de cada artefato.
           </p>
         </motion.div>
 
@@ -101,6 +101,12 @@ export default function TamanhoPage() {
                   </tbody>
                 </table>
               </div>
+
+              {table.note && (
+                <p className="font-sans text-[9px] text-zinc-500 uppercase tracking-widest mt-4">
+                  {table.note}
+                </p>
+              )}
             </motion.div>
           ))}
         </div>

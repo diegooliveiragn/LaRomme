@@ -7,7 +7,7 @@ import { siteConfig } from '@/config/site';
 
 export default function AcessoVIPPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', size: '', inviteCode: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', size: '' });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,19 +18,14 @@ export default function AcessoVIPPage() {
 
   return (
     <div className="bg-brand-black text-brand-offwhite min-h-screen flex flex-col justify-center items-center relative overflow-hidden pt-28 pb-20">
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'url("/noise.png")' }}></div>
-      <div className="absolute bottom-10 left-10 font-mono text-[10px] text-zinc-800 uppercase tracking-widest rotate-[-90deg] origin-bottom-left hidden md:block">
-        {siteConfig.coordinates}
-      </div>
-
       <div className="w-full max-w-lg px-6 z-10">
         <AnimatePresence mode="wait">
           {!isSubmitted ? (
             <motion.div
               key="form"
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
+              exit={{ opacity: 0, scale: 0.98 }}
               transition={{ duration: DURATIONS.slow, ease: EASINGS.cinematic }}
               className="space-y-10"
             >
@@ -40,13 +35,8 @@ export default function AcessoVIPPage() {
                   Abertura de Arquivo
                 </h1>
                 
-                {/* Gatilho de Escassez Autêntica */}
-                <div className="inline-block border border-brand-red/30 bg-brand-red/5 px-4 py-2 font-mono text-[9px] text-brand-red uppercase tracking-widest">
-                  [ CAPACIDADE DO LOTE ZERO: 100 ARTEFATOS ]
-                </div>
-
                 <p className="font-sans text-xs text-zinc-400 uppercase tracking-widest leading-relaxed max-w-sm mx-auto pt-2">
-                  Antes da operação pública, uma fração do Drop 01 será alocada de forma restrita aos membros cadastrados.
+                  Antes do lançamento público, o Drop 01 será disponibilizado de forma antecipada para os membros cadastrados.
                 </p>
               </div>
 
@@ -67,15 +57,6 @@ export default function AcessoVIPPage() {
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="E-MAIL DE CONTATO"
                     className="w-full bg-zinc-900/50 border border-zinc-800 text-white p-4 focus:outline-none focus:border-brand-offwhite transition-colors placeholder:text-zinc-600"
-                  />
-
-                  {/* Gatilho da Porta Trancada (Código de Convite Opcional) */}
-                  <input
-                    type="text"
-                    value={formData.inviteCode}
-                    onChange={(e) => setFormData({ ...formData, inviteCode: e.target.value })}
-                    placeholder="CÓDIGO DE CONVITE (OPCIONAL)"
-                    className="w-full bg-zinc-900/20 border border-zinc-800/60 text-zinc-300 p-4 focus:outline-none focus:border-brand-red transition-colors placeholder:text-zinc-700"
                   />
 
                   <div className="pt-2">
@@ -108,14 +89,14 @@ export default function AcessoVIPPage() {
                       : 'bg-brand-red text-white hover:bg-red-800 shadow-xl'
                   }`}
                 >
-                  [ Solicitar Alocação ]
+                  [ Solicitar Acesso ]
                 </button>
               </form>
             </motion.div>
           ) : (
             <motion.div
               key="success"
-              initial={{ opacity: 0, scale: 0.95 }}
+              initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: DURATIONS.medium, ease: EASINGS.cinematic }}
               className="text-center space-y-8 py-12 border border-zinc-800 bg-zinc-900/30 p-8"
@@ -124,7 +105,7 @@ export default function AcessoVIPPage() {
                 <span className="font-mono text-xl">✓</span>
               </div>
               <h2 className="font-serif text-2xl uppercase tracking-wider text-white">
-                Registro Selado na Base
+                Registro Confirmado
               </h2>
               <div className="font-mono text-[10px] text-zinc-400 uppercase tracking-widest space-y-2">
                 <p>NOME: {formData.name}</p>
@@ -132,7 +113,7 @@ export default function AcessoVIPPage() {
                 <p>STATUS: AGUARDANDO LIBERAÇÃO</p>
               </div>
               <p className="font-sans text-xs text-zinc-500 uppercase tracking-widest leading-relaxed max-w-xs mx-auto pt-6 border-t border-zinc-800">
-                Fique atento às comunicações sigilosas. A chave de acesso ao lote restrito será enviada no momento exato.
+                Seu acesso ao ORIGO / 01 foi registrado. A próxima etapa será comunicada diretamente por e-mail.
               </p>
             </motion.div>
           )}
