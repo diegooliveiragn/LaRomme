@@ -12,7 +12,7 @@ export const siteConfig = {
     pillars: 'DISCIPLINA • LIBERDADE • PERMANÊNCIA',
   },
   social: {
-    instagram: 'https://instagram.com/laromme',
+    instagram: 'https://instagram.com/uselaromme',
     tiktok: 'https://tiktok.com/@laromme',
   },
   contact: {
