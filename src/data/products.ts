@@ -4,24 +4,26 @@ export const products: Product[] = [
   {
     id: 'vestigium-01',
     name: 'VESTIGIUM',
-    subtitle: 'Camisa Algodão Premium',
+    subtitle: 'Camiseta de Algodão',
     slug: 'vestigium-camisa-algodao',
     price: 289.00,
     category: 'Lifestyle',
     collection: 'ORIGO',
-    concept: 'O que permanece.',
-    shortDescription: 'Algodão de alta gramatura com modelagem Boxy/Oversized. Arte autoral conectando a arquitetura romana às coordenadas de Fortaleza.',
-    fitDetails: 'Modelagem Boxy de caimento estruturado e ombros deslocados.',
+    concept: 'O que permanece. Arte, cultura e atitude.',
+    shortDescription: 'Algodão premium de alta gramatura com modelagem Oversized/Boxy. Arte autoral conectando a herança clássica às coordenadas de Fortaleza.',
+    fitDetails: 'Modelagem Oversized/Boxy de caimento estruturado e ombros deslocados.',
     materials: [
-      '100% Algodão Premium de Alta Gramatura',
-      'Toque macio e pré-encolhido',
-      'Estampa autoral de alta durabilidade'
+      'Algodão premium de estrutura e conforto elevado',
+      'Toque macio com pré-encolhimento de fábrica',
+      'Estampa autoral de alta definição e durabilidade'
     ],
     features: [
-      'Algodão encorpado com toque macio',
-      'Modelagem Boxy desenvolvida sob medida',
-      'Gola canelada de 3cm',
-      'Estampa posterior artística'
+      'Algodão premium (estrutura e conforto)',
+      'Modelagem oversized/boxy',
+      'Gola estruturada',
+      'Estampa de alta definição e durabilidade',
+      'Etiqueta externa frontal',
+      'Acabamento premium'
     ],
     careInstructions: [
       'Lavar à mão ou em ciclo delicado na máquina com água fria',
@@ -30,11 +32,11 @@ export const products: Product[] = [
       'Passar do avesso em temperatura média'
     ],
     availableColors: [
-      { name: 'Off-White', hex: '#F2F1ED', slug: 'offwhite' },
+      { name: 'Off White', hex: '#F2F1ED', slug: 'offwhite' },
       { name: 'Preto', hex: '#111111', slug: 'preto' }
     ],
     availableSizes: ['P', 'M', 'G', 'GG'],
-    images: ['/assets/products/vestigium/offwhite-back.jpg'],
+    images: ['/assets/products/vestigium/vestigium-techpack.jpg'],
     isFeatured: true,
   },
   {
@@ -103,7 +105,7 @@ export const products: Product[] = [
     availableColors: [
       { name: 'Bordô', hex: '#8B1E1E', slug: 'bordo' },
       { name: 'Preto', hex: '#111111', slug: 'preto' },
-      { name: 'Off-White', hex: '#F2F1ED', slug: 'offwhite' }
+      { name: 'Off White', hex: '#F2F1ED', slug: 'offwhite' }
     ],
     availableSizes: ['P', 'M', 'G', 'GG'],
     images: ['/assets/products/libertas/red-front.jpg'],
@@ -134,10 +136,13 @@ export const products: Product[] = [
     ],
     availableColors: [
       { name: 'Preto', hex: '#111111', slug: 'preto' },
-      { name: 'Off-White', hex: '#F2F1ED', slug: 'offwhite' }
+      { name: 'Off White', hex: '#F2F1ED', slug: 'offwhite' }
     ],
     availableSizes: ['P'],
     images: ['/assets/products/signum/black-cap.jpg'],
     isFeatured: false,
   }
 ];
+
+// Alias para garantir compatibilidade com rotas da coleção e sitemap
+export const PRODUCTS_ORIGO = products;
