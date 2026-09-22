@@ -12,8 +12,9 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const rawImage = product.images[0];
-  const imgSrc = typeof rawImage === 'string' ? rawImage : (rawImage as any)?.src || '/assets/brand/logo.jpg';
+  const firstImg = product.images[0];
+  const imgSrc = typeof firstImg === 'string' ? firstImg : (firstImg as any)?.src || '/assets/brand/logo.jpg';
+  const imgAlt = typeof firstImg === 'string' ? product.name : (firstImg as any)?.alt || product.name;
 
   return (
     <motion.div 
@@ -26,7 +27,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <Link href={`/produto/${product.slug}`} className="block relative overflow-hidden aspect-[3/4] bg-zinc-900 mb-6">
         <Image
           src={imgSrc}
-          alt={product.name}
+          alt={imgAlt}
           fill
           className="object-cover object-center group-hover:scale-105 transition-transform duration-1000 ease-out"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
