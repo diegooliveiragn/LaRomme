@@ -9,4 +9,5 @@ export const DURATIONS = {
   medium: 0.9,
   slow: 1.3,
   editorial: 1.8,
+  cinematic: 1.3,
 } as const;
