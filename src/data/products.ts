@@ -1,197 +1,143 @@
 import { Product } from '@/types/product';
 
-export const PRODUCTS_ORIGO: Product[] = [
+export const products: Product[] = [
   {
     id: 'vestigium-01',
-    slug: 'vestigium-camisa-algodao',
     name: 'VESTIGIUM',
-    subtitle: 'Camiseta de Algodão',
-    collection: 'origo',
-    category: 'lifestyle',
+    subtitle: 'Camisa Algodão Premium',
+    slug: 'vestigium-camisa-algodao',
+    price: 289.00,
+    category: 'Lifestyle',
+    collection: 'ORIGO',
     concept: 'O que permanece.',
-    shortDescription: 'Camiseta oversized em algodão premium com caimento boxy e arte posterior exclusiva.',
-    fullStory: 'VESTIGIUM representa o que dura no tempo. Inspirada na cultura do skate e na estética dos anos 2000, traz a fusão perfeita entre a rusticidade do algodão encorpado e a narrativa da LaRomme, unindo as coordenadas de Fortaleza com os símbolos eternos de Roma.',
-    price: 189.90,
-    availableColors: [
-      { name: 'Off White', hex: '#F2F1ED', slug: 'off-white' },
-      { name: 'Preto', hex: '#111111', slug: 'preto' },
-    ],
-    availableSizes: ['P', 'M', 'G', 'GG'],
-    variants: [
-      { id: 'v1', sku: 'VEST-OW-P', color: { name: 'Off White', hex: '#F2F1ED', slug: 'off-white' }, size: 'P', price: 189.90, stock: 10 },
-      { id: 'v2', sku: 'VEST-OW-M', color: { name: 'Off White', hex: '#F2F1ED', slug: 'off-white' }, size: 'M', price: 189.90, stock: 15 },
-      { id: 'v3', sku: 'VEST-OW-G', color: { name: 'Off White', hex: '#F2F1ED', slug: 'off-white' }, size: 'G', price: 189.90, stock: 12 },
-      { id: 'v4', sku: 'VEST-BLK-P', color: { name: 'Preto', hex: '#111111', slug: 'preto' }, size: 'P', price: 189.90, stock: 8 },
-      { id: 'v5', sku: 'VEST-BLK-M', color: { name: 'Preto', hex: '#111111', slug: 'preto' }, size: 'M', price: 189.90, stock: 14 },
+    shortDescription: 'Algodão de alta gramatura com modelagem Boxy/Oversized. Arte autoral conectando a arquitetura romana às coordenadas de Fortaleza.',
+    fitDetails: 'Modelagem Boxy de caimento estruturado e ombros deslocados.',
+    materials: [
+      '100% Algodão Premium de Alta Gramatura',
+      'Toque macio e pré-encolhido',
+      'Estampa autoral de alta durabilidade'
     ],
     features: [
-      'Algodão premium encorpado com caimento estruturado',
-      'Modelagem oversized / boxy inspirada nos anos 2000',
-      'Gola estruturada e acabamento de alta durabilidade',
-      'Estampa posterior em alta definição (arte x coordenadas)',
-      'Etiqueta externa frontal discreta',
+      'Algodão encorpado com toque macio',
+      'Modelagem Boxy desenvolvida sob medida',
+      'Gola canelada de 3cm',
+      'Estampa posterior artística'
     ],
-    materials: ['100% Algodão Premium'],
-    fitDetails: 'Modelagem Boxy / Oversized. Caimento solto no corpo com ombros levemente deslocados.',
     careInstructions: [
-      'Lavar à máquina no ciclo delicado com água fria',
-      'Não utilizar alvejantes ou branqueadores',
-      'Passar do avesso para preservar a estampa',
+      'Lavar à mão ou em ciclo delicado na máquina com água fria',
+      'Não utilizar alvejante',
+      'Secar à sombra',
+      'Passar do avesso em temperatura média'
     ],
-    images: [
-      { src: '/assets/products/vestigium/offwhite-front.jpg', alt: 'Camiseta Vestigium Off White - Frente', isHover: false },
-      { src: '/assets/products/vestigium/offwhite-back.jpg', alt: 'Camiseta Vestigium Off White - Costas com Arte', isHover: true },
+    availableColors: [
+      { name: 'Off-White', hex: '#F2F1ED', slug: 'offwhite' },
+      { name: 'Preto', hex: '#111111', slug: 'preto' }
     ],
-    featured: true,
-    available: true,
+    availableSizes: ['P', 'M', 'G', 'GG'],
+    images: ['/assets/products/vestigium/offwhite-back.jpg'],
+    isFeatured: true,
   },
   {
     id: 'forza-01',
-    slug: 'forza-camisa-performance',
     name: 'FORZA',
-    subtitle: 'Camiseta Sport Performance',
-    collection: 'origo',
-    category: 'performance',
-    concept: 'O que nos faz continuar.',
-    shortDescription: 'Camiseta técnica desenvolvida para alta performance e mobilidade no esporte praiano.',
-    fullStory: 'FORZA foi projetada para a arena. Seja na praia, na corrida ou no treino intenso, entrega extrema leveza, secagem ultra-rápida e proteção UV, sem abrir mão da estética sofisticada e dos detalhes refletivos de segurança.',
-    price: 169.90,
-    availableColors: [
-      { name: 'Preto', hex: '#111111', slug: 'preto' },
-      { name: 'Off White', hex: '#F2F1ED', slug: 'off-white' },
-      { name: 'Vermelho LaRomme', hex: '#8B1E1E', slug: 'vermelho' },
-    ],
-    availableSizes: ['P', 'M', 'G', 'GG'],
-    variants: [
-      { id: 'f1', sku: 'FORZ-BLK-M', color: { name: 'Preto', hex: '#111111', slug: 'preto' }, size: 'M', price: 169.90, stock: 20 },
-      { id: 'f2', sku: 'FORZ-OW-M', color: { name: 'Off White', hex: '#F2F1ED', slug: 'off-white' }, size: 'M', price: 169.90, stock: 15 },
+    subtitle: 'Camiseta Sport',
+    slug: 'forza-camisa-performance',
+    price: 249.00,
+    category: 'Performance',
+    collection: 'ORIGO',
+    concept: 'Movimento, conforto e identidade.',
+    shortDescription: 'Desenvolvida para alta mobilidade e intensidade. Tecido leve com secagem rápida, proteção UV e detalhes refletivos.',
+    fitDetails: 'Modelagem relaxed de caimento premium anatômico com foco na liberdade corporal.',
+    materials: [
+      'Tecido leve e altamente respirável',
+      'Tratamento tecnológico de secagem rápida (Dry)',
+      'Proteção solar UV integrada'
     ],
     features: [
-      'Tecido leve de altíssima respirabilidade',
-      'Tecnologia de secagem rápida (Quick Dry)',
-      'Proteção UV integrada às fibras do tecido',
-      'Modelagem relaxed focada em liberdade de movimento',
-      'Detalhes e logos refletivos para visibilidade noturna',
-      'Etiqueta externa emborrachada de alta resistência',
+      'Tecido leve e respirável',
+      'Secagem rápida',
+      'Proteção UV',
+      'Modelagem relaxed com caimento premium',
+      'Detalhes refletivos de segurança',
+      'Etiqueta externa exclusiva'
     ],
-    materials: ['Poliamida com Elastano de Tecnologia Avançada'],
-    fitDetails: 'Modelagem Relaxed / Athletic. Ajustável ao corpo sem comprimir.',
     careInstructions: [
-      'Lavar a frio',
-      'Não usar amaciante para não obstruir os poros de respirabilidade',
-      'Secar à sombra',
+      'Lavar na máquina em ciclo esportivo/delicado',
+      'Não usar amaciante nem alvejante',
+      'Secagem rápida ao ar livre',
+      'Não passar a ferro sobre as estampas e detalhes refletivos'
     ],
-    images: [
-      { src: '/assets/products/forza/black-front.jpg', alt: 'Camiseta Forza Preta - Frente', isHover: false },
-      { src: '/assets/products/forza/black-back.jpg', alt: 'Camiseta Forza Preta - Costas', isHover: true },
+    availableColors: [
+      { name: 'Preto', hex: '#111111', slug: 'preto' },
+      { name: 'Off White', hex: '#F2F1ED', slug: 'offwhite' },
+      { name: 'Bordô', hex: '#8B1E1E', slug: 'bordo' }
     ],
-    featured: true,
-    available: true,
+    availableSizes: ['P', 'M', 'G', 'GG'],
+    images: ['/assets/products/forza/forza-techpack.jpg'],
+    isFeatured: true,
   },
   {
     id: 'libertas-01',
-    slug: 'libertas-regata-performance',
     name: 'LIBERTAS',
     subtitle: 'Regata Performance',
-    collection: 'origo',
-    category: 'performance',
+    slug: 'libertas-regata-performance',
+    price: 199.00,
+    category: 'Performance',
+    collection: 'ORIGO',
     concept: 'Movimento sem restrição.',
-    shortDescription: 'Regata de caimento solto e gola careca, equilibrando 50% performance e 50% lifestyle.',
-    fullStory: 'LIBERTAS nasceu da busca pelo equilíbrio entre a liberdade do movimento no esporte de praia e o apelo visual do casual contemporâneo. Possui gola careca tradicional, cava média e acabamento refletivo discreto.',
-    price: 149.90,
-    availableColors: [
-      { name: 'Vermelho LaRomme', hex: '#8B1E1E', slug: 'vermelho' },
-      { name: 'Preto', hex: '#111111', slug: 'preto' },
-      { name: 'Off White', hex: '#F2F1ED', slug: 'off-white' },
-    ],
-    availableSizes: ['P', 'M', 'G', 'GG'],
-    variants: [
-      { id: 'l1', sku: 'LIB-RED-M', color: { name: 'Vermelho LaRomme', hex: '#8B1E1E', slug: 'vermelho' }, size: 'M', price: 149.90, stock: 12 },
-      { id: 'l2', sku: 'LIB-BLK-M', color: { name: 'Preto', hex: '#111111', slug: 'preto' }, size: 'M', price: 149.90, stock: 18 },
-      { id: 'l3', sku: 'LIB-OW-M', color: { name: 'Off White', hex: '#F2F1ED', slug: 'off-white' }, size: 'M', price: 149.90, stock: 10 },
+    shortDescription: 'Cava estratégica projetada para amplitude total de movimento. A fusão exata entre lifestyle de praia e esporte de arena.',
+    fitDetails: 'Cava profunda e modelagem solta para mobilidade irrestrita.',
+    materials: [
+      'Tecido técnico ultraleve',
+      'Absorção e evaporação rápida de suor'
     ],
     features: [
-      'Proporção exata: 50% Performance / 50% Fashion',
-      'Gola careca tradicional com estrutura reforçada',
-      'Cava média desenhada para mobilidade dos ombros',
-      'Comprimento ideal na altura do quadril',
-      'Detalhe refletivo posterior LaRomme',
+      'Cava anatômica sem fricção',
+      'Toque gelado e respirabilidade máxima',
+      'Costuras reforçadas'
     ],
-    materials: ['Tecido Técnico Ultraleve'],
-    fitDetails: 'Caimento solto / Athletic. Não compressivo.',
     careInstructions: [
-      'Lavar à mão ou máquina em modo delicado',
-      'Secagem rápida ao ar livre',
+      'Lavar com água fria',
+      'Secar à sombra'
     ],
-    images: [
-      { src: '/assets/products/libertas/red-front.jpg', alt: 'Regata Libertas Bordô - Frente', isHover: false },
+    availableColors: [
+      { name: 'Bordô', hex: '#8B1E1E', slug: 'bordo' },
+      { name: 'Preto', hex: '#111111', slug: 'preto' },
+      { name: 'Off-White', hex: '#F2F1ED', slug: 'offwhite' }
     ],
-    featured: true,
-    available: true,
+    availableSizes: ['P', 'M', 'G', 'GG'],
+    images: ['/assets/products/libertas/red-front.jpg'],
+    isFeatured: true,
   },
   {
     id: 'signum-01',
-    slug: 'signum-bone-preto',
     name: 'SIGNUM',
-    subtitle: 'Boné Lifestyle - Preto',
-    collection: 'origo',
-    category: 'lifestyle',
-    concept: 'A marca da atitude.',
-    shortDescription: 'Boné em sarja encorpada com monograma frontal bordado em alto relevo.',
-    fullStory: 'SIGNUM é o símbolo de pertencimento ao universo LaRomme. Construído em sarja de alta densidade, garante estrutura impecável e ajuste regulável com fecho de fivela personalizada.',
-    price: 129.90,
+    subtitle: 'Acessório / Cap',
+    slug: 'signum-bone',
+    price: 159.00,
+    category: 'Lifestyle',
+    collection: 'ORIGO',
+    concept: 'O código visual.',
+    shortDescription: 'Boné estruturado de abas curvas com bordado em alto relevo e fecho ajustável personalizado.',
+    fitDetails: 'Tamanho único ajustável.',
+    materials: [
+      '100% Sarja de Algodão Encorpada',
+      'Bordado frontal e lateral de alta precisão'
+    ],
+    features: [
+      'Fecho traseiro em metal com fivela personalizada',
+      'Fita interna com código de origem LaRomme'
+    ],
+    careInstructions: [
+      'Limpar com pano úmido',
+      'Não lavar na máquina'
+    ],
     availableColors: [
       { name: 'Preto', hex: '#111111', slug: 'preto' },
+      { name: 'Off-White', hex: '#F2F1ED', slug: 'offwhite' }
     ],
-    availableSizes: ['UNICO'],
-    variants: [
-      { id: 's1', sku: 'SIG-BLK-U', color: { name: 'Preto', hex: '#111111', slug: 'preto' }, size: 'UNICO', price: 129.90, stock: 25 },
-    ],
-    features: [
-      'Modelagem Dad Hat / Five-Panel ajustável',
-      'Monograma LaRomme bordado em alto relevo',
-      'Fivela traseira regulável em metal com gravação',
-      'Aba curva estruturada',
-    ],
-    materials: ['100% Algodão Sarja Heavyweight'],
-    fitDetails: 'Tamanho único regulável.',
-    careInstructions: ['Limpeza a seco ou com pano levemente úmido'],
-    images: [
-      { src: '/assets/products/signum/black.jpg', alt: 'Boné Signum Preto', isHover: false },
-    ],
-    featured: false,
-    available: true,
-  },
-  {
-    id: 'signum-02',
-    slug: 'signum-bone-off-white',
-    name: 'SIGNUM',
-    subtitle: 'Boné Lifestyle - Off White',
-    collection: 'origo',
-    category: 'lifestyle',
-    concept: 'A marca da atitude.',
-    shortDescription: 'Boné em sarja off-white encorpada com o monograma LaRomme bordado.',
-    fullStory: 'Variante solar da linha SIGNUM, perfeita para ambientes de praia e encontros casuais.',
-    price: 129.90,
-    availableColors: [
-      { name: 'Off White', hex: '#F2F1ED', slug: 'off-white' },
-    ],
-    availableSizes: ['UNICO'],
-    variants: [
-      { id: 's2', sku: 'SIG-OW-U', color: { name: 'Off White', hex: '#F2F1ED', slug: 'off-white' }, size: 'UNICO', price: 129.90, stock: 20 },
-    ],
-    features: [
-      'Modelagem Dad Hat / Five-Panel ajustável',
-      'Monograma LaRomme bordado',
-      'Fivela traseira em metal banhado',
-    ],
-    materials: ['100% Algodão Sarja Heavyweight'],
-    fitDetails: 'Tamanho único regulável.',
-    careInstructions: ['Limpeza a seco ou pano úmido'],
-    images: [
-      { src: '/assets/products/signum/offwhite.jpg', alt: 'Boné Signum Off White', isHover: false },
-    ],
-    featured: false,
-    available: true,
-  },
+    availableSizes: ['P'],
+    images: ['/assets/products/signum/black-cap.jpg'],
+    isFeatured: false,
+  }
 ];
