@@ -1,111 +1,110 @@
-import { Metadata } from 'next';
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Guia de Tamanhos | LaRomme',
-  description: 'Tabela de medidas e especificações das modelagens LaRomme.',
-};
+import { motion } from 'framer-motion';
+import { EASINGS, DURATIONS } from '@/config/motion';
+import { siteConfig } from '@/config/site';
 
 export default function TamanhoPage() {
+  const tables = [
+    {
+      title: 'VESTIGIUM',
+      subtitle: 'Camiseta Algodão (Modelagem Boxy / Oversized)',
+      description: 'Caimento estruturado com ombros deslocados. Construída em algodão heavyweight.',
+      headers: ['Tamanho', 'Tórax (cm)', 'Comprimento (cm)', 'Manga (cm)'],
+      rows: [
+        ['P', '108', '72', '22'],
+        ['M', '114', '75', '23'],
+        ['G', '128', '78', '24'],
+        ['GG', '126', '81', '25'],
+      ]
+    },
+    {
+      title: 'FORZA',
+      subtitle: 'Camiseta Sport (Relaxed Performance)',
+      description: 'Caimento anatômico livre para mobilidade. Tecido leve de secagem rápida.',
+      headers: ['Tamanho', 'Tórax (cm)', 'Comprimento (cm)'],
+      rows: [
+        ['P', '104', '70'],
+        ['M', '110', '73'],
+        ['G', '116', '76'],
+        ['GG', '122', '79'],
+      ]
+    },
+    {
+      title: 'LIBERTAS',
+      subtitle: 'Regata Performance (Cava Profunda)',
+      description: 'Projetada para amplitude total de movimento sem restrições ou fricção.',
+      headers: ['Tamanho', 'Tórax (cm)', 'Comprimento (cm)'],
+      rows: [
+        ['P', '102', '71'],
+        ['M', '108', '74'],
+        ['G', '114', '77'],
+        ['GG', '120', '80'],
+      ]
+    }
+  ];
+
   return (
-    <div className="pt-28 pb-24 max-w-4xl mx-auto px-6 space-y-12">
-      <div className="border-b border-zinc-300 pb-6 text-center">
-        <span className="text-xs uppercase font-bold tracking-editorial text-brand-red block mb-1">
-          Tabelas de Medidas
-        </span>
-        <h1 className="font-serif text-3xl sm:text-4xl font-bold uppercase text-brand-black">
-          Guia de Tamanhos e Caimento
-        </h1>
-      </div>
+    <div className="bg-brand-black text-brand-offwhite min-h-screen pt-32 pb-24">
+      <div className="max-w-4xl mx-auto px-6 space-y-16">
+        
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: DURATIONS.slow, ease: EASINGS.cinematic }}
+          className="text-center space-y-4"
+        >
+          <span className="font-mono text-[10px] text-brand-red uppercase tracking-widest block">
+            Especificações Milimétricas
+          </span>
+          <h1 className="font-serif text-3xl sm:text-5xl font-bold uppercase tracking-wider text-white">
+            Estrutura & Medidas
+          </h1>
+          <p className="font-sans text-xs text-zinc-500 uppercase tracking-widest max-w-lg mx-auto leading-relaxed">
+            Consulte a matriz cartesiana abaixo para identificar a proporção exata para o seu corpo.
+          </p>
+        </motion.div>
 
-      {/* Tabela Camisetas Oversized (VESTIGIUM) */}
-      <div className="bg-white border border-zinc-200 p-6 sm:p-8 space-y-4">
-        <h2 className="font-serif text-xl font-bold uppercase text-brand-black">
-          1. Camiseta Algodão VESTIGIUM (Modelagem Boxy / Oversized)
-        </h2>
-        <p className="text-xs text-zinc-500 uppercase tracking-wider">
-          Modelagem ampla com ombros deslocados e caimento estruturado.
-        </p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left border-collapse font-mono">
-            <thead>
-              <tr className="bg-zinc-100 border-b border-zinc-300 text-brand-black">
-                <th className="p-3">Tamanho</th>
-                <th className="p-3">Tórax (cm)</th>
-                <th className="p-3">Comprimento (cm)</th>
-                <th className="p-3">Manga (cm)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-200">
-              <tr>
-                <td className="p-3 font-bold">P</td>
-                <td className="p-3">108</td>
-                <td className="p-3">72</td>
-                <td className="p-3">22</td>
-              </tr>
-              <tr>
-                <td className="p-3 font-bold">M</td>
-                <td className="p-3">114</td>
-                <td className="p-3">75</td>
-                <td className="p-3">23</td>
-              </tr>
-              <tr>
-                <td className="p-3 font-bold">G</td>
-                <td className="p-3">120</td>
-                <td className="p-3">78</td>
-                <td className="p-3">24</td>
-              </tr>
-              <tr>
-                <td className="p-3 font-bold">GG</td>
-                <td className="p-3">126</td>
-                <td className="p-3">81</td>
-                <td className="p-3">25</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+        <div className="space-y-12">
+          {tables.map((table, index) => (
+            <motion.div 
+              key={table.title}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: DURATIONS.medium, delay: index * 0.1, ease: EASINGS.cinematic }}
+              className="border border-zinc-800 p-6 md:p-10 bg-zinc-900/20"
+            >
+              <div className="mb-8">
+                <h2 className="font-serif text-2xl uppercase tracking-wider text-white mb-2">{table.title}</h2>
+                <p className="font-mono text-[10px] text-brand-red uppercase tracking-widest mb-2">{table.subtitle}</p>
+                <p className="font-sans text-[10px] uppercase text-zinc-500">{table.description}</p>
+              </div>
 
-      {/* Tabela Performance (FORZA / LIBERTAS) */}
-      <div className="bg-white border border-zinc-200 p-6 sm:p-8 space-y-4">
-        <h2 className="font-serif text-xl font-bold uppercase text-brand-black">
-          2. Linha Performance FORZA e LIBERTAS (Modelagem Athletic Relaxed)
-        </h2>
-        <p className="text-xs text-zinc-500 uppercase tracking-wider">
-          Caimento ajustável ao corpo sem compressão, focado em alta mobilidade.
-        </p>
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs text-left border-collapse font-mono">
-            <thead>
-              <tr className="bg-zinc-100 border-b border-zinc-300 text-brand-black">
-                <th className="p-3">Tamanho</th>
-                <th className="p-3">Tórax (cm)</th>
-                <th className="p-3">Comprimento (cm)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-200">
-              <tr>
-                <td className="p-3 font-bold">P</td>
-                <td className="p-3">98</td>
-                <td className="p-3">70</td>
-              </tr>
-              <tr>
-                <td className="p-3 font-bold">M</td>
-                <td className="p-3">104</td>
-                <td className="p-3">72</td>
-              </tr>
-              <tr>
-                <td className="p-3 font-bold">G</td>
-                <td className="p-3">110</td>
-                <td className="p-3">74</td>
-              </tr>
-              <tr>
-                <td className="p-3 font-bold">GG</td>
-                <td className="p-3">116</td>
-                <td className="p-3">76</td>
-              </tr>
-            </tbody>
-          </table>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left font-mono text-[11px] uppercase tracking-widest min-w-[500px]">
+                  <thead className="text-zinc-500 border-b border-zinc-800">
+                    <tr>
+                      {table.headers.map(h => (
+                        <th key={h} className="pb-4 font-normal">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="text-zinc-300">
+                    {table.rows.map((row, i) => (
+                      <tr key={i} className="border-b border-zinc-800/50 hover:bg-zinc-800/30 transition-colors">
+                        {row.map((cell, j) => (
+                          <td key={j} className="py-4">{cell}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </motion.div>
+          ))}
         </div>
+
       </div>
     </div>
   );

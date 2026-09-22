@@ -16,6 +16,6 @@ export const siteConfig = {
     tiktok: 'https://tiktok.com/@laromme',
   },
   contact: {
-    email: 'contato@laromme.com.br',
+    email: 'romannuscompany@gmail.com',
   },
 };
