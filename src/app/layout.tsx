@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Manrope, JetBrains_Mono } from "next/font/google";
-import "@/styles/globals.css";
+import "@/app/globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { siteConfig } from "@/config/site";
@@ -31,8 +31,8 @@ const jetbrains = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: ${siteConfig.name} | ,
-    template: %s | ,
+    default: `${siteConfig.name} | ${siteConfig.slogans.hero}`,
+    template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
   keywords: ["Streetwear", "Performance", "Fortaleza", "Roma", "Moda Masculina", "Vestuário", "Lifestyle"],
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     type: "website",
     locale: "pt_BR",
     url: "https://la-romme.vercel.app",
-    title: ${siteConfig.name} — Lote Zero,
+    title: `${siteConfig.name} — Lote Zero`,
     description: siteConfig.slogans.manifesto,
     siteName: siteConfig.name,
     images: [
@@ -56,7 +56,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: ${siteConfig.name} | ,
+    title: `${siteConfig.name} | ${siteConfig.slogans.hero}`,
     description: siteConfig.description,
     images: ["/assets/brand/logo.jpg"],
   },
@@ -79,7 +79,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={${cormorant.variable}   scroll-smooth}>
+    <html lang="pt-BR" className={`${cormorant.variable} ${manrope.variable} ${jetbrains.variable} scroll-smooth`}>
       <body className="bg-brand-black text-brand-offwhite antialiased min-h-screen flex flex-col selection:bg-brand-red selection:text-white">
         <CartProvider>
           <Preloader />
