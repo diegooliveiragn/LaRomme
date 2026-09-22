@@ -39,7 +39,7 @@ export const products: Product[] = [
     images: [
       { src: '/assets/products/vestigium/vestigium-techpack.jpg', alt: 'Camiseta VESTIGIUM' }
     ],
-    isFeatured: true,
+    featured: true,
   },
   {
     id: 'forza-01',
@@ -53,7 +53,7 @@ export const products: Product[] = [
     shortDescription: 'Desenvolvida para alta mobilidade e intensidade. Tecido leve com secagem rápida, proteção UV e detalhes refletivos.',
     fitDetails: 'Modelagem relaxed de caimento premium anatômico com foco na liberdade corporal.',
     materials: [
-      'Tecido leve e altamente respirável',
+      'Tecido leve e highly respirável',
       'Tratamento tecnológico de secagem rápida (Dry)',
       'Proteção solar UV integrada'
     ],
@@ -80,7 +80,7 @@ export const products: Product[] = [
     images: [
       { src: '/assets/products/forza/forza-techpack.jpg', alt: 'Camiseta FORZA' }
     ],
-    isFeatured: true,
+    featured: true,
   },
   {
     id: 'libertas-01',
@@ -118,7 +118,7 @@ export const products: Product[] = [
       { src: '/assets/products/libertas/libertas-black.jpg', alt: 'Regata LIBERTAS Preto' },
       { src: '/assets/products/libertas/libertas-white.jpg', alt: 'Regata LIBERTAS Off White' }
     ],
-    isFeatured: true,
+    featured: true,
   },
   {
     id: 'signum-01',
@@ -153,7 +153,7 @@ export const products: Product[] = [
       { src: '/assets/products/signum/signum-black.jpg', alt: 'Boné SIGNUM Preto' },
       { src: '/assets/products/signum/signum-white.jpg', alt: 'Boné SIGNUM Off White' }
     ],
-    isFeatured: false,
+    featured: false,
   }
 ];
 
