@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Product } from '@/types/product';
 import { formatCurrency } from '@/lib/formatters';
@@ -11,6 +12,8 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
+  const mainImage = product.images[0] || '/assets/brand/logo.jpg';
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: 30 }}
@@ -19,22 +22,15 @@ export function ProductCard({ product }: ProductCardProps) {
       transition={{ duration: DURATIONS.slow, ease: EASINGS.cinematic }}
       className="group flex flex-col justify-between h-full bg-white p-4 transition-all duration-700 hover:shadow-2xl hover:shadow-brand-black/5"
     >
-      <Link href={`/produto/${product.slug}`} className="block relative overflow-hidden aspect-[3/4] bg-zinc-100 mb-6">
-        {/* Imagem/Placeholder Editorial */}
-        <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-zinc-100 via-zinc-50 to-zinc-200 group-hover:scale-105 transition-transform duration-1000 ease-out">
-          <span className="font-mono text-[9px] uppercase tracking-widest text-brand-red mb-3 block opacity-0 group-hover:opacity-100 transition-opacity duration-700 delay-100">
-            EXPLORAR PEÇA
-          </span>
-          <span className="font-serif text-3xl font-bold uppercase tracking-widest text-brand-black block">
-            {product.name}
-          </span>
-          <span className="text-xs text-zinc-400 mt-4 italic font-serif opacity-80 block">
-            "{product.concept}"
-          </span>
-        </div>
-
-        {/* Categoria / Label (Mono) */}
-        <div className="absolute top-4 left-4 bg-brand-black/90 backdrop-blur-sm text-white text-[9px] uppercase font-mono tracking-widest px-3 py-1.5 shadow-sm">
+      <Link href={`/produto/${product.slug}`} className="block relative overflow-hidden aspect-[3/4] bg-zinc-900 mb-6">
+        <Image
+          src={mainImage}
+          alt={product.name}
+          fill
+          className="object-cover object-center group-hover:scale-105 transition-transform duration-1000 ease-out"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+        />
+        <div className="absolute top-4 left-4 bg-brand-black/90 backdrop-blur-sm text-white text-[9px] uppercase font-mono tracking-widest px-3 py-1.5 shadow-sm z-10">
           {product.category}
         </div>
       </Link>
@@ -51,13 +47,11 @@ export function ProductCard({ product }: ProductCardProps) {
               {product.subtitle}
             </p>
           </div>
-          {/* Preço (Código/Precisão - Mono) */}
           <span className="text-xs font-bold text-brand-black tracking-tight font-mono whitespace-nowrap">
             {formatCurrency(product.price)}
           </span>
         </div>
 
-        {/* Swatches de Cores (Minimalistas) */}
         <div className="flex items-center gap-3 pt-4 border-t border-zinc-100">
           <span className="font-mono text-[9px] text-zinc-400 uppercase tracking-widest">Cores disponíveis:</span>
           <div className="flex gap-2">

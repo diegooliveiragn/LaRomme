@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Product, ColorWay, Size } from '@/types/product';
 import { formatCurrency } from '@/lib/formatters';
@@ -22,6 +23,9 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
   
   const { addToCart } = useCart();
 
+  // Seleciona a imagem correspondente à cor ou usa a primeira como fallback
+  const activeImage = product.images.find(img => img.toLowerCase().includes(selectedColor.slug)) || product.images[0];
+
   const handleAddToCart = () => {
     if (!selectedSize) return;
     addToCart(product, selectedColor, selectedSize, 1);
@@ -36,42 +40,36 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
-        {/* Galeria / Display do Produto */}
+        {/* Galeria de Fotos Oficial */}
         <div className="lg:col-span-7 space-y-4 sticky top-28">
-          <div className="aspect-[3/4] bg-white border border-zinc-200 p-8 sm:p-12 flex flex-col justify-center items-center text-center relative overflow-hidden shadow-sm">
+          <div className="aspect-[3/4] bg-zinc-900 border border-zinc-800 relative overflow-hidden shadow-xl">
             <AnimatePresence mode="wait">
               <motion.div
-                key={selectedColor.slug}
+                key={activeImage}
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.02 }}
                 transition={{ duration: DURATIONS.medium, ease: EASINGS.cinematic }}
-                className="w-full flex flex-col items-center justify-center space-y-4"
+                className="w-full h-full relative"
               >
-                <span className="text-xs font-bold uppercase tracking-editorial text-brand-red font-sans">
-                  {product.subtitle}
-                </span>
-                <h2 className="font-serif text-4xl sm:text-6xl font-bold uppercase tracking-wider text-brand-black">
-                  {product.name}
-                </h2>
-                <p className="text-xs text-zinc-500 italic font-serif max-w-md">
-                  "{product.concept}"
-                </p>
-                
-                <div 
-                  className="w-16 h-16 rounded-full border border-zinc-300 shadow-md mt-6 transition-transform duration-500"
-                  style={{ backgroundColor: selectedColor.hex }}
+                <Image
+                  src={activeImage}
+                  alt={`${product.name} - ${selectedColor.name}`}
+                  fill
+                  className="object-cover object-center"
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 58vw"
                 />
               </motion.div>
             </AnimatePresence>
 
-            <div className="absolute bottom-6 left-6 text-[10px] font-mono uppercase tracking-widest text-zinc-400">
+            <div className="absolute bottom-4 left-4 bg-brand-black/90 backdrop-blur-sm text-white text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 z-10 border border-zinc-800">
               VARIANTE: {selectedColor.name}
             </div>
           </div>
         </div>
 
-        {/* Informações Comerciais e Narrativas */}
+        {/* Informações Comerciais */}
         <motion.div 
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -153,7 +151,7 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
             )}
           </div>
 
-          {/* Botão Principal de Compra */}
+          {/* Botão de Compra */}
           <button
             onClick={handleAddToCart}
             disabled={!selectedSize}
@@ -251,7 +249,7 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
         </motion.div>
       </div>
 
-      {/* Sticky Mobile Bar de Compra */}
+      {/* Sticky Mobile Bar */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-brand-black/95 text-white p-4 border-t border-zinc-800 backdrop-blur-md z-30 flex items-center justify-between gap-4">
         <div>
           <span className="font-serif text-sm font-bold uppercase block">{product.name}</span>
@@ -270,7 +268,6 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
         </button>
       </div>
 
-      {/* Modal de Guia de Tamanhos */}
       <SizeGuideModal isOpen={isSizeGuideOpen} onClose={() => setIsSizeGuideOpen(false)} />
     </>
   );
