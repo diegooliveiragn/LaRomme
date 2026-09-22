@@ -36,9 +36,7 @@ export const products: Product[] = [
       { name: 'Preto', hex: '#111111', slug: 'preto' }
     ],
     availableSizes: ['P', 'M', 'G', 'GG'],
-    images: [
-      { src: '/assets/products/vestigium/vestigium-techpack.jpg', alt: 'Camiseta VESTIGIUM' }
-    ],
+    images: ['/assets/products/vestigium/vestigium-techpack.jpg'],
     isFeatured: true,
   },
   {
@@ -77,9 +75,7 @@ export const products: Product[] = [
       { name: 'Bordô', hex: '#8B1E1E', slug: 'bordo' }
     ],
     availableSizes: ['P', 'M', 'G', 'GG'],
-    images: [
-      { src: '/assets/products/forza/forza-techpack.jpg', alt: 'Camiseta FORZA' }
-    ],
+    images: ['/assets/products/forza/forza-techpack.jpg'],
     isFeatured: true,
   },
   {
@@ -114,9 +110,9 @@ export const products: Product[] = [
     ],
     availableSizes: ['P', 'M', 'G', 'GG'],
     images: [
-      { src: '/assets/products/libertas/libertas-bordo.jpg', alt: 'Regata LIBERTAS Bordô' },
-      { src: '/assets/products/libertas/libertas-black.jpg', alt: 'Regata LIBERTAS Preto' },
-      { src: '/assets/products/libertas/libertas-white.jpg', alt: 'Regata LIBERTAS Off White' }
+      '/assets/products/libertas/libertas-bordo.jpg',
+      '/assets/products/libertas/libertas-black.jpg',
+      '/assets/products/libertas/libertas-white.jpg'
     ],
     isFeatured: true,
   },
@@ -150,8 +146,8 @@ export const products: Product[] = [
     ],
     availableSizes: ['P'],
     images: [
-      { src: '/assets/products/signum/signum-black.jpg', alt: 'Boné SIGNUM Preto' },
-      { src: '/assets/products/signum/signum-white.jpg', alt: 'Boné SIGNUM Off White' }
+      '/assets/products/signum/signum-black.jpg',
+      '/assets/products/signum/signum-white.jpg'
     ],
     isFeatured: false,
   }
