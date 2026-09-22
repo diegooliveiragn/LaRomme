@@ -3,15 +3,25 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EASINGS, DURATIONS } from '@/config/motion';
-import { siteConfig } from '@/config/site';
+import { trackEvent } from '@/lib/analytics';
 
 export default function AcessoVIPPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', size: '' });
 
+  const handleSizeSelect = (size: string) => {
+    setFormData({ ...formData, size });
+    trackEvent('size_selection', { selected_size: size });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.name && formData.email && formData.size) {
+      trackEvent('access_request', { 
+        size: formData.size,
+        has_name: !!formData.name,
+        has_email: !!formData.email 
+      });
       setIsSubmitted(true);
     }
   };
@@ -66,7 +76,7 @@ export default function AcessoVIPPage() {
                         <button
                           key={size}
                           type="button"
-                          onClick={() => setFormData({ ...formData, size })}
+                          onClick={() => handleSizeSelect(size)}
                           className={`py-3 border transition-all ${
                             formData.size === size
                               ? 'bg-brand-offwhite text-brand-black border-brand-offwhite font-bold'

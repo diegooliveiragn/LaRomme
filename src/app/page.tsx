@@ -6,6 +6,7 @@ import { EASINGS, DURATIONS, fadeInUpVariants } from '@/config/motion';
 import { PRODUCTS_ORIGO } from '@/data/products';
 import { ProductCard } from '@/components/product/ProductCard';
 import { ArchitectureOfMovement } from '@/components/collection/ArchitectureOfMovement';
+import { RealTestimonials } from '@/components/editorial/RealTestimonials';
 
 export default function Home() {
   const featuredProducts = PRODUCTS_ORIGO.filter(p => p.featured);
@@ -101,6 +102,9 @@ export default function Home() {
           Explorar Categorias
         </Link>
       </section>
+
+      {/* PROVA SOCIAL */} 
+      <RealTestimonials />
 
       {/* 9. ACCESS */}
       <section className="py-32 px-6 bg-brand-black text-center relative overflow-hidden">
