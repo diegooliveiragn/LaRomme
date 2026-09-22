@@ -5,10 +5,9 @@ import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Product, ColorWay, Size } from '@/types/product';
 import { formatCurrency } from '@/lib/formatters';
-import { useCart } from '@/context/CartContext';
 import { EASINGS, DURATIONS } from '@/config/motion';
 import { SizeGuideModal } from '@/components/product/SizeGuideModal';
-import { Check, ShieldCheck, Truck, RefreshCw, ChevronDown, ArrowRight, Ruler } from 'lucide-react';
+import { ShieldCheck, Truck, RefreshCw, ChevronDown, ArrowRight, Ruler } from 'lucide-react';
 
 interface ProductDetailsClientProps {
   product: Product;
@@ -17,25 +16,25 @@ interface ProductDetailsClientProps {
 export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
   const [selectedColor, setSelectedColor] = useState<ColorWay>(product.availableColors[0]);
   const [selectedSize, setSelectedSize] = useState<Size | null>(null);
-  const [addedToCart, setAddedToCart] = useState(false);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
   const [openAccordion, setOpenAccordion] = useState<'details' | 'materials' | 'care' | null>('details');
   
-  const { addToCart } = useCart();
+  const hasImages = product.images && product.images.length > 0;
+  let activeImageSrc = '';
+  
+  if (hasImages) {
+    const activeImgObj = product.images.find(img => {
+      const srcStr = typeof img === 'string' ? img : img.src;
+      return srcStr.toLowerCase().includes(selectedColor.slug);
+    }) || product.images[0];
+    activeImageSrc = typeof activeImgObj === 'string' ? activeImgObj : (activeImgObj?.src || '');
+  }
 
-  const activeImgObj = product.images.find(img => {
-    const srcStr = typeof img === 'string' ? img : img.src;
-    return srcStr.toLowerCase().includes(selectedColor.slug);
-  }) || product.images[0];
-
-  const activeImageSrc = typeof activeImgObj === 'string' ? activeImgObj : (activeImgObj?.src || '/assets/brand/logo.jpg');
-  const activeImageAlt = typeof activeImgObj === 'string' ? `${product.name} - ${selectedColor.name}` : (activeImgObj?.alt || `${product.name} - ${selectedColor.name}`);
-
-  const handleAddToCart = () => {
+  const handleVIPAccess = () => {
     if (!selectedSize) return;
-    addToCart(product, selectedColor, selectedSize, 1);
-    setAddedToCart(true);
-    setTimeout(() => setAddedToCart(false), 2000);
+    const msg = `LR // PRE-LAUNCH ACCESS%0A%0AARTEFATO: ${product.name}%0ACOR: ${selectedColor.name}\%0ATAMANHO:${selectedSize}%0A%0A--%0AOlá, gostaria de solicitar acesso antecipado a esta peça.`;
+    // Substitua o número abaixo pelo WhatsApp oficial da LaRomme (ex: 5585999999999)
+    window.open(`https://wa.me/5585999999999?text=${msg}`, '_blank');
   };
 
   const toggleAccordion = (section: 'details' | 'materials' | 'care') => {
@@ -45,28 +44,38 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
-        {/* Galeria de Fotos Oficial */}
-        <div className="lg:col-span-7 space-y-4 sticky top-28">
+        
+        {/* Galeria - CORREÇÃO: relative no mobile, sticky apenas no desktop */}
+        <div className="lg:col-span-7 space-y-4 relative lg:sticky lg:top-28">
           <div className="aspect-[3/4] bg-zinc-900 border border-zinc-800 relative overflow-hidden shadow-xl">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeImageSrc}
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 1.02 }}
-                transition={{ duration: DURATIONS.medium, ease: EASINGS.cinematic }}
-                className="w-full h-full relative"
-              >
-                <Image
-                  src={activeImageSrc}
-                  alt={activeImageAlt}
-                  fill
-                  className="object-cover object-center"
-                  priority
-                  sizes="(max-width: 1024px) 100vw, 58vw"
-                />
-              </motion.div>
-            </AnimatePresence>
+            {activeImageSrc ? (
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeImageSrc}
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 1.02 }}
+                  transition={{ duration: DURATIONS.medium, ease: EASINGS.cinematic }}
+                  className="w-full h-full relative"
+                >
+                  <Image
+                    src={activeImageSrc}
+                    alt={`${product.name} -${selectedColor.name}`}
+                    fill
+                    className="object-cover object-center"
+                    priority
+                    sizes="(max-width: 1024px) 100vw, 58vw"
+                  />
+                </motion.div>
+              </AnimatePresence>
+            ) : (
+              <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900/90">
+                <span className="font-serif text-5xl text-zinc-800 opacity-40">LR</span>
+                <span className="font-mono text-[10px] text-zinc-500 uppercase tracking-widest mt-6">
+                  [ Arquivo Visual Em Atualização ]
+                </span>
+              </div>
+            )}
 
             <div className="absolute bottom-4 left-4 bg-brand-black/90 backdrop-blur-sm text-white text-[9px] font-mono uppercase tracking-widest px-3 py-1.5 z-10 border border-zinc-800">
               VARIANTE: {selectedColor.name}
@@ -100,7 +109,6 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
             {product.shortDescription}
           </p>
 
-          {/* Seleção de Cor */}
           <div className="space-y-3">
             <label className="text-xs font-bold uppercase tracking-widest text-brand-black block font-sans">
               Cor: <span className="text-zinc-500 font-normal">{selectedColor.name}</span>
@@ -121,7 +129,6 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
             </div>
           </div>
 
-          {/* Seleção de Tamanho */}
           <div className="space-y-3">
             <div className="flex justify-between items-center text-xs">
               <label className="font-bold uppercase tracking-widest text-brand-black font-sans">
@@ -151,35 +158,23 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
             </div>
             {!selectedSize && (
               <p className="text-[10px] text-brand-red uppercase tracking-wider font-mono">
-                * Selecione um tamanho para continuar.
+                * Selecione um tamanho para acesso VIP.
               </p>
             )}
           </div>
 
-          {/* Botão de Compra */}
           <button
-            onClick={handleAddToCart}
+            onClick={handleVIPAccess}
             disabled={!selectedSize}
             className={`w-full py-5 text-xs font-bold uppercase tracking-editorial transition-all flex items-center justify-center gap-2 ${
               !selectedSize
                 ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
-                : addedToCart
-                ? 'bg-green-700 text-white'
-                : 'bg-brand-red text-white hover:bg-red-700 shadow-xl hover:shadow-brand-red/20'
+                : 'bg-brand-black text-white hover:bg-brand-red shadow-xl hover:shadow-brand-red/20'
             }`}
           >
-            {addedToCart ? (
-              <>
-                <Check size={16} /> Item Adicionado Ao Carrinho
-              </>
-            ) : (
-              <>
-                Adicionar Ao Carrinho <ArrowRight size={16} />
-              </>
-            )}
+            Solicitar Acesso VIP <ArrowRight size={16} />
           </button>
 
-          {/* Garantias */}
           <div className="grid grid-cols-3 gap-2 pt-2 border-t border-zinc-200 text-center text-[10px] uppercase tracking-wider text-zinc-500 font-sans">
             <div className="flex flex-col items-center gap-1">
               <Truck size={16} className="text-brand-black" />
@@ -195,7 +190,6 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
             </div>
           </div>
 
-          {/* Accordions */}
           <div className="border-t border-zinc-200 pt-4 space-y-3 font-sans">
             <div className="border-b border-zinc-200 pb-3">
               <button
@@ -254,14 +248,13 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
         </motion.div>
       </div>
 
-      {/* Sticky Mobile Bar */}
       <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-brand-black/95 text-white p-4 border-t border-zinc-800 backdrop-blur-md z-30 flex items-center justify-between gap-4">
         <div>
           <span className="font-serif text-sm font-bold uppercase block">{product.name}</span>
           <span className="font-mono text-xs text-brand-red font-bold">{formatCurrency(product.price)}</span>
         </div>
         <button
-          onClick={handleAddToCart}
+          onClick={handleVIPAccess}
           disabled={!selectedSize}
           className={`px-6 py-3 text-[10px] font-bold uppercase tracking-editorial font-sans ${
             !selectedSize
@@ -269,7 +262,7 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
               : 'bg-brand-red text-white'
           }`}
         >
-          {selectedSize ? 'Comprar' : 'Escolha o Tam'}
+          {selectedSize ? 'Reserva VIP' : 'Escolha o Tam'}
         </button>
       </div>
 

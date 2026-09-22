@@ -12,9 +12,9 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product }: ProductCardProps) {
-  const firstImg = product.images[0];
-  const imgSrc = typeof firstImg === 'string' ? firstImg : (firstImg as any)?.src || '/assets/brand/logo.jpg';
-  const imgAlt = typeof firstImg === 'string' ? product.name : (firstImg as any)?.alt || product.name;
+  const hasImage = product.images && product.images.length > 0;
+  const firstImg = hasImage ? product.images[0] : null;
+  const imgSrc = firstImg ? (typeof firstImg === 'string' ? firstImg : (firstImg as any)?.src) : '';
 
   return (
     <motion.div 
@@ -25,13 +25,22 @@ export function ProductCard({ product }: ProductCardProps) {
       className="group flex flex-col justify-between h-full bg-white p-4 transition-all duration-700 hover:shadow-2xl hover:shadow-brand-black/5"
     >
       <Link href={`/produto/${product.slug}`} className="block relative overflow-hidden aspect-[3/4] bg-zinc-900 mb-6">
-        <Image
-          src={imgSrc}
-          alt={imgAlt}
-          fill
-          className="object-cover object-center group-hover:scale-105 transition-transform duration-1000 ease-out"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-        />
+        {hasImage ? (
+          <Image
+            src={imgSrc}
+            alt={product.name}
+            fill
+            className="object-cover object-center group-hover:scale-105 transition-transform duration-1000 ease-out"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 border border-zinc-800 transition-colors duration-500 group-hover:bg-brand-black">
+             <span className="font-serif text-3xl text-zinc-800 opacity-40">LR</span>
+             <span className="font-mono text-[8px] text-zinc-500 uppercase tracking-widest mt-4">
+               [ Arquivo Oculto ]
+             </span>
+          </div>
+        )}
         <div className="absolute top-4 left-4 bg-brand-black/90 backdrop-blur-sm text-white text-[9px] uppercase font-mono tracking-widest px-3 py-1.5 shadow-sm z-10">
           {product.category}
         </div>

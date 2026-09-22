@@ -39,9 +39,7 @@ export const products: Product[] = [
       { name: 'Preto', hex: '#111111', slug: 'preto' }
     ],
     availableSizes: ['P', 'M', 'G', 'GG'],
-    images: [
-      { src: '/assets/products/vestigium/vestigium-techpack.jpg', alt: 'Camiseta VESTIGIUM' }
-    ],
+    images: [],
     featured: true,
   },
   {
@@ -59,7 +57,7 @@ export const products: Product[] = [
     available: true,
     variants: [],
     materials: [
-      'Tecido leve e altamente respirável',
+      'Tecido leve e highly respirável',
       'Tratamento tecnológico de secagem rápida (Dry)',
       'Proteção solar UV integrada'
     ],
@@ -83,9 +81,7 @@ export const products: Product[] = [
       { name: 'Bordô', hex: '#8B1E1E', slug: 'bordo' }
     ],
     availableSizes: ['P', 'M', 'G', 'GG'],
-    images: [
-      { src: '/assets/products/forza/forza-techpack.jpg', alt: 'Camiseta FORZA' }
-    ],
+    images: [],
     featured: true,
   },
   {
@@ -122,11 +118,7 @@ export const products: Product[] = [
       { name: 'Off White', hex: '#F2F1ED', slug: 'offwhite' }
     ],
     availableSizes: ['P', 'M', 'G', 'GG'],
-    images: [
-      { src: '/assets/products/libertas/libertas-bordo.jpg', alt: 'Regata LIBERTAS Bordô' },
-      { src: '/assets/products/libertas/libertas-black.jpg', alt: 'Regata LIBERTAS Preto' },
-      { src: '/assets/products/libertas/libertas-white.jpg', alt: 'Regata LIBERTAS Off White' }
-    ],
+    images: [],
     featured: true,
   },
   {
@@ -161,10 +153,7 @@ export const products: Product[] = [
       { name: 'Off White', hex: '#F2F1ED', slug: 'offwhite' }
     ],
     availableSizes: ['P'],
-    images: [
-      { src: '/assets/products/signum/signum-black.jpg', alt: 'Boné SIGNUM Preto' },
-      { src: '/assets/products/signum/signum-white.jpg', alt: 'Boné SIGNUM Off White' }
-    ],
+    images: [],
     featured: false,
   }
 ];
