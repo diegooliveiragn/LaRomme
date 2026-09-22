@@ -7,7 +7,7 @@ export const products: Product[] = [
     subtitle: 'Camiseta de Algodão',
     slug: 'vestigium-camisa-algodao',
     price: 289.00,
-    category: 'Lifestyle',
+    category: 'lifestyle',
     collection: 'ORIGO',
     concept: 'O que permanece. Arte, cultura e atitude.',
     shortDescription: 'Algodão premium de alta gramatura com modelagem Oversized/Boxy. Arte autoral conectando a herança clássica às coordenadas de Fortaleza.',
@@ -45,7 +45,7 @@ export const products: Product[] = [
     subtitle: 'Camiseta Sport',
     slug: 'forza-camisa-performance',
     price: 249.00,
-    category: 'Performance',
+    category: 'performance',
     collection: 'ORIGO',
     concept: 'Movimento, conforto e identidade.',
     shortDescription: 'Desenvolvida para alta mobilidade e intensidade. Tecido leve com secagem rápida, proteção UV e detalhes refletivos.',
@@ -84,7 +84,7 @@ export const products: Product[] = [
     subtitle: 'Regata Performance',
     slug: 'libertas-regata-performance',
     price: 199.00,
-    category: 'Performance',
+    category: 'performance',
     collection: 'ORIGO',
     concept: 'Movimento sem restrição.',
     shortDescription: 'Cava estratégica projetada para amplitude total de movimento. A fusão exata entre lifestyle de praia e esporte de arena.',
@@ -122,7 +122,7 @@ export const products: Product[] = [
     subtitle: 'Acessório / Cap',
     slug: 'signum-bone',
     price: 159.00,
-    category: 'Lifestyle',
+    category: 'lifestyle',
     collection: 'ORIGO',
     concept: 'O código visual.',
     shortDescription: 'Boné estruturado de abas curvas com bordado em alto relevo e fecho ajustável personalizado em metal.',
@@ -153,5 +153,4 @@ export const products: Product[] = [
   }
 ];
 
-// Exportação secundária para garantir compatibilidade com as rotas de coleção e sitemap
 export const PRODUCTS_ORIGO = products;
