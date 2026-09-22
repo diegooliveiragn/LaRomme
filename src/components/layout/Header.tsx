@@ -3,15 +3,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingBag, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useCart } from '@/context/CartContext';
 import { EASINGS, DURATIONS } from '@/config/motion';
 
 export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { openCart, totalItems } = useCart();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -38,7 +36,6 @@ export function Header() {
         <button
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="lg:hidden p-2 hover:text-brand-red transition-colors -ml-2"
-          aria-label="Abrir menu"
         >
           {isMobileMenuOpen ? <X size={20} strokeWidth={1.5} /> : <Menu size={20} strokeWidth={1.5} />}
         </button>
@@ -55,13 +52,12 @@ export function Header() {
 
         {/* Center Logo Area - Emblema Oficial */}
         <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center group">
-          {/* O container circular bg-white camufla o fundo do JPEG */}
           <div className="relative w-10 h-10 sm:w-11 sm:h-11 mb-1.5 bg-white rounded-full overflow-hidden flex items-center justify-center shadow-lg border border-zinc-700 transition-transform duration-700 ease-out group-hover:scale-105">
-            <Image 
-              src="/assets/brand/logo.jpg" 
-              alt="LaRomme Logo" 
+            <Image
+              src="/assets/brand/logo.jpg"
+              alt="LaRomme Logo"
               fill
-              className="object-contain scale-90" 
+              className="object-contain scale-90"
               priority
             />
           </div>
@@ -73,27 +69,12 @@ export function Header() {
         {/* Right Actions */}
         <div className="flex items-center gap-6">
           <Link href="/journal" className="hidden lg:block text-[11px] font-semibold tracking-editorial uppercase text-zinc-300 hover:text-white transition-colors font-sans">
-            Journal
+            Archive
           </Link>
-          <button
-            onClick={openCart}
-            className="p-2 relative hover:text-white text-zinc-300 transition-colors flex items-center -mr-2"
-            aria-label="Carrinho"
-          >
-            <ShoppingBag size={18} strokeWidth={1.5} />
-            <AnimatePresence>
-              {totalItems > 0 && (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0 }}
-                  className="absolute -top-1 -right-1 bg-brand-red text-white font-mono text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold"
-                >
-                  {totalItems}
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </button>
+          {/* O botão do carrinho dá lugar ao botão de Acesso VIP no pré-lançamento */}
+          <Link href="/acesso" className="font-mono text-[9px] uppercase tracking-widest text-brand-red border border-brand-red/30 px-4 py-2 hover:bg-brand-red hover:text-white transition-all rounded-sm hidden sm:block">
+            [ Acesso VIP ]
+          </Link>
         </div>
       </div>
 
@@ -114,7 +95,10 @@ export function Header() {
               A Marca
             </Link>
             <Link href="/journal" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-red transition-colors py-2 border-b border-zinc-900/50">
-              Journal
+              Archive
+            </Link>
+            <Link href="/acesso" onClick={() => setIsMobileMenuOpen(false)} className="text-brand-red hover:text-white transition-colors pt-4 font-mono text-[10px] tracking-widest block">
+              [ Solicitar Acesso VIP ]
             </Link>
           </motion.div>
         )}

@@ -30,12 +30,7 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
     activeImageSrc = typeof activeImgObj === 'string' ? activeImgObj : (activeImgObj?.src || '');
   }
 
-  const handleVIPAccess = () => {
-    if (!selectedSize) return;
-    const msg = `LR // PRE-LAUNCH ACCESS%0A%0AARTEFATO: ${product.name}%0ACOR: ${selectedColor.name}\%0ATAMANHO:${selectedSize}%0A%0A--%0AOlá, gostaria de solicitar acesso antecipado a esta peça.`;
-    // Substitua o número abaixo pelo WhatsApp oficial da LaRomme (ex: 5585992330186)
-    window.open(`https://wa.me/5585992330186?text=${msg}`, '_blank');
-  };
+  const handleVIPAccess = () => { if (!selectedSize) return; window.location.href = '/acesso'; };
 
   const toggleAccordion = (section: 'details' | 'materials' | 'care') => {
     setOpenAccordion(openAccordion === section ? null : section);
