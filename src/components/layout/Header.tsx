@@ -44,7 +44,7 @@ export function Header() {
         </button>
 
         {/* Desktop Navigation */}
-        <nav className="hidden lg:flex items-center gap-10 text-[11px] font-semibold tracking-editorial uppercase text-zinc-300">
+        <nav className="hidden lg:flex items-center gap-10 text-[11px] font-semibold tracking-editorial uppercase text-zinc-300 font-sans">
           <Link href="/colecao/origo" className="hover:text-white transition-colors">
             Drop 01 — Origo
           </Link>
@@ -53,26 +53,26 @@ export function Header() {
           </Link>
         </nav>
 
-        {/* Center Logo Area */}
+        {/* Center Logo Area - Emblema Oficial */}
         <Link href="/" className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center group">
-          {/* Logo Helmet - Renderizado com um fundo claro discreto para acomodar o JPEG */}
-          <div className="relative w-8 h-8 sm:w-10 sm:h-10 mb-1.5 bg-white/5 rounded-sm p-1 transition-transform duration-700 ease-out group-hover:scale-105">
+          {/* O container circular bg-white camufla o fundo do JPEG */}
+          <div className="relative w-10 h-10 sm:w-11 sm:h-11 mb-1.5 bg-white rounded-full overflow-hidden flex items-center justify-center shadow-lg border border-zinc-700 transition-transform duration-700 ease-out group-hover:scale-105">
             <Image 
               src="/assets/brand/logo.jpg" 
               alt="LaRomme Logo" 
               fill
-              className="object-contain mix-blend-screen opacity-90 group-hover:opacity-100 transition-opacity"
+              className="object-contain scale-90" 
               priority
             />
           </div>
-          <span className="font-serif text-lg sm:text-xl tracking-widest font-bold uppercase transition-colors duration-300">
+          <span className="font-serif text-lg sm:text-xl tracking-widest font-bold uppercase transition-colors duration-300 group-hover:text-brand-red">
             LaRomme
           </span>
         </Link>
 
         {/* Right Actions */}
         <div className="flex items-center gap-6">
-          <Link href="/journal" className="hidden lg:block text-[11px] font-semibold tracking-editorial uppercase text-zinc-300 hover:text-white transition-colors">
+          <Link href="/journal" className="hidden lg:block text-[11px] font-semibold tracking-editorial uppercase text-zinc-300 hover:text-white transition-colors font-sans">
             Journal
           </Link>
           <button
@@ -105,7 +105,7 @@ export function Header() {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: DURATIONS.medium, ease: EASINGS.cinematic }}
-            className="lg:hidden bg-brand-black text-brand-offwhite border-t border-zinc-900 px-6 py-8 space-y-6 flex flex-col uppercase text-[11px] font-semibold tracking-editorial overflow-hidden"
+            className="lg:hidden bg-brand-black text-brand-offwhite border-t border-zinc-900 px-6 py-8 space-y-6 flex flex-col uppercase text-[11px] font-semibold tracking-editorial overflow-hidden font-sans"
           >
             <Link href="/colecao/origo" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-red transition-colors py-2 border-b border-zinc-900/50">
               Drop 01 — Origo
@@ -115,9 +115,6 @@ export function Header() {
             </Link>
             <Link href="/journal" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-red transition-colors py-2 border-b border-zinc-900/50">
               Journal
-            </Link>
-            <Link href="/tamanho" onClick={() => setIsMobileMenuOpen(false)} className="hover:text-brand-red transition-colors py-2 border-b border-zinc-900/50">
-              Guia de Medidas
             </Link>
           </motion.div>
         )}
