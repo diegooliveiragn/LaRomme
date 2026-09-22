@@ -7,19 +7,17 @@ import { siteConfig } from '@/config/site';
 
 export default function AcessoVIPPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', size: '' });
+  const [formData, setFormData] = useState({ name: '', email: '', size: '', inviteCode: '' });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // A simulação do envio. Numa fase posterior, integraremos aqui o Resend/SendGrid.
     if (formData.name && formData.email && formData.size) {
       setIsSubmitted(true);
     }
   };
 
   return (
-    <div className="bg-brand-black text-brand-offwhite min-h-screen flex flex-col justify-center items-center relative overflow-hidden pt-20">
-      {/* Ruído de fundo (Grain) e Coordenadas Subliminares */}
+    <div className="bg-brand-black text-brand-offwhite min-h-screen flex flex-col justify-center items-center relative overflow-hidden pt-28 pb-20">
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'url("/noise.png")' }}></div>
       <div className="absolute bottom-10 left-10 font-mono text-[10px] text-zinc-800 uppercase tracking-widest rotate-[-90deg] origin-bottom-left hidden md:block">
         {siteConfig.coordinates}
@@ -34,45 +32,52 @@ export default function AcessoVIPPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95 }}
               transition={{ duration: DURATIONS.slow, ease: EASINGS.cinematic }}
-              className="space-y-12"
+              className="space-y-10"
             >
-              {/* Header Editorial */}
               <div className="text-center space-y-4">
-                <span className="font-serif text-3xl opacity-50 block mb-6">LR</span>
+                <span className="font-serif text-3xl opacity-50 block mb-4">LR</span>
                 <h1 className="font-serif text-3xl sm:text-4xl font-bold uppercase tracking-wider text-white">
                   Abertura de Arquivo
                 </h1>
-                <p className="font-sans text-xs text-zinc-400 uppercase tracking-widest leading-relaxed max-w-sm mx-auto">
-                  Antes da operação pública, uma fração do Drop 01 será alocada de forma restrita. 
-                  Inscreva-se para obter acesso e a possibilidade de receber o artefato de origem.
+                
+                {/* Gatilho de Escassez Autêntica */}
+                <div className="inline-block border border-brand-red/30 bg-brand-red/5 px-4 py-2 font-mono text-[9px] text-brand-red uppercase tracking-widest">
+                  [ CAPACIDADE DO LOTE ZERO: 100 ARTEFATOS ]
+                </div>
+
+                <p className="font-sans text-xs text-zinc-400 uppercase tracking-widest leading-relaxed max-w-sm mx-auto pt-2">
+                  Antes da operação pública, uma fração do Drop 01 será alocada de forma restrita aos membros cadastrados.
                 </p>
               </div>
 
-              {/* Formulário Minimalista */}
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-4 font-mono text-[10px] uppercase tracking-widest">
-                  <div className="relative group">
-                    <input
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="IDENTIFICAÇÃO (NOME)"
-                      className="w-full bg-zinc-900/50 border border-zinc-800 text-white p-4 focus:outline-none focus:border-brand-offwhite transition-colors placeholder:text-zinc-600"
-                    />
-                  </div>
-                  <div className="relative group">
-                    <input
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="E-MAIL DE CONTATO"
-                      className="w-full bg-zinc-900/50 border border-zinc-800 text-white p-4 focus:outline-none focus:border-brand-offwhite transition-colors placeholder:text-zinc-600"
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    placeholder="IDENTIFICAÇÃO (NOME)"
+                    className="w-full bg-zinc-900/50 border border-zinc-800 text-white p-4 focus:outline-none focus:border-brand-offwhite transition-colors placeholder:text-zinc-600"
+                  />
+                  <input
+                    type="email"
+                    required
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="E-MAIL DE CONTATO"
+                    className="w-full bg-zinc-900/50 border border-zinc-800 text-white p-4 focus:outline-none focus:border-brand-offwhite transition-colors placeholder:text-zinc-600"
+                  />
 
-                  {/* Gatilho Psicológico: A escolha do tamanho */}
+                  {/* Gatilho da Porta Trancada (Código de Convite Opcional) */}
+                  <input
+                    type="text"
+                    value={formData.inviteCode}
+                    onChange={(e) => setFormData({ ...formData, inviteCode: e.target.value })}
+                    placeholder="CÓDIGO DE CONVITE (OPCIONAL)"
+                    className="w-full bg-zinc-900/20 border border-zinc-800/60 text-zinc-300 p-4 focus:outline-none focus:border-brand-red transition-colors placeholder:text-zinc-700"
+                  />
+
                   <div className="pt-2">
                     <span className="block text-zinc-500 mb-3 ml-1">SELECIONE SUA ESTRUTURA (TAMANHO)</span>
                     <div className="grid grid-cols-4 gap-2">
@@ -108,7 +113,6 @@ export default function AcessoVIPPage() {
               </form>
             </motion.div>
           ) : (
-            /* Tela de Confirmação Sucesso */
             <motion.div
               key="success"
               initial={{ opacity: 0, scale: 0.95 }}
@@ -120,7 +124,7 @@ export default function AcessoVIPPage() {
                 <span className="font-mono text-xl">✓</span>
               </div>
               <h2 className="font-serif text-2xl uppercase tracking-wider text-white">
-                Registro Confirmado
+                Registro Selado na Base
               </h2>
               <div className="font-mono text-[10px] text-zinc-400 uppercase tracking-widest space-y-2">
                 <p>NOME: {formData.name}</p>
@@ -128,7 +132,7 @@ export default function AcessoVIPPage() {
                 <p>STATUS: AGUARDANDO LIBERAÇÃO</p>
               </div>
               <p className="font-sans text-xs text-zinc-500 uppercase tracking-widest leading-relaxed max-w-xs mx-auto pt-6 border-t border-zinc-800">
-                Acompanhe o canal oficial. Os acessos ao lote restrito serão comunicados por e-mail.
+                Fique atento às comunicações sigilosas. A chave de acesso ao lote restrito será enviada no momento exato.
               </p>
             </motion.div>
           )}

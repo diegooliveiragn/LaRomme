@@ -1,13 +1,13 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Manrope, JetBrains_Mono } from "next/font/google";
-import "./globals.css";
+import "@/styles/globals.css";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { siteConfig } from "@/config/site";
 import { CartProvider } from "@/context/CartContext";
 import { CartDrawer } from "@/components/cart/CartDrawer";
+import { Preloader } from "@/components/shared/Preloader";
 
-// Tipografia Editorial (Roma)
 const cormorant = Cormorant_Garamond({ 
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
@@ -15,7 +15,6 @@ const cormorant = Cormorant_Garamond({
   display: "swap",
 });
 
-// Tipografia UI/Performance (Fortaleza)
 const manrope = Manrope({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700", "800"],
@@ -23,7 +22,6 @@ const manrope = Manrope({
   display: "swap",
 });
 
-// Tipografia Arquivo/Código
 const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "700"],
@@ -31,11 +29,10 @@ const jetbrains = JetBrains_Mono({
   display: "swap",
 });
 
-// Metadados Otimizados para WhatsApp, Google e Redes Sociais
 export const metadata: Metadata = {
   title: {
-    default: `${siteConfig.name} | ${siteConfig.slogans.hero}`,
-    template: `%s | ${siteConfig.name}`,
+    default: ${siteConfig.name} | ,
+    template: %s | ,
   },
   description: siteConfig.description,
   keywords: ["Streetwear", "Performance", "Fortaleza", "Roma", "Moda Masculina", "Vestuário", "Lifestyle"],
@@ -44,13 +41,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "pt_BR",
-    url: "https://la-romme.vercel.app", // Pode ser atualizado para o domínio final futuramente
-    title: `${siteConfig.name} — Lote Zero`,
+    url: "https://la-romme.vercel.app",
+    title: ${siteConfig.name} — Lote Zero,
     description: siteConfig.slogans.manifesto,
     siteName: siteConfig.name,
     images: [
       {
-        url: "/assets/brand/logo.jpg", // A imagem que aparecerá no link do WhatsApp
+        url: "/assets/brand/logo.jpg",
         width: 800,
         height: 800,
         alt: "LaRomme Emblem",
@@ -59,7 +56,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: `${siteConfig.name} | ${siteConfig.slogans.hero}`,
+    title: ${siteConfig.name} | ,
     description: siteConfig.description,
     images: ["/assets/brand/logo.jpg"],
   },
@@ -70,7 +67,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#111111", // Cor da barra do navegador no celular (Preto Absoluto)
+  themeColor: "#111111",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -82,9 +79,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR" className={`${cormorant.variable} ${manrope.variable} ${jetbrains.variable} scroll-smooth`}>
+    <html lang="pt-BR" className={${cormorant.variable}   scroll-smooth}>
       <body className="bg-brand-black text-brand-offwhite antialiased min-h-screen flex flex-col selection:bg-brand-red selection:text-white">
         <CartProvider>
+          <Preloader />
           <Header />
           <CartDrawer />
           <main className="flex-grow">
