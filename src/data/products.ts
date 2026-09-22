@@ -90,13 +90,14 @@ export const products: Product[] = [
     shortDescription: 'Cava estratégica projetada para amplitude total de movimento. A fusão exata entre lifestyle de praia e esporte de arena.',
     fitDetails: 'Cava profunda e modelagem solta para mobilidade irrestrita.',
     materials: [
-      'Tecido técnico ultraleve',
+      'Tecido técnico ultraleve e respirável',
       'Absorção e evaporação rápida de suor'
     ],
     features: [
       'Cava anatômica sem fricção',
       'Toque gelado e respirabilidade máxima',
-      'Costuras reforçadas'
+      'Detalhes refletivos nas costas e ombros',
+      'Costuras reforçadas para alta intensidade'
     ],
     careInstructions: [
       'Lavar com água fria',
@@ -108,7 +109,11 @@ export const products: Product[] = [
       { name: 'Off White', hex: '#F2F1ED', slug: 'offwhite' }
     ],
     availableSizes: ['P', 'M', 'G', 'GG'],
-    images: ['/assets/products/libertas/red-front.jpg'],
+    images: [
+      '/assets/products/libertas/libertas-bordo.jpg',
+      '/assets/products/libertas/libertas-black.jpg',
+      '/assets/products/libertas/libertas-white.jpg'
+    ],
     isFeatured: true,
   },
   {
@@ -120,15 +125,16 @@ export const products: Product[] = [
     category: 'Lifestyle',
     collection: 'ORIGO',
     concept: 'O código visual.',
-    shortDescription: 'Boné estruturado de abas curvas com bordado em alto relevo e fecho ajustável personalizado.',
-    fitDetails: 'Tamanho único ajustável.',
+    shortDescription: 'Boné estruturado de abas curvas com bordado em alto relevo e fecho ajustável personalizado em metal.',
+    fitDetails: 'Tamanho único ajustável com fecho em fivela metálica.',
     materials: [
       '100% Sarja de Algodão Encorpada',
       'Bordado frontal e lateral de alta precisão'
     ],
     features: [
-      'Fecho traseiro em metal com fivela personalizada',
-      'Fita interna com código de origem LaRomme'
+      'Fecho traseiro em metal com fivela personalizada LaRomme',
+      'Fita interna com código de origem',
+      'Bordado em alto relevo'
     ],
     careInstructions: [
       'Limpar com pano úmido',
@@ -139,10 +145,13 @@ export const products: Product[] = [
       { name: 'Off White', hex: '#F2F1ED', slug: 'offwhite' }
     ],
     availableSizes: ['P'],
-    images: ['/assets/products/signum/black-cap.jpg'],
+    images: [
+      '/assets/products/signum/signum-black.jpg',
+      '/assets/products/signum/signum-white.jpg'
+    ],
     isFeatured: false,
   }
 ];
 
-// Alias para garantir compatibilidade com rotas da coleção e sitemap
+// Exportação secundária para garantir compatibilidade com as rotas de coleção e sitemap
 export const PRODUCTS_ORIGO = products;
