@@ -1,79 +1,67 @@
 'use client';
 
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Product } from '@/types/product';
 import { ProductCard } from '@/components/product/ProductCard';
+import { EASINGS, DURATIONS } from '@/config/motion';
 
 interface CollectionFilterGridProps {
   products: Product[];
 }
 
-type FilterCategory = 'todos' | 'lifestyle' | 'performance';
-
 export function CollectionFilterGrid({ products }: CollectionFilterGridProps) {
-  const [activeFilter, setActiveFilter] = useState<FilterCategory>('todos');
+  const [activeCategory, setActiveCategory] = useState<string>('all');
 
-  const filteredProducts = products.filter((product) => {
-    if (activeFilter === 'todos') return true;
-    return product.category === activeFilter;
-  });
+  const categories = [
+    { id: 'all', label: 'Todos os Artefatos' },
+    { id: 'Lifestyle', label: 'Lifestyle' },
+    { id: 'Performance', label: 'Performance' },
+  ];
+
+  const filteredProducts = activeCategory === 'all'
+    ? products
+    : products.filter(p => p.category.toLowerCase() === activeCategory.toLowerCase());
 
   return (
-    <div className="space-y-8">
-      {/* Barra de Filtros */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-300 pb-4">
-        <div className="flex items-center gap-6 text-xs uppercase font-bold tracking-widest">
+    <div className="space-y-12">
+      {/* Filtros em Pílulas Editoriais */}
+      <div className="flex flex-wrap justify-center items-center gap-3 border-b border-zinc-800 pb-8">
+        {categories.map((cat) => (
           <button
-            onClick={() => setActiveFilter('todos')}
-            className={`pb-1 transition-all ${
-              activeFilter === 'todos'
-                ? 'text-brand-red border-b-2 border-brand-red'
-                : 'text-zinc-500 hover:text-brand-black'
+            key={cat.id}
+            onClick={() => setActiveCategory(cat.id)}
+            className={`px-5 py-2.5 text-xs font-mono uppercase tracking-widest transition-all duration-300 ${
+              activeCategory === cat.id
+                ? 'bg-brand-offwhite text-brand-black font-bold shadow-md'
+                : 'text-zinc-400 hover:text-white border border-zinc-800 hover:border-zinc-700'
             }`}
           >
-            Todos ({products.length})
+            {cat.label}
           </button>
-          <button
-            onClick={() => setActiveFilter('lifestyle')}
-            className={`pb-1 transition-all ${
-              activeFilter === 'lifestyle'
-                ? 'text-brand-red border-b-2 border-brand-red'
-                : 'text-zinc-500 hover:text-brand-black'
-            }`}
-          >
-            Lifestyle ({products.filter((p) => p.category === 'lifestyle').length})
-          </button>
-          <button
-            onClick={() => setActiveFilter('performance')}
-            className={`pb-1 transition-all ${
-              activeFilter === 'performance'
-                ? 'text-brand-red border-b-2 border-brand-red'
-                : 'text-zinc-500 hover:text-brand-black'
-            }`}
-          >
-            Performance ({products.filter((p) => p.category === 'performance').length})
-          </button>
-        </div>
-
-        <span className="text-[11px] uppercase tracking-wider text-zinc-400 font-mono">
-          Exibindo {filteredProducts.length} itens
-        </span>
+        ))}
       </div>
 
-      {/* Grade de Produtos */}
-      {filteredProducts.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+      {/* Grid de Produtos com Motion Presence */}
+      <motion.div 
+        layout
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 sm:gap-10"
+      >
+        <AnimatePresence>
           {filteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
+            <motion.div
+              key={product.id}
+              layout
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: DURATIONS.medium, ease: EASINGS.cinematic }}
+            >
+              <ProductCard product={product} />
+            </motion.div>
           ))}
-        </div>
-      ) : (
-        <div className="text-center py-16 bg-white border border-zinc-200">
-          <p className="text-xs uppercase tracking-widest text-zinc-500">
-            Nenhum produto encontrado nesta categoria.
-          </p>
-        </div>
-      )}
+        </AnimatePresence>
+      </motion.div>
     </div>
   );
 }
