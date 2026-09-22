@@ -1,65 +1,38 @@
-import Link from 'next/link';
 import { Hero } from '@/components/editorial/Hero';
 import { ManifestoSection } from '@/components/editorial/ManifestoSection';
-import { ProductCard } from '@/components/product/ProductCard';
-import { PRODUCTS_ORIGO } from '@/data/products';
+import { CollectionHighlight } from '@/components/editorial/CollectionHighlight';
+import Link from 'next/link';
 
 export default function HomePage() {
-  const featuredProducts = PRODUCTS_ORIGO.filter((p) => p.featured);
-
   return (
-    <div className="space-y-0">
-      {/* Hero Section */}
+    <div className="bg-brand-black overflow-hidden">
+      {/* 1. Hero Cinematográfico */}
       <Hero />
 
-      {/* Seção Coleção Origo Highlight */}
-      <section className="py-24 max-w-7xl mx-auto px-6">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 border-b border-zinc-300 pb-6 gap-4">
-          <div>
-            <span className="text-xs uppercase font-bold tracking-editorial text-brand-red block mb-1">
-              Capítulo 01
-            </span>
-            <h2 className="font-serif text-3xl sm:text-4xl font-bold uppercase tracking-tight text-brand-black">
-              Drop 01 — Origo
-            </h2>
-          </div>
-          <Link
-            href="/colecao/origo"
-            className="text-xs font-bold uppercase tracking-editorial text-brand-black hover:text-brand-red transition-colors"
-          >
-            Ver Coleção Completa →
-          </Link>
-        </div>
+      {/* 2. Destaques da Coleção (Assimetria & Scroll Reveal) */}
+      <CollectionHighlight />
 
-        {/* Grade de Produtos */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {featuredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
-      </section>
-
-      {/* Seção Manifesto */}
+      {/* 3. Manifesto (Respiro visual / Marca) */}
       <ManifestoSection />
 
-      {/* Seção CTA do Drop Completo */}
-      <section className="py-24 bg-brand-offwhite text-center">
-        <div className="max-w-3xl mx-auto px-6 space-y-6">
-          <span className="text-xs font-bold uppercase tracking-editorial text-brand-red block">
-            Exclusividade & Atitude
+      {/* 4. Fechamento Comercial Forte */}
+      <section className="py-32 bg-brand-offwhite text-center border-t border-zinc-200">
+        <div className="max-w-3xl mx-auto px-6 space-y-8">
+          <span className="text-[10px] font-bold uppercase tracking-editorial text-brand-red block">
+            O Ponto de Encontro
           </span>
-          <h2 className="font-serif text-3xl sm:text-4xl font-bold uppercase text-brand-black">
-            Pronto Para Entrar Na Arena?
+          <h2 className="font-serif text-4xl sm:text-5xl font-bold uppercase text-brand-black leading-tight">
+            Descubra O Drop Completo
           </h2>
           <p className="text-xs sm:text-sm text-zinc-600 uppercase tracking-wider leading-relaxed">
-            Conheça todos os produtos da coleção ORIGO. Desenvolvidos com caimento premium, tecidos de alta tecnologia e a identidade da LaRomme.
+            Menos produto, mais pertencimento. Conheça as peças desenvolvidas para o primeiro capítulo da LaRomme.
           </p>
-          <div>
+          <div className="pt-8">
             <Link
               href="/colecao/origo"
-              className="inline-block bg-brand-black text-white text-xs font-bold uppercase tracking-editorial px-10 py-5 hover:bg-brand-red transition-all"
+              className="inline-block bg-brand-black text-white text-xs font-bold uppercase tracking-editorial px-12 py-5 hover:bg-brand-red transition-all duration-300 shadow-xl hover:shadow-brand-red/20"
             >
-              Acessar Catálogo Origo
+              Acessar Catálogo Oficial
             </Link>
           </div>
         </div>
