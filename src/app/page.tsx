@@ -14,14 +14,24 @@ export default function Home() {
   return (
     <div className="bg-brand-black min-h-screen">
       
-      {/* 1. IMPACT (Hero com Oceano Escuro Abstrato) */}
+      {/* 1. IMPACT (Hero com CINEMATIC VIDEO LOOP) */}
       <section className="relative h-screen flex flex-col items-center justify-center border-b border-zinc-900 overflow-hidden">
-        {/* Background Imagem */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center grayscale opacity-30 mix-blend-luminosity scale-105"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1505142468610-359e7d316be0?q=80&w=2070&auto=format&fit=crop')" }}
-        />
-        {/* Gradiente para garantir leitura */}
+        
+        {/* Background Video (Muted, Autoplay, Looping, Mobile-friendly) */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          poster="https://images.unsplash.com/photo-1505142468610-359e7d316be0?q=80&w=2070&auto=format&fit=crop"
+          className="absolute inset-0 w-full h-full object-cover grayscale opacity-30 mix-blend-luminosity scale-105"
+        >
+          {/* Placeholder: Vídeo Royalty-Free de mar escuro/movimento */}
+          <source src="https://cdn.pixabay.com/video/2018/11/02/19001-300445579_large.mp4" type="video/mp4" />
+          <source src="https://cdn.pixabay.com/video/2020/05/25/40141-424855919_large.mp4" type="video/mp4" />
+        </video>
+
+        {/* Gradiente de Sombras para garantir 100% de leitura da tipografia */}
         <div className="absolute inset-0 bg-gradient-to-b from-brand-black/40 via-brand-black/60 to-brand-black" />
         
         <motion.div
@@ -57,7 +67,7 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* 3. ORIGO (Estátua de Mármore Sombria) */}
+      {/* 3. ORIGO */}
       <section className="relative py-40 px-6 border-b border-zinc-900 overflow-hidden">
         <div 
           className="absolute inset-0 bg-cover bg-center grayscale opacity-15"
@@ -92,7 +102,7 @@ export default function Home() {
         <ArchitectureOfMovement />
       </section>
 
-      {/* 6. MANIFESTO & ORIGIN (Concreto Brutalista) */}
+      {/* 6. MANIFESTO & ORIGIN */}
       <section className="relative py-40 px-6 border-b border-zinc-900 overflow-hidden">
         <div 
           className="absolute inset-0 bg-cover bg-center grayscale opacity-10"
@@ -111,7 +121,7 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* PROVA SOCIAL */} 
+      {/* 7. PROVA SOCIAL */}
       <RealTestimonials />
 
       {/* 8. ARCHIVE */}
