@@ -8,7 +8,7 @@ export const products: Product[] = [
     slug: 'vestigium-camisa-algodao',
     price: 289.00,
     category: 'lifestyle',
-    collection: 'ORIGO',
+    collection: 'origo',
     concept: 'O que permanece. Arte, cultura e atitude.',
     shortDescription: 'Algodão premium de alta gramatura com modelagem Oversized/Boxy. Arte autoral conectando a herança clássica às coordenadas de Fortaleza.',
     fitDetails: 'Modelagem Oversized/Boxy de caimento estruturado e ombros deslocados.',
@@ -36,7 +36,9 @@ export const products: Product[] = [
       { name: 'Preto', hex: '#111111', slug: 'preto' }
     ],
     availableSizes: ['P', 'M', 'G', 'GG'],
-    images: ['/assets/products/vestigium/vestigium-techpack.jpg'],
+    images: [
+      { src: '/assets/products/vestigium/vestigium-techpack.jpg', alt: 'Camiseta VESTIGIUM' }
+    ],
     isFeatured: true,
   },
   {
@@ -46,7 +48,7 @@ export const products: Product[] = [
     slug: 'forza-camisa-performance',
     price: 249.00,
     category: 'performance',
-    collection: 'ORIGO',
+    collection: 'origo',
     concept: 'Movimento, conforto e identidade.',
     shortDescription: 'Desenvolvida para alta mobilidade e intensidade. Tecido leve com secagem rápida, proteção UV e detalhes refletivos.',
     fitDetails: 'Modelagem relaxed de caimento premium anatômico com foco na liberdade corporal.',
@@ -75,7 +77,9 @@ export const products: Product[] = [
       { name: 'Bordô', hex: '#8B1E1E', slug: 'bordo' }
     ],
     availableSizes: ['P', 'M', 'G', 'GG'],
-    images: ['/assets/products/forza/forza-techpack.jpg'],
+    images: [
+      { src: '/assets/products/forza/forza-techpack.jpg', alt: 'Camiseta FORZA' }
+    ],
     isFeatured: true,
   },
   {
@@ -85,7 +89,7 @@ export const products: Product[] = [
     slug: 'libertas-regata-performance',
     price: 199.00,
     category: 'performance',
-    collection: 'ORIGO',
+    collection: 'origo',
     concept: 'Movimento sem restrição.',
     shortDescription: 'Cava estratégica projetada para amplitude total de movimento. A fusão exata entre lifestyle de praia e esporte de arena.',
     fitDetails: 'Cava profunda e modelagem solta para mobilidade irrestrita.',
@@ -110,9 +114,9 @@ export const products: Product[] = [
     ],
     availableSizes: ['P', 'M', 'G', 'GG'],
     images: [
-      '/assets/products/libertas/libertas-bordo.jpg',
-      '/assets/products/libertas/libertas-black.jpg',
-      '/assets/products/libertas/libertas-white.jpg'
+      { src: '/assets/products/libertas/libertas-bordo.jpg', alt: 'Regata LIBERTAS Bordô' },
+      { src: '/assets/products/libertas/libertas-black.jpg', alt: 'Regata LIBERTAS Preto' },
+      { src: '/assets/products/libertas/libertas-white.jpg', alt: 'Regata LIBERTAS Off White' }
     ],
     isFeatured: true,
   },
@@ -123,7 +127,7 @@ export const products: Product[] = [
     slug: 'signum-bone',
     price: 159.00,
     category: 'lifestyle',
-    collection: 'ORIGO',
+    collection: 'origo',
     concept: 'O código visual.',
     shortDescription: 'Boné estruturado de abas curvas com bordado em alto relevo e fecho ajustável personalizado em metal.',
     fitDetails: 'Tamanho único ajustável com fecho em fivela metálica.',
@@ -146,8 +150,8 @@ export const products: Product[] = [
     ],
     availableSizes: ['P'],
     images: [
-      '/assets/products/signum/signum-black.jpg',
-      '/assets/products/signum/signum-white.jpg'
+      { src: '/assets/products/signum/signum-black.jpg', alt: 'Boné SIGNUM Preto' },
+      { src: '/assets/products/signum/signum-white.jpg', alt: 'Boné SIGNUM Off White' }
     ],
     isFeatured: false,
   }

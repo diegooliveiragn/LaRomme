@@ -23,8 +23,13 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
   
   const { addToCart } = useCart();
 
-  // Seleciona a imagem correspondente à cor ou usa a primeira como fallback
-  const activeImage = product.images.find(img => img.toLowerCase().includes(selectedColor.slug)) || product.images[0];
+  const activeImgObj = product.images.find(img => {
+    const srcStr = typeof img === 'string' ? img : img.src;
+    return srcStr.toLowerCase().includes(selectedColor.slug);
+  }) || product.images[0];
+
+  const activeImageSrc = typeof activeImgObj === 'string' ? activeImgObj : (activeImgObj?.src || '/assets/brand/logo.jpg');
+  const activeImageAlt = typeof activeImgObj === 'string' ? `${product.name} - ${selectedColor.name}` : (activeImgObj?.alt || `${product.name} - ${selectedColor.name}`);
 
   const handleAddToCart = () => {
     if (!selectedSize) return;
@@ -45,7 +50,7 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
           <div className="aspect-[3/4] bg-zinc-900 border border-zinc-800 relative overflow-hidden shadow-xl">
             <AnimatePresence mode="wait">
               <motion.div
-                key={activeImage}
+                key={activeImageSrc}
                 initial={{ opacity: 0, scale: 0.98 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.02 }}
@@ -53,8 +58,8 @@ export function ProductDetailsClient({ product }: ProductDetailsClientProps) {
                 className="w-full h-full relative"
               >
                 <Image
-                  src={activeImage}
-                  alt={`${product.name} - ${selectedColor.name}`}
+                  src={activeImageSrc}
+                  alt={activeImageAlt}
                   fill
                   className="object-cover object-center"
                   priority
