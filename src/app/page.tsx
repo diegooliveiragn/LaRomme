@@ -14,21 +14,26 @@ export default function Home() {
   return (
     <div className="bg-brand-black min-h-screen">
       
-      {/* 1. IMPACT (Hero) */}
-      <section className="relative h-screen flex flex-col items-center justify-center border-b border-zinc-900">
-        <div className="absolute inset-0 bg-zinc-900 flex items-center justify-center opacity-30">
-          <span className="font-serif text-9xl text-zinc-800 opacity-20">LR</span>
-        </div>
+      {/* 1. IMPACT (Hero com Oceano Escuro Abstrato) */}
+      <section className="relative h-screen flex flex-col items-center justify-center border-b border-zinc-900 overflow-hidden">
+        {/* Background Imagem */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center grayscale opacity-30 mix-blend-luminosity scale-105"
+          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1505142468610-359e7d316be0?q=80&w=2070&auto=format&fit=crop')" }}
+        />
+        {/* Gradiente para garantir leitura */}
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-black/40 via-brand-black/60 to-brand-black" />
+        
         <motion.div
           initial="hidden"
           animate="visible"
           variants={fadeInUpVariants}
           className="relative z-10 text-center px-6 w-full max-w-4xl"
         >
-          <span className="font-mono text-[10px] text-brand-red uppercase tracking-widest block mb-6">
+          <span className="font-mono text-[10px] text-brand-red uppercase tracking-widest block mb-6 drop-shadow-lg">
             A SUA CASA. A SUA FORÇA.
           </span>
-          <h1 className="font-serif text-6xl md:text-[8rem] leading-none font-bold uppercase tracking-tight text-white mb-10">
+          <h1 className="font-serif text-6xl md:text-[8rem] leading-none font-bold uppercase tracking-tight text-white mb-10 drop-shadow-2xl">
             Origo
           </h1>
           <Link
@@ -41,7 +46,7 @@ export default function Home() {
       </section>
 
       {/* 2. TERRITORY */}
-      <section className="py-20 px-6 text-center border-b border-zinc-900">
+      <section className="py-20 px-6 text-center border-b border-zinc-900 bg-brand-black">
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeInUpVariants}>
           <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-widest">
             03°43'16"S 38°32'41"W
@@ -52,9 +57,15 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* 3. ORIGO */}
-      <section className="py-32 px-6 max-w-4xl mx-auto text-center border-b border-zinc-900">
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeInUpVariants}>
+      {/* 3. ORIGO (Estátua de Mármore Sombria) */}
+      <section className="relative py-40 px-6 border-b border-zinc-900 overflow-hidden">
+        <div 
+          className="absolute inset-0 bg-cover bg-center grayscale opacity-15"
+          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1549887552-cb1071d3e5ca?q=80&w=2000&auto=format&fit=crop')", backgroundAttachment: 'fixed' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-black via-brand-black/80 to-brand-black" />
+        
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeInUpVariants} className="relative z-10 max-w-4xl mx-auto text-center">
           <p className="font-serif text-3xl sm:text-4xl md:text-5xl text-zinc-500 leading-tight uppercase tracking-wide">
             A interseção exata entre a <span className="text-white">disciplina</span> da pedra e a <span className="text-white">liberdade</span> do mar.
           </p>
@@ -62,7 +73,7 @@ export default function Home() {
       </section>
 
       {/* 4. ARTEFACTS */}
-      <section className="py-32 px-6 max-w-7xl mx-auto border-b border-zinc-900">
+      <section className="py-32 px-6 max-w-7xl mx-auto border-b border-zinc-900 bg-brand-black">
         <div className="mb-16">
           <span className="font-mono text-[10px] text-brand-red uppercase tracking-widest block mb-3">Drop 01</span>
           <h2 className="font-serif text-4xl uppercase tracking-wider text-white">Os Artefatos</h2>
@@ -77,14 +88,20 @@ export default function Home() {
       </section>
 
       {/* 5. ARCHITECTURE OF MOVEMENT */}
-      <section className="py-32 border-b border-zinc-900">
+      <section className="py-32 border-b border-zinc-900 bg-brand-black">
         <ArchitectureOfMovement />
       </section>
 
-      {/* 6. MANIFESTO & 7. ORIGIN (Mesclados para fluidez) */}
-      <section className="py-32 px-6 bg-zinc-900/20 border-b border-zinc-900">
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeInUpVariants} className="max-w-3xl mx-auto text-center space-y-8">
-          <h3 className="font-serif text-3xl uppercase tracking-wider text-white">A Força de Roma. O Movimento de Fortaleza.</h3>
+      {/* 6. MANIFESTO & ORIGIN (Concreto Brutalista) */}
+      <section className="relative py-40 px-6 border-b border-zinc-900 overflow-hidden">
+        <div 
+          className="absolute inset-0 bg-cover bg-center grayscale opacity-10"
+          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1600607686527-6fb886090705?q=80&w=2000&auto=format&fit=crop')" }}
+        />
+        <div className="absolute inset-0 bg-brand-black/80" />
+        
+        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeInUpVariants} className="relative z-10 max-w-3xl mx-auto text-center space-y-8">
+          <h3 className="font-serif text-3xl uppercase tracking-wider text-white">A Força de Roma.<br/>O Movimento de Fortaleza.</h3>
           <p className="font-sans text-xs text-zinc-400 uppercase tracking-widest leading-relaxed">
             Nós não usamos o Império Romano como decoração. Ele é o nosso código estrutural. Disciplina, permanência e engenharia, adaptados para a fluidez, a luz e o ritmo do litoral contemporâneo. A roupa deve servir à vida na arena e fora dela.
           </p>
@@ -94,17 +111,17 @@ export default function Home() {
         </motion.div>
       </section>
 
+      {/* PROVA SOCIAL */} 
+      <RealTestimonials />
+
       {/* 8. ARCHIVE */}
-      <section className="py-32 px-6 max-w-7xl mx-auto border-b border-zinc-900 text-center">
+      <section className="py-32 px-6 max-w-7xl mx-auto border-b border-zinc-900 text-center bg-brand-black">
         <span className="font-mono text-[10px] text-brand-red uppercase tracking-widest block mb-6">Acervo Visual</span>
         <h3 className="font-serif text-3xl uppercase tracking-wider text-white mb-8">Journal & Process</h3>
         <Link href="/journal" className="inline-block border border-zinc-800 text-zinc-300 px-8 py-4 font-mono text-[10px] uppercase tracking-widest hover:border-brand-offwhite hover:text-brand-black hover:bg-brand-offwhite transition-colors">
           Explorar Categorias
         </Link>
       </section>
-
-      {/* PROVA SOCIAL */} 
-      <RealTestimonials />
 
       {/* 9. ACCESS */}
       <section className="py-32 px-6 bg-brand-black text-center relative overflow-hidden">
