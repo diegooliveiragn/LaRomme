@@ -1,95 +1,48 @@
-import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, Manrope, JetBrains_Mono } from "next/font/google";
-import "@/styles/globals.css";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
-import { siteConfig } from "@/config/site";
-import { CartProvider } from "@/context/CartContext";
-import { CartDrawer } from "@/components/cart/CartDrawer";
-import { Preloader } from "@/components/shared/Preloader";
+import type { Metadata, Viewport } from 'next';
+import { siteConfig } from '@/config/site';
+import { Header } from '@/components/layout/Header';
+import { Footer } from '@/components/layout/Footer';
+import '@/styles/globals.css';
 
-const cormorant = Cormorant_Garamond({ 
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-cormorant",
-  display: "swap",
-});
-
-const manrope = Manrope({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700", "800"],
-  variable: "--font-manrope",
-  display: "swap",
-});
-
-const jetbrains = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
-  variable: "--font-jetbrains",
-  display: "swap",
-});
+export const viewport: Viewport = {
+  themeColor: '#111111',
+  width: 'device-width',
+  initialScale: 1,
+};
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://la-romme.vercel.app'),
   title: {
-    default: `${siteConfig.name} | ${siteConfig.slogans.hero}`,
+    default: `${siteConfig.name} — ${siteConfig.tagline}`,
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
-  keywords: ["Streetwear", "Performance", "Fortaleza", "Roma", "Moda Masculina", "Vestuário", "Lifestyle"],
-  authors: [{ name: "LaRomme" }],
-  creator: "LaRomme",
+  keywords: ['LaRomme', 'Origo', 'Luxury Streetwear', 'Fortaleza', 'Brutalism', 'Roman Discipline'],
   openGraph: {
-    type: "website",
-    locale: "pt_BR",
-    url: "https://la-romme.vercel.app",
-    title: `${siteConfig.name} — Lote Zero`,
-    description: siteConfig.slogans.manifesto,
-    siteName: siteConfig.name,
-    images: [
-      {
-        url: "/assets/brand/logo.jpg",
-        width: 800,
-        height: 800,
-        alt: "LaRomme Emblem",
-      },
-    ],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: `${siteConfig.name} | ${siteConfig.slogans.hero}`,
+    title: siteConfig.name,
     description: siteConfig.description,
-    images: ["/assets/brand/logo.jpg"],
+    url: 'https://la-romme.vercel.app',
+    siteName: siteConfig.name,
+    locale: 'pt_BR',
+    type: 'website',
   },
-  icons: {
-    icon: "/assets/brand/logo.jpg",
-    apple: "/assets/brand/logo.jpg",
+  robots: {
+    index: true,
+    follow: true,
   },
-};
-
-export const viewport: Viewport = {
-  themeColor: "#111111",
-  width: "device-width",
-  initialScale: 1,
-  maximumScale: 1,
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="pt-BR" className={`${cormorant.variable} ${manrope.variable} ${jetbrains.variable} scroll-smooth`}>
-      <body className="bg-brand-black text-brand-offwhite antialiased min-h-screen flex flex-col selection:bg-brand-red selection:text-white">
-        <CartProvider>
-          <Preloader />
-          <Header />
-          <CartDrawer />
-          <main className="flex-grow">
-            {children}
-          </main>
-          <Footer />
-        </CartProvider>
+    <html lang="pt-BR" className="dark bg-brand-black text-brand-offwhite antialiased">
+      <body className="min-h-screen flex flex-col font-sans selection:bg-brand-red selection:text-white">
+        <Header />
+        <main className="flex-1">{children}</main>
+        <Footer />
       </body>
     </html>
   );
