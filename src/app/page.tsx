@@ -8,20 +8,21 @@ export default function HomePage() {
   return (
     <main className="relative bg-brand-black min-h-screen text-brand-offwhite overflow-hidden flex flex-col justify-between pt-24 selection:bg-brand-red selection:text-white">
       
-      {/* VÍDEO DA PRAIA OFICIAL EM MP4 */}
+      {/* VÍDEO DA PRAIA COM FILTRO P&B E CONTRASTE */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
         <video 
           autoPlay 
           loop 
           muted 
           playsInline 
-          className="absolute inset-0 w-full h-full object-cover scale-105 opacity-70 filter grayscale contrast-125"
+          className="absolute inset-0 w-full h-full object-cover scale-105 opacity-60 filter grayscale contrast-125"
+          style={{ filter: 'grayscale(100%) contrast(125%)' }}
         >
           <source src="/praia.mp4" type="video/mp4" />
         </video>
 
-        {/* Máscara de Contraste Brutalista */}
-        <div className="absolute inset-0 bg-black/35"></div>
+        {/* MÁSCARA DE CONTRASTE */}
+        <div className="absolute inset-0 bg-black/40"></div>
         <div className="absolute inset-0 bg-gradient-to-b from-brand-black/80 via-transparent to-brand-black"></div>
       </div>
 
@@ -87,7 +88,7 @@ export default function HomePage() {
 
       </div>
 
-      {/* BASE TÉCNICA (GRID DE DADOS) */}
+      {/* BASE TÉCNICA */}
       <div className="relative z-10 max-w-7xl mx-auto w-full px-6 pb-10 pt-6 border-t border-zinc-900/80">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 font-mono text-[9px] uppercase tracking-widest">
           
