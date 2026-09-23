@@ -1,112 +1,139 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Product, ColorWay, Size } from '@/types/product';
 
-export type CartItem = {
+export interface CartItem {
   id: string;
-  product: Product;
-  selectedColor: ColorWay;
-  selectedSize: Size;
+  slug: string;
+  name: string;
+  price: number;
+  size: string;
   quantity: number;
-  unitPrice: number;
-};
+  image?: string;
+  images?: any[];
+}
 
 interface CartContextType {
-  cart: CartItem[];
-  isCartOpen: boolean;
+  items: CartItem[];
+  isOpen: boolean;
   openCart: () => void;
   closeCart: () => void;
-  addToCart: (product: Product, color: ColorWay, size: Size, quantity?: number) => void;
-  removeFromCart: (cartItemId: string) => void;
-  updateQuantity: (cartItemId: string, quantity: number) => void;
+  toggleCart: () => void;
+  addToCart: (product: any, size: string, quantity?: number) => void;
+  removeFromCart: (id: string, size: string) => void;
+  updateQuantity: (id: string, size: string, delta: number) => void;
   clearCart: () => void;
-  subtotal: number;
   totalItems: number;
+  subtotal: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
 
+  // Carregar do localStorage ao iniciar
   useEffect(() => {
-    const savedCart = localStorage.getItem('laromme_cart');
-    if (savedCart) {
-      try {
-        setCart(JSON.parse(savedCart));
-      } catch (e) {
-        console.error('Erro ao carregar carrinho local', e);
+    try {
+      const savedCart = localStorage.getItem('@laromme:cart');
+      if (savedCart) {
+        setItems(JSON.parse(savedCart));
       }
+    } catch (e) {
+      console.error('Erro ao carregar carrinho local:', e);
+    } finally {
+      setIsLoaded(true);
     }
   }, []);
 
+  // Salvar no localStorage sempre que houver alteração
   useEffect(() => {
-    localStorage.setItem('laromme_cart', JSON.stringify(cart));
-  }, [cart]);
+    if (isLoaded) {
+      try {
+        localStorage.setItem('@laromme:cart', JSON.stringify(items));
+      } catch (e) {
+        console.error('Erro ao salvar carrinho local:', e);
+      }
+    }
+  }, [items, isLoaded]);
 
-  const openCart = () => setIsCartOpen(true);
-  const closeCart = () => setIsCartOpen(false);
+  const openCart = () => setIsOpen(true);
+  const closeCart = () => setIsOpen(false);
+  const toggleCart = () => setIsOpen((prev) => !prev);
 
-  const addToCart = (product: Product, color: ColorWay, size: Size, quantity = 1) => {
-    const cartItemId = `${product.id}-${color.slug}-${size}`;
+  const addToCart = (product: any, size: string, quantity = 1) => {
+    const productId = product.id || product.slug;
+    const imgSrc = typeof product.images?.[0] === 'string' 
+      ? product.images[0] 
+      : (product.images?.[0]?.src || product.image || '/images/material.jpg');
 
-    setCart((prevCart) => {
-      const existingIndex = prevCart.findIndex((item) => item.id === cartItemId);
+    setItems((prevItems) => {
+      const existingIndex = prevItems.findIndex(
+        (item) => item.id === productId && item.size === size
+      );
+
       if (existingIndex > -1) {
-        const updated = [...prevCart];
+        const updated = [...prevItems];
         updated[existingIndex].quantity += quantity;
         return updated;
       }
+
       return [
-        ...prevCart,
+        ...prevItems,
         {
-          id: cartItemId,
-          product,
-          selectedColor: color,
-          selectedSize: size,
+          id: productId,
+          slug: product.slug || productId,
+          name: product.name,
+          price: Number(product.price) || 0,
+          size,
           quantity,
-          unitPrice: product.price,
+          image: imgSrc,
         },
       ];
     });
 
-    setIsCartOpen(true);
+    setIsOpen(true);
   };
 
-  const removeFromCart = (cartItemId: string) => {
-    setCart((prev) => prev.filter((item) => item.id !== cartItemId));
+  const removeFromCart = (id: string, size: string) => {
+    setItems((prev) => prev.filter((item) => !(item.id === id && item.size === size)));
   };
 
-  const updateQuantity = (cartItemId: string, quantity: number) => {
-    if (quantity <= 0) {
-      removeFromCart(cartItemId);
-      return;
-    }
-    setCart((prev) =>
-      prev.map((item) => (item.id === cartItemId ? { ...item, quantity } : item))
+  const updateQuantity = (id: string, size: string, delta: number) => {
+    setItems((prev) =>
+      prev
+        .map((item) => {
+          if (item.id === id && item.size === size) {
+            const newQty = item.quantity + delta;
+            return newQty > 0 ? { ...item, quantity: newQty } : null;
+          }
+          return item;
+        })
+        .filter(Boolean) as CartItem[]
     );
   };
 
-  const clearCart = () => setCart([]);
+  const clearCart = () => setItems([]);
 
-  const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
+  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
   return (
     <CartContext.Provider
       value={{
-        cart,
-        isCartOpen,
+        items,
+        isOpen,
         openCart,
         closeCart,
+        toggleCart,
         addToCart,
         removeFromCart,
         updateQuantity,
         clearCart,
-        subtotal,
         totalItems,
+        subtotal,
       }}
     >
       {children}

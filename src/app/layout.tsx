@@ -5,6 +5,7 @@ import { Footer } from '@/components/layout/Footer';
 import { CartProvider } from '@/context/CartContext';
 import { SmoothScroll } from '@/components/layout/SmoothScroll';
 import '@/styles/globals.css';
+import { CartDrawer } from '@/components/cart/CartDrawer';
 
 export const viewport: Viewport = {
   themeColor: '#111111',
@@ -44,6 +45,7 @@ export default function RootLayout({
       <body className="min-h-screen flex flex-col font-sans selection:bg-brand-red selection:text-white">
         <SmoothScroll>
           <CartProvider>
+          <CartDrawer />
             <Header />
             <main className="flex-1">{children}</main>
             <Footer />

@@ -10,8 +10,7 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-  const cart = useCart() as any;
-  const cartItemsCount = cart?.items?.length || 0;
+  const { totalItems, openCart } = useCart();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -38,13 +37,16 @@ export function Header() {
       <header className={`fixed top-0 w-full z-40 transition-all duration-300 ${isScrolled ? 'bg-brand-black/95 backdrop-blur-md border-b border-zinc-900 py-4' : 'bg-transparent py-6'}`}>
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
           
-          {/* LOGO PNG OFICIAL BRANCA */}
+          {/* LOGO TRANSPARENTE COM TRATAMENTO DE BLEND MODE CONTRA FUNDO BRANCO */}
           <Link href="/" className="relative z-50 flex items-center">
-            <img 
-              src="/logo-white.png" 
-              alt="LaRomme" 
-              className="h-9 w-auto object-contain hover:opacity-80 transition-opacity" 
-            />
+            <div className="h-9 w-auto overflow-hidden flex items-center justify-center">
+              <img 
+                src="/logo-white.png" 
+                alt="LaRomme" 
+                className="h-9 w-auto object-contain mix-blend-screen hover:opacity-80 transition-opacity" 
+                style={{ mixBlendMode: 'screen' }}
+              />
+            </div>
           </Link>
 
           {/* DESKTOP NAV */}
@@ -57,12 +59,11 @@ export function Header() {
           {/* ACTIONS */}
           <div className="flex items-center gap-6 relative z-50">
             <button 
-              onClick={() => {
-                if (cart && typeof cart.openCart === 'function') cart.openCart();
-              }}
-              className="font-mono text-[10px] uppercase tracking-widest text-white hover:text-brand-red transition-colors"
+              onClick={openCart}
+              className="font-mono text-[10px] uppercase tracking-widest text-white hover:text-brand-red transition-colors flex items-center gap-1 bg-zinc-900/60 border border-zinc-800 px-3 py-2 rounded-none"
             >
-              Sacola [{cartItemsCount}]
+              <span>Sacola</span>
+              <span className="text-brand-red font-bold">[{totalItems}]</span>
             </button>
             
             {/* HAMBURGER */}
@@ -92,7 +93,8 @@ export function Header() {
                 <img 
                   src="/logo-white.png" 
                   alt="LaRomme" 
-                  className="h-9 w-auto object-contain" 
+                  className="h-9 w-auto object-contain mix-blend-screen" 
+                  style={{ mixBlendMode: 'screen' }}
                 />
               </Link>
               <button 
