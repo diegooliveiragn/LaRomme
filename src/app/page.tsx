@@ -14,22 +14,22 @@ export default function Home() {
   return (
     <div className="bg-brand-black min-h-screen">
       
-      {/* 1. IMPACT (Hero com Vídeo em Loop Direto) */}
+      {/* 1. IMPACT (Hero com Vídeo Local) */}
       <section className="relative h-screen flex flex-col items-center justify-center border-b border-zinc-900 overflow-hidden">
         
-        {/* Background Video Loop (CDN direto e estável) */}
+        {/* Background Video Apontando para Arquivo Local */}
         <video
           autoPlay
           loop
           muted
           playsInline
-          poster="https://images.unsplash.com/photo-1505142468610-359e7d316be0?q=80&w=2070&auto=format&fit=crop"
-          className="absolute inset-0 w-full h-full object-cover grayscale opacity-35 mix-blend-luminosity scale-105"
+          poster="https://images.unsplash.com/photo-1518331647614-7a1f04cd34af?q=80&w=2070&auto=format&fit=crop"
+          className="absolute inset-0 w-full h-full object-cover grayscale opacity-40 mix-blend-luminosity scale-105"
         >
-          <source src="https://assets.mixkit.co/videos/preview/mixkit-dark-stormy-sea-waves-4257-large.mp4" type="video/mp4" />
+          {/* Este arquivo será adicionado por você na pasta public */}
+          <source src="/hero-loop.mp4" type="video/mp4" />
         </video>
 
-        {/* Gradiente de Sombras para leitura perfeita */}
         <div className="absolute inset-0 bg-gradient-to-b from-brand-black/30 via-brand-black/60 to-brand-black" />
         
         <motion.div
@@ -65,16 +65,16 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* 3. ORIGO */}
+      {/* 3. ORIGO (Fundo corrigido: sem fixed, estátua romana legível) */}
       <section className="relative py-40 px-6 border-b border-zinc-900 overflow-hidden">
         <div 
-          className="absolute inset-0 bg-cover bg-center grayscale opacity-15"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1549887552-cb1071d3e5ca?q=80&w=2000&auto=format&fit=crop')", backgroundAttachment: 'fixed' }}
+          className="absolute inset-0 bg-cover bg-center grayscale opacity-30"
+          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1533035353720-f1c6a75ce8c4?q=80&w=2000&auto=format&fit=crop')" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-brand-black via-brand-black/80 to-brand-black" />
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-black via-brand-black/60 to-brand-black" />
         
         <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeInUpVariants} className="relative z-10 max-w-4xl mx-auto text-center">
-          <p className="font-serif text-3xl sm:text-4xl md:text-5xl text-zinc-500 leading-tight uppercase tracking-wide">
+          <p className="font-serif text-3xl sm:text-4xl md:text-5xl text-zinc-400 leading-tight uppercase tracking-wide">
             A interseção exata entre a <span className="text-white">disciplina</span> da pedra e a <span className="text-white">liberdade</span> do mar.
           </p>
         </motion.div>
