@@ -8,21 +8,21 @@ export default function HomePage() {
   return (
     <main className="relative bg-brand-black min-h-screen text-brand-offwhite overflow-hidden flex flex-col justify-between selection:bg-brand-red selection:text-white">
       
-      {/* VÍDEO DA PRAIA LOCAL EM LOOPING (PRAIALANDSCAPE.MOV) */}
+      {/* VÍDEO DA PRAIA EM LOOPING (PRAIALANDSCAPE.MOV) */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
         <video 
           autoPlay 
           loop 
           muted 
           playsInline 
-          className="absolute inset-0 w-full h-full object-cover scale-105 opacity-60 filter grayscale contrast-125"
+          className="absolute inset-0 w-full h-full object-cover scale-105 opacity-55 filter grayscale contrast-125"
         >
           <source src="/praialandscape.mov" type="video/quicktime" />
           <source src="/praialandscape.mov" type="video/mp4" />
         </video>
 
-        {/* Gradiente Brutalista */}
-        <div className="absolute inset-0 bg-black/40"></div>
+        {/* Gradiente de Contraste Brutalista */}
+        <div className="absolute inset-0 bg-black/35"></div>
         <div className="absolute inset-0 bg-gradient-to-b from-brand-black/80 via-transparent to-brand-black"></div>
       </div>
 
@@ -63,7 +63,7 @@ export default function HomePage() {
           </p>
         </FadeIn>
 
-        {/* BOTÕES COM FEEDBACK TÁTIL MOBILE */}
+        {/* BOTÕES DE AÇÃO */}
         <FadeIn direction="up" duration={1} delay={0.6}>
           <div className="pt-10 flex flex-col sm:flex-row items-center justify-center gap-5 w-full max-w-md mx-auto">
             <motion.div whileTap={{ scale: 0.97 }} className="w-full sm:w-auto flex-1">
@@ -88,7 +88,7 @@ export default function HomePage() {
 
       </div>
 
-      {/* BARRA DE ESPECIFICAÇÕES ROMANAS DA BASE */}
+      {/* BASE DA PÁGINA */}
       <div className="relative z-10 max-w-7xl mx-auto w-full px-6 pb-12 border-t border-zinc-900/80 pt-6">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 font-mono text-[9px] text-zinc-400 uppercase tracking-widest text-center sm:text-left">
           <div className="border-l border-zinc-900 pl-3">
