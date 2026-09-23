@@ -1,102 +1,133 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
-import { Menu, X } from 'lucide-react';
-import { siteConfig } from '@/config/site';
+import { usePathname } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useCart } from '@/context/CartContext';
 
 export function Header() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [hidden, setHidden] = useState(false);
-  const { scrollY } = useScroll();
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const cart = useCart() as any;
+  const cartItemsCount = cart?.items?.length || 0;
 
-  // Esconde o menu ao dar scroll down, revela ao dar scroll up
-  useMotionValueEvent(scrollY, "change", (latest) => {
-    const previous = scrollY.getPrevious() ?? 0;
-    if (latest > previous && latest > 150) {
-      setHidden(true); // Descendo a tela
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Fechar o menu automaticamente ao trocar de página
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
+  // Travar o scroll da página quando o menu mobile estiver aberto
+  useEffect(() => {
+    if (isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
     } else {
-      setHidden(false); // Subindo a tela
+      document.body.style.overflow = '';
     }
-  });
-
-  const menuLinks = [
-    { label: 'Drop 01 — Origo', href: '/colecao/origo' },
-    { label: 'A Marca', href: '/sobre' },
-    { label: 'Archive', href: '/journal' },
-    { label: 'Medidas', href: '/tamanho' },
-    { label: 'FAQ', href: '/faq' },
-  ];
+  }, [isMobileMenuOpen]);
 
   return (
-    <motion.header
-      variants={{
-        visible: { y: 0 },
-        hidden: { y: '-100%' },
-      }}
-      animate={hidden ? 'hidden' : 'visible'}
-      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      className="fixed top-0 w-full z-40 bg-brand-black/95 backdrop-blur-md border-b border-zinc-900 transition-colors"
-    >
-      <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-        
-        {/* LOGO */}
-        <Link href="/" className="font-serif text-2xl tracking-widest text-white z-50">
-          LR
-        </Link>
-
-        {/* DESKTOP NAV */}
-        <nav className="hidden md:flex items-center gap-8 font-sans text-[10px] uppercase tracking-widest font-bold">
-          {menuLinks.map((link) => (
-            <Link key={link.href} href={link.href} className="text-zinc-400 hover:text-white transition-colors">
-              {link.label}
-            </Link>
-          ))}
-          <Link href="/acesso" className="text-brand-red border border-zinc-800 px-4 py-2 hover:border-brand-red transition-all">
-            [ Lote Zero ]
+    <>
+      <header className={`fixed top-0 w-full z-40 transition-all duration-300 ${isScrolled ? 'bg-brand-black/95 backdrop-blur-md border-b border-zinc-900 py-4' : 'bg-transparent py-6'}`}>
+        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
+          
+          {/* LOGO */}
+          <Link href="/" className="font-serif text-2xl tracking-widest text-white relative z-50">
+            LR
           </Link>
-        </nav>
 
-        {/* MOBILE TOGGLE */}
-        <button 
-          className="md:hidden text-white z-50"
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          {isOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-      </div>
+          {/* DESKTOP NAV */}
+          <nav className="hidden md:flex gap-8 items-center font-mono text-[10px] uppercase tracking-widest text-zinc-400">
+            <Link href="/colecao/origo" className="hover:text-white transition-colors">Origo</Link>
+            <Link href="/journal" className="hover:text-white transition-colors">Journal</Link>
+            <Link href="/sobre" className="hover:text-white transition-colors">Manifesto</Link>
+          </nav>
 
-      {/* MOBILE FULLSCREEN MENU */}
-      <motion.div
-        initial={false}
-        animate={{ opacity: isOpen ? 1 : 0, pointerEvents: isOpen ? 'auto' : 'none' }}
-        className="fixed inset-0 bg-brand-black z-40 flex flex-col justify-center items-center"
-      >
-        <nav className="flex flex-col items-center gap-8 font-serif text-2xl uppercase tracking-widest">
-          {menuLinks.map((link) => (
-            <Link 
-              key={link.href} 
-              href={link.href} 
-              className="text-zinc-400 hover:text-white transition-colors"
-              onClick={() => setIsOpen(false)}
+          {/* ACTIONS */}
+          <div className="flex items-center gap-6 relative z-50">
+            <button 
+              onClick={() => {
+                if (cart && typeof cart.openCart === 'function') cart.openCart();
+              }}
+              className="font-mono text-[10px] uppercase tracking-widest text-white hover:text-brand-red transition-colors"
             >
-              {link.label}
-            </Link>
-          ))}
-          <Link 
-            href="/acesso" 
-            className="mt-8 text-brand-red font-mono text-sm border border-zinc-800 px-8 py-4"
-            onClick={() => setIsOpen(false)}
-          >
-            [ Acessar Lote Zero ]
-          </Link>
-        </nav>
-        
-        <div className="absolute bottom-10 font-mono text-[9px] text-zinc-600 uppercase tracking-widest">
-          {siteConfig.coordinates}
+              Sacola [{cartItemsCount}]
+            </button>
+            
+            {/* HAMBURGER (Apenas Mobile) */}
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="md:hidden font-mono text-[10px] uppercase tracking-widest text-white hover:text-brand-red transition-colors"
+            >
+              MENU
+            </button>
+          </div>
         </div>
-      </motion.div>
-    </motion.header>
+      </header>
+
+      {/* MOBILE MENU FULLSCREEN (100% Sólido) */}
+      <AnimatePresence>
+        {isMobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3, ease: 'easeOut' }}
+            className="fixed inset-0 z-[100] bg-brand-black w-full h-[100dvh] flex flex-col"
+          >
+            {/* Top Bar Interna do Menu */}
+            <div className="flex justify-between items-center px-6 py-6 border-b border-zinc-900">
+              <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="font-serif text-2xl tracking-widest text-brand-red">
+                LR
+              </Link>
+              <button 
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="font-mono text-[10px] uppercase tracking-widest text-white hover:text-brand-red transition-colors p-2"
+              >
+                [ FECHAR ]
+              </button>
+            </div>
+
+            {/* Links Editoriais */}
+            <div className="flex-1 flex flex-col justify-center px-6 gap-8">
+              <Link href="/colecao/origo" onClick={() => setIsMobileMenuOpen(false)} className="font-serif text-4xl uppercase tracking-wider text-white hover:text-brand-red transition-colors">
+                Origo
+              </Link>
+              <Link href="/journal" onClick={() => setIsMobileMenuOpen(false)} className="font-serif text-4xl uppercase tracking-wider text-white hover:text-brand-red transition-colors">
+                Journal
+              </Link>
+              <Link href="/sobre" onClick={() => setIsMobileMenuOpen(false)} className="font-serif text-4xl uppercase tracking-wider text-white hover:text-brand-red transition-colors">
+                Manifesto
+              </Link>
+              
+              <div className="w-12 h-[1px] bg-zinc-800 my-4" />
+              
+              <Link href="/tamanho" onClick={() => setIsMobileMenuOpen(false)} className="font-mono text-[11px] text-zinc-400 uppercase tracking-widest hover:text-white transition-colors">
+                Guia de Medidas
+              </Link>
+              <Link href="/faq" onClick={() => setIsMobileMenuOpen(false)} className="font-mono text-[11px] text-zinc-400 uppercase tracking-widest hover:text-white transition-colors">
+                Diretrizes & FAQ
+              </Link>
+            </div>
+
+            {/* Call to Action Final */}
+            <div className="px-6 pb-12 mt-auto">
+              <Link href="/acesso" onClick={() => setIsMobileMenuOpen(false)} className="block w-full text-center bg-white text-brand-black py-5 font-mono text-[11px] uppercase tracking-widest hover:bg-brand-red hover:text-white transition-colors shadow-2xl">
+                [ Acessar Lote Zero ]
+              </Link>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
