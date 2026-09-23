@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { siteConfig } from '@/config/site';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { CartProvider } from '@/context/CartContext';
 import '@/styles/globals.css';
 
 export const viewport: Viewport = {
@@ -13,7 +14,7 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   metadataBase: new URL('https://la-romme.vercel.app'),
   title: {
-    default: `${siteConfig.name} — ${siteConfig.tagline}`,
+    default: `${siteConfig.name} —${siteConfig.tagline}`,
     template: `%s | ${siteConfig.name}`,
   },
   description: siteConfig.description,
@@ -40,9 +41,11 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="dark bg-brand-black text-brand-offwhite antialiased">
       <body className="min-h-screen flex flex-col font-sans selection:bg-brand-red selection:text-white">
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <CartProvider>
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </CartProvider>
       </body>
     </html>
   );
