@@ -1,56 +1,54 @@
 import type { Metadata, Viewport } from 'next';
-import { siteConfig } from '@/config/site';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
-import { CartProvider } from '@/context/CartContext';
-import { SmoothScroll } from '@/components/layout/SmoothScroll';
 import '@/styles/globals.css';
-import { CartDrawer } from '@/components/cart/CartDrawer';
 
+import { Header } from '@/components/layout/Header';
+import { CartProvider } from '@/context/CartContext';
+import { CartDrawer } from '@/components/cart/CartDrawer';
+import { Tracking } from '@/components/layout/Tracking';
+
+// Configuração Anti-Zoom para iOS (Mantém a escala cravada em 1x)
 export const viewport: Viewport = {
-  themeColor: '#111111',
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
+// Configuração de SEO Premium (Open Graph para WhatsApp/Insta)
 export const metadata: Metadata = {
+  title: 'LaRomme | Lote Zero',
+  description: 'Protocolo de alocação Origo. Acesso restrito.',
   metadataBase: new URL('https://la-romme.vercel.app'),
-  title: {
-    default: `${siteConfig.name} —${siteConfig.tagline}`,
-    template: `%s | ${siteConfig.name}`,
-  },
-  description: siteConfig.description,
-  keywords: ['LaRomme', 'Origo', 'Luxury Streetwear', 'Fortaleza', 'Brutalism', 'Roman Discipline'],
   openGraph: {
-    title: siteConfig.name,
-    description: siteConfig.description,
+    title: 'LaRomme | Coleção Origo',
+    description: 'Protocolo de alocação da primeira coleção oficial. Acesso restrito ao Lote Zero.',
     url: 'https://la-romme.vercel.app',
-    siteName: siteConfig.name,
+    siteName: 'LaRomme',
+    images: [
+      {
+        url: '/logo-black.png', // Usando a logo preta com fundo transparente como banner de compartilhamento
+        width: 1200,
+        height: 630,
+        alt: 'LaRomme Signature',
+      },
+    ],
     locale: 'pt_BR',
     type: 'website',
   },
-  robots: {
-    index: true,
-    follow: true,
-  },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR" className="dark bg-brand-black text-brand-offwhite antialiased">
-      <body className="min-h-screen flex flex-col font-sans selection:bg-brand-red selection:text-white">
-        <SmoothScroll>
-          <CartProvider>
+    <html lang="pt-BR" className="bg-brand-black">
+      <body className="antialiased min-h-screen flex flex-col text-brand-offwhite selection:bg-brand-red selection:text-white custom-scrollbar">
+        <CartProvider>
+          <Tracking />
+          <Header />
           <CartDrawer />
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </CartProvider>
-        </SmoothScroll>
+          <main className="flex-1">
+            {children}
+          </main>
+        </CartProvider>
       </body>
     </html>
   );
