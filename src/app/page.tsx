@@ -8,29 +8,25 @@ export default function HomePage() {
   return (
     <main className="relative bg-brand-black min-h-screen text-brand-offwhite overflow-hidden flex flex-col justify-between selection:bg-brand-red selection:text-white">
       
-      {/* VÍDEO DO MAR EM LOOPING (PRAIA ORIGO) + OVERLAY CINEMÁTICO */}
+      {/* VÍDEO DA PRAIA LOCAL EM LOOPING (PRAIALANDSCAPE.MOV) */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
-        <img 
-          src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2073&auto=format&fit=crop" 
-          alt="Mare Nostrum" 
-          className="absolute inset-0 w-full h-full object-cover opacity-30 filter grayscale contrast-125"
-        />
         <video 
           autoPlay 
           loop 
           muted 
           playsInline 
-          className="absolute inset-0 w-full h-full object-cover scale-105 opacity-50 filter grayscale contrast-125"
+          className="absolute inset-0 w-full h-full object-cover scale-105 opacity-60 filter grayscale contrast-125"
         >
-          <source src="https://assets.mixkit.co/videos/preview/mixkit-dramatic-dark-ocean-waves-42867-large.mp4" type="video/mp4" />
+          <source src="/praialandscape.mov" type="video/quicktime" />
+          <source src="/praialandscape.mov" type="video/mp4" />
         </video>
 
-        {/* Gradiente Brutalista para Leitura Perfeita */}
+        {/* Gradiente Brutalista */}
         <div className="absolute inset-0 bg-black/40"></div>
         <div className="absolute inset-0 bg-gradient-to-b from-brand-black/80 via-transparent to-brand-black"></div>
       </div>
 
-      {/* GRAFISMOS ROMANOS // CRUZES DE PRECISÃO NOS CANTOS */}
+      {/* GRAFISMOS ROMANOS */}
       <div className="absolute top-8 left-8 z-10 font-mono text-[9px] text-zinc-600 pointer-events-none hidden sm:block">+ 03°44'S 38°31'W</div>
       <div className="absolute top-8 right-8 z-10 font-mono text-[9px] text-zinc-600 pointer-events-none hidden sm:block">ANNO MMXXVI +</div>
       <div className="absolute bottom-8 left-8 z-10 font-mono text-[9px] text-zinc-600 pointer-events-none hidden sm:block">+ OPUS CAEMENTICIUM</div>
@@ -67,7 +63,7 @@ export default function HomePage() {
           </p>
         </FadeIn>
 
-        {/* BOTÕES COM FEEDBACK TÁTIL MOBILE (whileTap) */}
+        {/* BOTÕES COM FEEDBACK TÁTIL MOBILE */}
         <FadeIn direction="up" duration={1} delay={0.6}>
           <div className="pt-10 flex flex-col sm:flex-row items-center justify-center gap-5 w-full max-w-md mx-auto">
             <motion.div whileTap={{ scale: 0.97 }} className="w-full sm:w-auto flex-1">
