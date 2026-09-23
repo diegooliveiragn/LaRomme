@@ -8,32 +8,32 @@ export default function JournalPage() {
     { 
       title: 'MATERIAL', 
       desc: 'Texturas, gramaturas e a física por trás do toque.',
-      img: 'https://images.unsplash.com/photo-1586745129647-7577a7b8eafb?q=80&w=1200&auto=format&fit=crop' // Pedra vulcânica/mármore
+      img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200&auto=format&fit=crop'
     },
     { 
       title: 'MOVEMENT', 
       desc: 'O corpo no espaço. A roupa em estado de tensão.',
-      img: 'https://images.unsplash.com/photo-1518331647614-7a1f04cd34af?q=80&w=1200&auto=format&fit=crop' // Oceano escuro batendo
+      img: 'https://images.unsplash.com/photo-1505142468610-359e7d316be0?q=80&w=1200&auto=format&fit=crop'
     },
     { 
       title: 'TERRITORY', 
       desc: 'A arquitetura, a luz e o chão de Fortaleza.',
-      img: 'https://images.unsplash.com/photo-1518099074172-2e47ee6cf622?q=80&w=1200&auto=format&fit=crop' // Cúpula do Panteão
+      img: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=1200&auto=format&fit=crop'
     },
     { 
       title: 'CULTURE', 
       desc: 'As referências romanas decodificadas para o presente.',
-      img: 'https://images.unsplash.com/photo-1533035353720-f1c6a75ce8c4?q=80&w=1200&auto=format&fit=crop' // Busto Romano clássico
+      img: 'https://images.unsplash.com/photo-1549887552-cb1071d3e5ca?q=80&w=1200&auto=format&fit=crop'
     },
     { 
       title: 'PROCESS', 
       desc: 'O desenvolvimento, a modelagem e as decisões de design.',
-      img: 'https://images.unsplash.com/photo-1610964199147-385a19cb2965?q=80&w=1200&auto=format&fit=crop' // Escultura na pedra
+      img: 'https://images.unsplash.com/photo-1618218168350-6e7c81151b64?q=80&w=1200&auto=format&fit=crop'
     },
     { 
       title: 'HERITAGE', 
       desc: 'Simbolismo, pedras seculares e a permanência do código.',
-      img: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?q=80&w=1200&auto=format&fit=crop' // Coliseu
+      img: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?q=80&w=1200&auto=format&fit=crop'
     }
   ];
 
@@ -69,12 +69,12 @@ export default function JournalPage() {
               variants={fadeInUpVariants}
               className="group relative overflow-hidden border border-zinc-900 min-h-[380px] flex flex-col justify-end p-8 cursor-pointer bg-zinc-950"
             >
-              {/* Imagem: Mais clara e com zoom lento */}
+              {/* Imagem */}
               <div 
                 className="absolute inset-0 bg-cover bg-center grayscale opacity-40 group-hover:opacity-80 group-hover:scale-105 transition-all duration-[1.2s] ease-out" 
                 style={{ backgroundImage: `url('${cat.img}')` }}
               />
-              {/* Sombras: Menos agressivas */}
+              {/* Sombras de Leitura */}
               <div className="absolute inset-0 bg-gradient-to-t from-brand-black via-brand-black/40 to-transparent opacity-80 group-hover:opacity-60 transition-opacity duration-500" />
               
               <div className="relative z-10 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500 ease-out">
