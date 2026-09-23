@@ -6,38 +6,38 @@ import { FadeIn } from '@/components/ui/FadeIn';
 
 export default function HomePage() {
   return (
-    <main className="relative bg-brand-black min-h-screen text-brand-offwhite overflow-hidden flex flex-col justify-between pt-20">
+    <main className="relative bg-brand-black min-h-screen text-brand-offwhite overflow-hidden flex flex-col justify-between pt-24 selection:bg-brand-red selection:text-white">
       
-      {/* VÍDEO DA PRAIA EM LOOPING (CDN SEGURO EM MP4) */}
+      {/* VÍDEO DO MAR COM ALTAR DE VISIBILIDADE (OPACIDADE CORRIGIDA) */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
         <video 
           autoPlay 
           loop 
           muted 
           playsInline 
-          className="absolute inset-0 w-full h-full object-cover scale-105 opacity-55 filter grayscale contrast-125"
+          className="absolute inset-0 w-full h-full object-cover scale-105 opacity-70 filter grayscale contrast-125"
         >
-          {/* Usando um CDN em mp4 para garantir que funcione na Vercel em todos os browsers */}
+          <source src="https://cdn.coverr.co/videos/coverr-dark-ocean-waves-5686/1080p.mp4" type="video/mp4" />
           <source src="https://assets.mixkit.co/videos/preview/mixkit-dramatic-dark-ocean-waves-42867-large.mp4" type="video/mp4" />
         </video>
 
-        {/* Gradiente de Contraste */}
-        <div className="absolute inset-0 bg-black/40"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-black/90 via-transparent to-brand-black"></div>
+        {/* Camada sutil de escurecimento para leitura sem tapar o mar */}
+        <div className="absolute inset-0 bg-black/30"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-black/70 via-transparent to-brand-black"></div>
       </div>
 
-      {/* GRAFISMOS ROMANOS */}
-      <div className="absolute top-24 left-8 z-10 font-mono text-[9px] text-zinc-600 pointer-events-none hidden sm:block">+ 03°44'S 38°31'W</div>
-      <div className="absolute top-24 right-8 z-10 font-mono text-[9px] text-zinc-600 pointer-events-none hidden sm:block">ANNO MMXXVI +</div>
-      <div className="absolute bottom-8 left-8 z-10 font-mono text-[9px] text-zinc-600 pointer-events-none hidden sm:block">+ OPUS CAEMENTICIUM</div>
-      <div className="absolute bottom-8 right-8 z-10 font-mono text-[9px] text-zinc-600 pointer-events-none hidden sm:block">EX NIHILO +</div>
+      {/* COORDENADAS SUPERIORES (SEM COLIDIR COM O RODAPÉ) */}
+      <div className="relative z-10 max-w-7xl mx-auto w-full px-6 flex justify-between font-mono text-[9px] text-zinc-500 pointer-events-none hidden sm:flex">
+        <span>+ 03°44'S 38°31'W</span>
+        <span>ANNO MMXXVI +</span>
+      </div>
 
-      {/* CONTEÚDO HERO PRINCIPAL */}
-      <div className="relative z-10 max-w-7xl mx-auto w-full px-6 pt-24 pb-16 flex-1 flex flex-col justify-center items-center text-center">
+      {/* CONTEÚDO HERO CENTRAL */}
+      <div className="relative z-10 max-w-7xl mx-auto w-full px-6 pt-12 pb-16 flex-1 flex flex-col justify-center items-center text-center">
         
         <FadeIn direction="down" duration={1}>
           <div className="space-y-2 mb-6">
-            <div className="inline-flex items-center gap-3 border border-zinc-800/80 bg-zinc-950/60 backdrop-blur-md px-4 py-1.5 rounded-full">
+            <div className="inline-flex items-center gap-3 border border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md px-4 py-1.5 rounded-full">
               <span className="w-1.5 h-1.5 rounded-full bg-brand-red animate-pulse"></span>
               <span className="font-mono text-[9px] text-brand-offwhite uppercase tracking-[0.25em]">
                 Senado Privado // Lote Zero
@@ -63,7 +63,7 @@ export default function HomePage() {
           </p>
         </FadeIn>
 
-        {/* BOTÕES CORRIGIDOS (WHITESPACE-NOWRAP IMPEDE A QUEBRA DE TEXTO) */}
+        {/* BOTÕES LADO A LADO SEM QUEBRA DE LINHA */}
         <FadeIn direction="up" duration={1} delay={0.6}>
           <div className="pt-10 flex flex-col sm:flex-row items-center justify-center gap-5 w-full max-w-md mx-auto">
             <motion.div whileTap={{ scale: 0.97 }} className="w-full sm:w-auto flex-1">
@@ -88,26 +88,36 @@ export default function HomePage() {
 
       </div>
 
-      {/* BASE DA PÁGINA */}
-      <div className="relative z-10 max-w-7xl mx-auto w-full px-6 pb-12 border-t border-zinc-900/80 pt-6 mt-12">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 font-mono text-[9px] text-zinc-400 uppercase tracking-widest text-center sm:text-left">
-          <div className="border-l border-zinc-900 pl-3">
-            <span className="text-zinc-600 block mb-0.5">ESTRUTURA</span>
-            <span className="text-white">400G/M² Heavyweight</span>
+      {/* PAINEL TÉCNICO INFERIOR (GRID ORGANIZADO SEM SOBREPOSIÇÃO) */}
+      <div className="relative z-10 max-w-7xl mx-auto w-full px-6 pb-10 pt-6 border-t border-zinc-900/80">
+        
+        {/* 4 Colunas Limpas */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 font-mono text-[9px] uppercase tracking-widest">
+          <div className="border-l border-zinc-800 pl-4 space-y-1">
+            <span className="text-zinc-600 block">ESTRUTURA</span>
+            <span className="text-white font-bold block">400G/M² HEAVYWEIGHT</span>
+            <span className="text-zinc-600 text-[8px] block pt-1">+ OPUS CAEMENTICIUM</span>
           </div>
-          <div className="border-l border-zinc-900 pl-3">
-            <span className="text-zinc-600 block mb-0.5">MATRIZ</span>
-            <span className="text-white">05 Artefatos Exclusivos</span>
+
+          <div className="border-l border-zinc-800 pl-4 space-y-1">
+            <span className="text-zinc-600 block">MATRIZ</span>
+            <span className="text-white font-bold block">05 ARTEFATOS EXCLUSIVOS</span>
+            <span className="text-zinc-600 text-[8px] block pt-1">+ LOTE ZERO</span>
           </div>
-          <div className="border-l border-zinc-900 pl-3">
-            <span className="text-zinc-600 block mb-0.5">ENGENHARIA</span>
-            <span className="text-white">Corte Boxy & Athletic</span>
+
+          <div className="border-l border-zinc-800 pl-4 space-y-1">
+            <span className="text-zinc-600 block">ENGENHARIA</span>
+            <span className="text-white font-bold block">CORTE BOXY & ATHLETIC</span>
+            <span className="text-zinc-600 text-[8px] block pt-1">+ RIGID FIT</span>
           </div>
-          <div className="border-l border-zinc-900 pl-3 sm:text-right">
-            <span className="text-zinc-600 block mb-0.5">STATUS</span>
-            <span className="text-brand-red">[ COFRE TRANCADO ]</span>
+
+          <div className="border-l border-zinc-800 pl-4 space-y-1">
+            <span className="text-zinc-600 block">STATUS</span>
+            <span className="text-brand-red font-bold block">[ COFRE TRANCADO ]</span>
+            <span className="text-zinc-600 text-[8px] block pt-1">EX NIHILO +</span>
           </div>
         </div>
+
       </div>
 
     </main>
