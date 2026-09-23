@@ -1,149 +1,90 @@
 'use client';
 
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { EASINGS, DURATIONS, fadeInUpVariants } from '@/config/motion';
-import { PRODUCTS_ORIGO } from '@/data/products';
-import { ProductCard } from '@/components/product/ProductCard';
-import { ArchitectureOfMovement } from '@/components/collection/ArchitectureOfMovement';
-import { RealTestimonials } from '@/components/editorial/RealTestimonials';
+import { FadeIn } from '@/components/ui/FadeIn';
 
-export default function Home() {
-  const featuredProducts = PRODUCTS_ORIGO.filter(p => p.featured);
-
+export default function HomePage() {
   return (
-    <div className="bg-brand-black min-h-screen">
+    <main className="relative bg-brand-black min-h-screen text-brand-offwhite overflow-hidden flex flex-col justify-between">
       
-      {/* 1. IMPACT (Hero com Vídeo Local) */}
-      <section className="relative h-screen flex flex-col items-center justify-center border-b border-zinc-900 overflow-hidden">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          poster="https://images.unsplash.com/photo-1518331647614-7a1f04cd34af?q=80&w=2070&auto=format&fit=crop"
-          className="absolute inset-0 w-full h-full object-cover grayscale opacity-40 mix-blend-luminosity scale-105"
+      {/* VÍDEO DO MAR EM LOOPING COM OVERLAY SOMBRIO */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <video 
+          autoPlay 
+          loop 
+          muted 
+          playsInline 
+          className="w-full h-full object-cover scale-105 opacity-30 filter grayscale contrast-125"
         >
-          <source src="/hero-loop.mp4" type="video/mp4" />
-          <source src="/hero-loop.mov" type="video/quicktime" />
+          <source src="https://assets.mixkit.co/videos/preview/mixkit-dramatic-dark-ocean-waves-42867-large.mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-black/30 via-brand-black/60 to-brand-black" />
+        {/* Gradiante Brutalista escurecendo o topo e a base */}
+        <div className="absolute inset-0 bg-gradient-to-b from-brand-black via-brand-black/60 to-brand-black"></div>
+      </div>
+
+      {/* CONTEÚDO HERO PRINCIPAL */}
+      <div className="relative z-10 max-w-7xl mx-auto w-full px-6 pt-40 pb-20 flex-1 flex flex-col justify-center items-center text-center">
         
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={fadeInUpVariants}
-          className="relative z-10 text-center px-6 w-full max-w-4xl"
-        >
-          <span className="font-mono text-[10px] text-brand-red uppercase tracking-widest block mb-6 drop-shadow-lg">
-            A SUA CASA. A SUA FORÇA.
-          </span>
-          <h1 className="font-serif text-6xl md:text-[8rem] leading-none font-bold uppercase tracking-tight text-white mb-10 drop-shadow-2xl">
+        <FadeIn direction="down" duration={1}>
+          <div className="space-y-3 mb-6">
+            <span className="font-mono text-[10px] text-brand-red uppercase tracking-[0.3em] block">
+              Anno MMXXVI // Acesso Privado
+            </span>
+            <span className="font-mono text-[9px] text-zinc-500 uppercase tracking-widest block">
+              Opus Caementicium // Capítulo I
+            </span>
+          </div>
+        </FadeIn>
+
+        <FadeIn duration={1.2} delay={0.2}>
+          <h1 className="font-serif text-7xl sm:text-9xl md:text-[140px] uppercase tracking-wider text-white leading-none select-none my-4">
             Origo
           </h1>
-          <Link
-            href="/colecao/origo"
-            className="inline-block bg-white text-brand-black px-10 py-5 font-mono text-[10px] uppercase tracking-widest hover:bg-brand-red hover:text-white transition-colors duration-500 shadow-2xl"
-          >
-            Explorar o Arquivo
-          </Link>
-        </motion.div>
-      </section>
+        </FadeIn>
 
-      {/* 2. TERRITORY */}
-      <section className="py-20 px-6 text-center border-b border-zinc-900 bg-brand-black">
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeInUpVariants}>
-          <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-widest">
-            03°43'16"S 38°32'41"W
+        <FadeIn direction="up" duration={1} delay={0.4}>
+          <p className="font-sans text-xs sm:text-sm text-zinc-400 uppercase tracking-widest max-w-xl mx-auto mt-4 leading-relaxed">
+            A origem do vestuário de alta densidade. Estruturas brutalistas inspiradas na engenharia romana.
           </p>
-          <p className="font-sans text-xs text-zinc-400 uppercase tracking-widest mt-4">
-            Fortaleza, Ceará. O Ponto de Partida.
-          </p>
-        </motion.div>
-      </section>
+        </FadeIn>
 
-      {/* 3. ORIGO (Foto Autoral: Territorio e Mar) */}
-      <section className="relative py-40 px-6 border-b border-zinc-900 overflow-hidden">
-        <div 
-          className="absolute inset-0 bg-cover bg-center grayscale opacity-30"
-          style={{ backgroundImage: "url('/images/territorio-mar.jpg')" }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-brand-black via-brand-black/60 to-brand-black" />
-        
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeInUpVariants} className="relative z-10 max-w-4xl mx-auto text-center">
-          <p className="font-serif text-3xl sm:text-4xl md:text-5xl text-zinc-400 leading-tight uppercase tracking-wide">
-            A interseção exata entre a <span className="text-white">disciplina</span> da pedra e a <span className="text-white">liberdade</span> do mar.
-          </p>
-        </motion.div>
-      </section>
-
-      {/* 4. ARTEFACTS */}
-      <section className="py-32 px-6 max-w-7xl mx-auto border-b border-zinc-900 bg-brand-black">
-        <div className="mb-16">
-          <span className="font-mono text-[10px] text-brand-red uppercase tracking-widest block mb-3">Drop 01</span>
-          <h2 className="font-serif text-4xl uppercase tracking-wider text-white">Os Artefatos</h2>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {featuredProducts.map(product => (
-            <div key={product.id} className="h-full">
-              <ProductCard product={product} />
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* 5. ARCHITECTURE OF MOVEMENT */}
-      <section className="py-32 border-b border-zinc-900 bg-brand-black">
-        <ArchitectureOfMovement />
-      </section>
-
-      {/* 6. MANIFESTO & ORIGIN (Foto Autoral: Cidade Velha) */}
-      <section className="relative py-40 px-6 border-b border-zinc-900 overflow-hidden">
-        <div 
-          className="absolute inset-0 bg-cover bg-center grayscale opacity-20"
-          style={{ backgroundImage: "url('/images/cidade-velha.jpg')" }}
-        />
-        <div className="absolute inset-0 bg-brand-black/80" />
-        
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: "-100px" }} variants={fadeInUpVariants} className="relative z-10 max-w-3xl mx-auto text-center space-y-8">
-          <h3 className="font-serif text-3xl uppercase tracking-wider text-white">A Força de Roma.<br/>O Movimento de Fortaleza.</h3>
-          <p className="font-sans text-xs text-zinc-400 uppercase tracking-widest leading-relaxed">
-            Nós não usamos o Império Romano como decoração. Ele é o nosso código estrutural. Disciplina, permanência e engenharia, adaptados para a fluidez, a luz e o ritmo do litoral contemporâneo. A roupa deve servir à vida na arena e fora dela.
-          </p>
-          <Link href="/sobre" className="inline-block font-mono text-[10px] text-zinc-400 hover:text-white uppercase tracking-widest border-b border-zinc-800 pb-1 mt-4">
-            Ler o Manifesto Completo
-          </Link>
-        </motion.div>
-      </section>
-
-      {/* 7. PROVA SOCIAL */}
-      <RealTestimonials />
-
-      {/* 8. ARCHIVE */}
-      <section className="py-32 px-6 max-w-7xl mx-auto border-b border-zinc-900 text-center bg-brand-black">
-        <span className="font-mono text-[10px] text-brand-red uppercase tracking-widest block mb-6">Acervo Visual</span>
-        <h3 className="font-serif text-3xl uppercase tracking-wider text-white mb-8">Journal & Process</h3>
-        <Link href="/journal" className="inline-block border border-zinc-800 text-zinc-300 px-8 py-4 font-mono text-[10px] uppercase tracking-widest hover:border-brand-offwhite hover:text-brand-black hover:bg-brand-offwhite transition-colors">
-          Explorar Categorias
-        </Link>
-      </section>
-
-      {/* 9. ACCESS */}
-      <section className="py-32 px-6 bg-brand-black text-center relative overflow-hidden">
-        <motion.div initial="hidden" whileInView="visible" viewport={{ once: true }} variants={fadeInUpVariants} className="max-w-2xl mx-auto space-y-8 relative z-10">
-          <span className="font-serif text-5xl text-brand-red opacity-80 block mb-6">LR</span>
-          <h2 className="font-serif text-4xl uppercase tracking-wider text-white">O Lote Zero</h2>
-          <p className="font-sans text-xs text-zinc-400 uppercase tracking-widest leading-relaxed">
-            Antes da abertura oficial, uma alocação restrita dos artefatos será liberada. Registre sua estrutura para ser notificado.
-          </p>
-          <div className="pt-4">
-            <Link href="/acesso" className="inline-block font-mono text-[11px] uppercase tracking-widest text-brand-black bg-white px-10 py-5 hover:bg-brand-red hover:text-white transition-all shadow-xl">
-              [ Solicitar Alocação ]
+        <FadeIn direction="up" duration={1} delay={0.6}>
+          <div className="pt-12 flex flex-col sm:flex-row items-center justify-center gap-6">
+            <Link 
+              href="/acesso" 
+              className="w-full sm:w-auto bg-white text-brand-black px-8 py-5 font-mono text-[10px] uppercase tracking-widest hover:bg-brand-red hover:text-white transition-all duration-500 shadow-2xl"
+            >
+              [ REQUISITAR ACESSO // LOTE ZERO ]
+            </Link>
+            <Link 
+              href="/colecao/origo" 
+              className="w-full sm:w-auto bg-zinc-950/80 border border-zinc-800 text-zinc-300 px-8 py-5 font-mono text-[10px] uppercase tracking-widest hover:border-white hover:text-white transition-all duration-300 backdrop-blur-sm"
+            >
+              [ DOSSIÊ DA COLEÇÃO ]
             </Link>
           </div>
-        </motion.div>
-      </section>
+        </FadeIn>
 
-    </div>
+      </div>
+
+      {/* RODAPÉ DO HERO (MICRO-COPY ROMANO) */}
+      <div className="relative z-10 max-w-7xl mx-auto w-full px-6 pb-12 border-t border-zinc-900/60 pt-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 font-mono text-[9px] text-zinc-600 uppercase tracking-widest text-center sm:text-left">
+          <div>
+            <span className="text-zinc-400 block mb-1">PROTOCOLO</span>
+            <span>Edição Limitada // Lote Zero</span>
+          </div>
+          <div className="sm:text-center">
+            <span className="text-zinc-400 block mb-1">ENGENHARIA</span>
+            <span>400G/M² Heavyweight & Performance</span>
+          </div>
+          <div className="sm:text-right">
+            <span className="text-zinc-400 block mb-1">STATUS</span>
+            <span className="text-brand-red">[ COFRE TRANCADO ]</span>
+          </div>
+        </div>
+      </div>
+
+    </main>
   );
 }
