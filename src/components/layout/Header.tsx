@@ -1,141 +1,59 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useCart } from '@/context/CartContext';
 
 export function Header() {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const pathname = usePathname();
-  const { totalItems, openCart } = useCart();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  useEffect(() => {
-    setIsMobileMenuOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
-    if (isMobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-  }, [isMobileMenuOpen]);
-
   return (
-    <>
-      <header className={`fixed top-0 w-full z-40 transition-all duration-300 ${isScrolled ? 'bg-brand-black/95 backdrop-blur-md border-b border-zinc-900 py-4' : 'bg-transparent py-6'}`}>
-        <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
-          
-          {/* LOGO TRANSPARENTE COM TRATAMENTO DE BLEND MODE CONTRA FUNDO BRANCO */}
-          <Link href="/" className="relative z-50 flex items-center">
-            <div className="h-9 w-auto overflow-hidden flex items-center justify-center">
-              <img 
-                src="/logo-white.png" 
-                alt="LaRomme" 
-                className="h-9 w-auto object-contain mix-blend-screen hover:opacity-80 transition-opacity" 
-                style={{ mixBlendMode: 'screen' }}
-              />
-            </div>
-          </Link>
-
-          {/* DESKTOP NAV */}
-          <nav className="hidden md:flex gap-8 items-center font-mono text-[10px] uppercase tracking-widest text-zinc-400">
-            <Link href="/colecao/origo" className="hover:text-white transition-colors">Origo</Link>
-            <Link href="/journal" className="hover:text-white transition-colors">Journal</Link>
-            <Link href="/sobre" className="hover:text-white transition-colors">Manifesto</Link>
-          </nav>
-
-          {/* ACTIONS */}
-          <div className="flex items-center gap-6 relative z-50">
-            <button 
-              onClick={openCart}
-              className="font-mono text-[10px] uppercase tracking-widest text-white hover:text-brand-red transition-colors flex items-center gap-1 bg-zinc-900/60 border border-zinc-800 px-3 py-2 rounded-none"
+    <header className="fixed top-0 left-0 w-full z-50 bg-brand-black/85 backdrop-blur-md border-b border-zinc-900/80 transition-all duration-300">
+      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        
+        {/* LOGO SUTIL + WORDMARK LAROMME (RETORNO À HOME) */}
+        <Link 
+          href="/" 
+          className="group flex items-center gap-3.5 cursor-pointer select-none"
+        >
+          {/* Símbolo Gráfico Sutil (Elmo / Escudo Romano em Vetor) */}
+          <div className="w-7 h-7 border border-zinc-800 bg-zinc-950 flex items-center justify-center rounded-sm group-hover:border-brand-red/60 transition-colors duration-300">
+            <svg 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              className="w-4 h-4 text-zinc-400 group-hover:text-brand-red transition-colors duration-300"
+              strokeWidth="1.5"
             >
-              <span>Sacola</span>
-              <span className="text-brand-red font-bold">[{totalItems}]</span>
-            </button>
-            
-            {/* HAMBURGER */}
-            <button 
-              onClick={() => setIsMobileMenuOpen(true)}
-              className="md:hidden font-mono text-[10px] uppercase tracking-widest text-white hover:text-brand-red transition-colors"
-            >
-              MENU
-            </button>
+              <path d="M12 2L4 7v6c0 5.55 3.84 10.74 8 12 4.16-1.26 8-6.45 8-12V7l-8-5z" />
+              <path d="M12 6v10M8 10h8" />
+            </svg>
           </div>
-        </div>
-      </header>
 
-      {/* MOBILE MENU */}
-      <AnimatePresence>
-        {isMobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="fixed inset-0 z-[100] bg-brand-black w-full h-[100dvh] flex flex-col"
+          {/* Wordmark Tipográfico em Libre Baskerville */}
+          <div className="flex flex-col">
+            <span className="font-serif text-base tracking-[0.25em] uppercase text-white group-hover:text-zinc-300 transition-colors duration-300">
+              LaRomme
+            </span>
+            <span className="font-mono text-[8px] text-zinc-600 tracking-widest uppercase -mt-1 hidden sm:block">
+              Opus Caementicium
+            </span>
+          </div>
+        </Link>
+
+        {/* NAVEGAÇÃO & ATALHOS */}
+        <div className="flex items-center gap-6 font-mono text-[10px] uppercase tracking-widest">
+          <Link 
+            href="/colecao/origo" 
+            className="text-zinc-400 hover:text-white transition-colors hidden sm:block"
           >
-            {/* Top Bar Interna */}
-            <div className="flex justify-between items-center px-6 py-6 border-b border-zinc-900">
-              <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="relative z-50 flex items-center">
-                <img 
-                  src="/logo-white.png" 
-                  alt="LaRomme" 
-                  className="h-9 w-auto object-contain mix-blend-screen" 
-                  style={{ mixBlendMode: 'screen' }}
-                />
-              </Link>
-              <button 
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="font-mono text-[10px] uppercase tracking-widest text-white hover:text-brand-red transition-colors p-2"
-              >
-                [ FECHAR ]
-              </button>
-            </div>
+            [ DOSSIÊ ORIGO ]
+          </Link>
+          <Link 
+            href="/acesso" 
+            className="text-white bg-zinc-900 hover:bg-brand-red border border-zinc-800 px-4 py-2 transition-all duration-300 shadow-lg"
+          >
+            [ SENADO VIP ]
+          </Link>
+        </div>
 
-            {/* Links Editoriais */}
-            <div className="flex-1 flex flex-col justify-center px-6 gap-8">
-              <Link href="/colecao/origo" onClick={() => setIsMobileMenuOpen(false)} className="font-serif text-4xl uppercase tracking-wider text-white hover:text-brand-red transition-colors">
-                Origo
-              </Link>
-              <Link href="/journal" onClick={() => setIsMobileMenuOpen(false)} className="font-serif text-4xl uppercase tracking-wider text-white hover:text-brand-red transition-colors">
-                Journal
-              </Link>
-              <Link href="/sobre" onClick={() => setIsMobileMenuOpen(false)} className="font-serif text-4xl uppercase tracking-wider text-white hover:text-brand-red transition-colors">
-                Manifesto
-              </Link>
-              
-              <div className="w-12 h-[1px] bg-zinc-800 my-4" />
-              
-              <Link href="/tamanho" onClick={() => setIsMobileMenuOpen(false)} className="font-mono text-[11px] text-zinc-400 uppercase tracking-widest hover:text-white transition-colors">
-                Guia de Medidas
-              </Link>
-              <Link href="/faq" onClick={() => setIsMobileMenuOpen(false)} className="font-mono text-[11px] text-zinc-400 uppercase tracking-widest hover:text-white transition-colors">
-                Diretrizes & FAQ
-              </Link>
-            </div>
-
-            {/* Call to Action Final */}
-            <div className="px-6 pb-12 mt-auto">
-              <Link href="/acesso" onClick={() => setIsMobileMenuOpen(false)} className="block w-full text-center bg-white text-brand-black py-5 font-mono text-[11px] uppercase tracking-widest hover:bg-brand-red hover:text-white transition-colors shadow-2xl">
-                [ Acessar Lote Zero ]
-              </Link>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+      </div>
+    </header>
   );
 }
