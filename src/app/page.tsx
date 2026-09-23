@@ -8,21 +8,19 @@ export default function HomePage() {
   return (
     <main className="relative bg-brand-black min-h-screen text-brand-offwhite overflow-hidden flex flex-col justify-between pt-24 selection:bg-brand-red selection:text-white">
       
-      {/* VÍDEO DA PRAIA (SUPORTE NATIVO LOCAL + FALLBACK COMPATÍVEL) */}
+      {/* VÍDEO DA PRAIA OFICIAL EM MP4 */}
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
         <video 
           autoPlay 
           loop 
           muted 
           playsInline 
-          className="absolute inset-0 w-full h-full object-cover scale-105 opacity-65 filter grayscale contrast-125"
+          className="absolute inset-0 w-full h-full object-cover scale-105 opacity-70 filter grayscale contrast-125"
         >
-          <source src="/praialandscape.mov" type="video/quicktime" />
-          <source src="/praialandscape.mov" type="video/mp4" />
-          <source src="https://assets.mixkit.co/videos/preview/mixkit-dramatic-dark-ocean-waves-42867-large.mp4" type="video/mp4" />
+          <source src="/praia.mp4" type="video/mp4" />
         </video>
 
-        {/* MÁSCARA DE CONTRASTE BRUTALISTA */}
+        {/* Máscara de Contraste Brutalista */}
         <div className="absolute inset-0 bg-black/35"></div>
         <div className="absolute inset-0 bg-gradient-to-b from-brand-black/80 via-transparent to-brand-black"></div>
       </div>
