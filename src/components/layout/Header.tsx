@@ -38,12 +38,12 @@ export function Header() {
       <header className={`fixed top-0 w-full z-40 transition-all duration-300 ${isScrolled ? 'bg-brand-black/95 backdrop-blur-md border-b border-zinc-900 py-4' : 'bg-transparent py-6'}`}>
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
           
-          {/* LOGO OFICIAL */}
+          {/* LOGO PNG OFICIAL BRANCA */}
           <Link href="/" className="relative z-50 flex items-center">
             <img 
-              src="/logo.jpeg" 
+              src="/logo-white.png" 
               alt="LaRomme" 
-              className="h-8 w-auto object-contain hover:opacity-80 transition-opacity" 
+              className="h-9 w-auto object-contain hover:opacity-80 transition-opacity" 
             />
           </Link>
 
@@ -86,13 +86,13 @@ export function Header() {
             transition={{ duration: 0.3, ease: 'easeOut' }}
             className="fixed inset-0 z-[100] bg-brand-black w-full h-[100dvh] flex flex-col"
           >
-            {/* Top Bar Interna do Menu */}
+            {/* Top Bar Interna */}
             <div className="flex justify-between items-center px-6 py-6 border-b border-zinc-900">
               <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="relative z-50 flex items-center">
                 <img 
-                  src="/logo.jpeg" 
+                  src="/logo-white.png" 
                   alt="LaRomme" 
-                  className="h-8 w-auto object-contain" 
+                  className="h-9 w-auto object-contain" 
                 />
               </Link>
               <button 
