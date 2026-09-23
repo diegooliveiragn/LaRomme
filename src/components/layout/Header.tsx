@@ -21,12 +21,10 @@ export function Header() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Fechar o menu automaticamente ao trocar de página
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
-  // Travar o scroll da página quando o menu mobile estiver aberto
   useEffect(() => {
     if (isMobileMenuOpen) {
       document.body.style.overflow = 'hidden';
@@ -40,9 +38,13 @@ export function Header() {
       <header className={`fixed top-0 w-full z-40 transition-all duration-300 ${isScrolled ? 'bg-brand-black/95 backdrop-blur-md border-b border-zinc-900 py-4' : 'bg-transparent py-6'}`}>
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center">
           
-          {/* LOGO */}
-          <Link href="/" className="font-serif text-2xl tracking-widest text-white relative z-50">
-            LR
+          {/* LOGO OFICIAL */}
+          <Link href="/" className="relative z-50 flex items-center">
+            <img 
+              src="/logo.jpeg" 
+              alt="LaRomme" 
+              className="h-8 w-auto object-contain hover:opacity-80 transition-opacity" 
+            />
           </Link>
 
           {/* DESKTOP NAV */}
@@ -63,7 +65,7 @@ export function Header() {
               Sacola [{cartItemsCount}]
             </button>
             
-            {/* HAMBURGER (Apenas Mobile) */}
+            {/* HAMBURGER */}
             <button 
               onClick={() => setIsMobileMenuOpen(true)}
               className="md:hidden font-mono text-[10px] uppercase tracking-widest text-white hover:text-brand-red transition-colors"
@@ -74,7 +76,7 @@ export function Header() {
         </div>
       </header>
 
-      {/* MOBILE MENU FULLSCREEN (100% Sólido) */}
+      {/* MOBILE MENU */}
       <AnimatePresence>
         {isMobileMenuOpen && (
           <motion.div
@@ -86,8 +88,12 @@ export function Header() {
           >
             {/* Top Bar Interna do Menu */}
             <div className="flex justify-between items-center px-6 py-6 border-b border-zinc-900">
-              <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="font-serif text-2xl tracking-widest text-brand-red">
-                LR
+              <Link href="/" onClick={() => setIsMobileMenuOpen(false)} className="relative z-50 flex items-center">
+                <img 
+                  src="/logo.jpeg" 
+                  alt="LaRomme" 
+                  className="h-8 w-auto object-contain" 
+                />
               </Link>
               <button 
                 onClick={() => setIsMobileMenuOpen(false)}
