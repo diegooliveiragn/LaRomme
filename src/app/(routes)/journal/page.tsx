@@ -8,27 +8,27 @@ export default function JournalPage() {
     { 
       title: 'MATERIAL', 
       desc: 'Texturas, gramaturas e a física por trás do toque.',
-      img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=1200&auto=format&fit=crop'
+      img: '/images/material.jpg'
     },
     { 
       title: 'MOVEMENT', 
       desc: 'O corpo no espaço. A roupa em estado de tensão.',
-      img: 'https://images.unsplash.com/photo-1505142468610-359e7d316be0?q=80&w=1200&auto=format&fit=crop'
+      img: '/images/movement.jpg'
     },
     { 
       title: 'TERRITORY', 
       desc: 'A arquitetura, a luz e o chão de Fortaleza.',
-      img: 'https://images.unsplash.com/photo-1513694203232-719a280e022f?q=80&w=1200&auto=format&fit=crop'
+      img: '/images/territory.jpg'
     },
     { 
       title: 'CULTURE', 
       desc: 'As referências romanas decodificadas para o presente.',
-      img: 'https://images.unsplash.com/photo-1549887552-cb1071d3e5ca?q=80&w=1200&auto=format&fit=crop'
+      img: '/images/culture.jpg'
     },
     { 
       title: 'PROCESS', 
       desc: 'O desenvolvimento, a modelagem e as decisões de design.',
-      img: 'https://images.unsplash.com/photo-1618218168350-6e7c81151b64?q=80&w=1200&auto=format&fit=crop'
+      img: '/images/process.jpg'
     },
     { 
       title: 'HERITAGE', 
@@ -69,12 +69,10 @@ export default function JournalPage() {
               variants={fadeInUpVariants}
               className="group relative overflow-hidden border border-zinc-900 min-h-[380px] flex flex-col justify-end p-8 cursor-pointer bg-zinc-950"
             >
-              {/* Imagem */}
               <div 
                 className="absolute inset-0 bg-cover bg-center grayscale opacity-40 group-hover:opacity-80 group-hover:scale-105 transition-all duration-[1.2s] ease-out" 
                 style={{ backgroundImage: `url('${cat.img}')` }}
               />
-              {/* Sombras de Leitura */}
               <div className="absolute inset-0 bg-gradient-to-t from-brand-black via-brand-black/40 to-transparent opacity-80 group-hover:opacity-60 transition-opacity duration-500" />
               
               <div className="relative z-10 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500 ease-out">

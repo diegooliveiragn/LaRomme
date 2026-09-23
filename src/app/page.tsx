@@ -16,8 +16,6 @@ export default function Home() {
       
       {/* 1. IMPACT (Hero com Vídeo Local) */}
       <section className="relative h-screen flex flex-col items-center justify-center border-b border-zinc-900 overflow-hidden">
-        
-        {/* Background Video Apontando para Arquivo Local */}
         <video
           autoPlay
           loop
@@ -26,10 +24,9 @@ export default function Home() {
           poster="https://images.unsplash.com/photo-1518331647614-7a1f04cd34af?q=80&w=2070&auto=format&fit=crop"
           className="absolute inset-0 w-full h-full object-cover grayscale opacity-40 mix-blend-luminosity scale-105"
         >
-          {/* Este arquivo será adicionado por você na pasta public */}
-          <source src="/hero-loop.mp4" type="video/mp4" />`n          <source src="/hero-loop.mov" type="video/quicktime" />
+          <source src="/hero-loop.mp4" type="video/mp4" />
+          <source src="/hero-loop.mov" type="video/quicktime" />
         </video>
-
         <div className="absolute inset-0 bg-gradient-to-b from-brand-black/30 via-brand-black/60 to-brand-black" />
         
         <motion.div
@@ -65,11 +62,11 @@ export default function Home() {
         </motion.div>
       </section>
 
-      {/* 3. ORIGO (Fundo corrigido: sem fixed, estátua romana legível) */}
+      {/* 3. ORIGO (Foto Autoral: Territorio e Mar) */}
       <section className="relative py-40 px-6 border-b border-zinc-900 overflow-hidden">
         <div 
           className="absolute inset-0 bg-cover bg-center grayscale opacity-30"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1533035353720-f1c6a75ce8c4?q=80&w=2000&auto=format&fit=crop')" }}
+          style={{ backgroundImage: "url('/images/territorio-mar.jpg')" }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-brand-black via-brand-black/60 to-brand-black" />
         
@@ -100,11 +97,11 @@ export default function Home() {
         <ArchitectureOfMovement />
       </section>
 
-      {/* 6. MANIFESTO & ORIGIN */}
+      {/* 6. MANIFESTO & ORIGIN (Foto Autoral: Cidade Velha) */}
       <section className="relative py-40 px-6 border-b border-zinc-900 overflow-hidden">
         <div 
-          className="absolute inset-0 bg-cover bg-center grayscale opacity-10"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1600607686527-6fb886090705?q=80&w=2000&auto=format&fit=crop')" }}
+          className="absolute inset-0 bg-cover bg-center grayscale opacity-20"
+          style={{ backgroundImage: "url('/images/cidade-velha.jpg')" }}
         />
         <div className="absolute inset-0 bg-brand-black/80" />
         
