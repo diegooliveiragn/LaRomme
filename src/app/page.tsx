@@ -27,7 +27,7 @@ export default function Home() {
           className="absolute inset-0 w-full h-full object-cover grayscale opacity-40 mix-blend-luminosity scale-105"
         >
           {/* Este arquivo será adicionado por você na pasta public */}
-          <source src="/hero-loop.mp4" type="video/mp4" />
+          <source src="/hero-loop.mp4" type="video/mp4" />`n          <source src="/hero-loop.mov" type="video/quicktime" />
         </video>
 
         <div className="absolute inset-0 bg-gradient-to-b from-brand-black/30 via-brand-black/60 to-brand-black" />
