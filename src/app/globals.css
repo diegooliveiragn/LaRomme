@@ -1,0 +1,7 @@
+﻿
+/* TRAVA DE SEGURANÇA CONTRA OVER-SCROLL BRANCO NO MOBILE */
+html, body {
+  background-color: #000000 !important;
+  overscroll-behavior-y: none;
+  -webkit-tap-highlight-color: transparent;
+}
