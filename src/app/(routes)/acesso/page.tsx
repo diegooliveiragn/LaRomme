@@ -1,147 +1,105 @@
 'use client';
 
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FadeIn } from '@/components/ui/FadeIn';
+import { supabase } from '@/lib/supabase';
 
-export default function AcessoPage() {
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '', instagram: '' });
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [errorMessage, setErrorMessage] = useState('');
+export default function AccessPage() {
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setStatus('loading');
-    setErrorMessage('');
+    if (!email) return;
+
+    setIsSubmitting(true);
+    
+    await new Promise(resolve => setTimeout(resolve, 800));
 
     try {
-      const res = await fetch('/api/acesso', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+      const { error } = await supabase
+        .from('senado_vip')
+        .insert([{ email: email, origin: 'acesso_page', status: 'pending' }]);
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Erro ao registrar acesso.');
-      }
-
+      if (error) throw error;
       setStatus('success');
-      setFormData({ name: '', email: '', phone: '', instagram: '' });
-    } catch (err: any) {
+    } catch (err) {
+      console.error(err);
       setStatus('error');
-      setErrorMessage(err.message || 'Falha na conexão com os servidores.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="bg-brand-black min-h-screen text-brand-offwhite pt-32 pb-32 px-6 flex items-center justify-center">
-      <div className="max-w-2xl w-full mx-auto space-y-12">
-        
-        {/* Cabeçalho */}
-        <div className="text-center space-y-4 border-b border-zinc-900 pb-8">
-          <span className="font-mono text-[10px] text-brand-red uppercase tracking-widest block">
-            Acesso Restrito // Lista VIP
-          </span>
-          <h1 className="font-serif text-4xl sm:text-5xl uppercase tracking-wider text-white">
-            Lote Zero
-          </h1>
-          <p className="font-sans text-xs text-zinc-400 uppercase tracking-widest max-w-md mx-auto leading-relaxed">
-            Inscreva suas coordenadas para garantir prioridade de alocação no primeiro Drop da coleção Origo.
-          </p>
-        </div>
+    <main className="relative min-h-screen bg-brand-black flex flex-col justify-center items-center pt-24 px-6 overflow-hidden">
+      <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-zinc-900/40 via-brand-black to-brand-black pointer-events-none"></div>
 
-        {/* Formulário ou Feedback de Sucesso */}
-        {status === 'success' ? (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            className="bg-zinc-950 border border-zinc-800 p-8 text-center space-y-6 shadow-2xl"
-          >
-            <span className="font-mono text-[10px] text-brand-red uppercase tracking-widest block">
-              PROTOCOLO CONFIRMADO // LEI DE PRIORIDADE
-            </span>
-            <h2 className="font-serif text-2xl uppercase text-white">
-              Sua chave de acesso foi gerada
-            </h2>
-            <p className="font-mono text-xs text-zinc-400 max-w-sm mx-auto">
-              Você receberá a notificação de abertura do Lote Zero antes do lançamento oficial público.
+      <div className="relative z-10 w-full max-w-md mx-auto">
+        <FadeIn direction="up">
+          <div className="text-center mb-12">
+            <span className="font-mono text-[9px] text-zinc-500 uppercase tracking-[0.3em] block mb-4">Protocolo de Entrada</span>
+            <h1 className="font-serif text-3xl sm:text-4xl text-white uppercase tracking-wider mb-4">Senado VIP</h1>
+            <p className="font-sans text-xs text-zinc-400 uppercase tracking-widest leading-relaxed">
+              O Lote Zero é classificado. <br/> Insira suas credenciais para solicitar decodificação.
             </p>
-            <button 
-              onClick={() => setStatus('idle')}
-              className="border border-zinc-800 text-zinc-400 hover:text-white px-8 py-3 font-mono text-[10px] uppercase tracking-widest transition-colors"
-            >
-              [ Registrar Novo Acesso ]
-            </button>
-          </motion.div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-4">
-              <div>
-                <label className="font-mono text-[9px] text-zinc-500 uppercase tracking-widest block mb-2">Nome Completo</label>
-                <input 
-                  type="text" 
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="EX: ARTHUR ROMME" 
-                  className="w-full bg-zinc-950 border border-zinc-800 p-4 font-mono text-[10px] uppercase tracking-widest text-white placeholder-zinc-700 focus:outline-none focus:border-white transition-colors"
-                />
-              </div>
+          </div>
 
-              <div>
-                <label className="font-mono text-[9px] text-zinc-500 uppercase tracking-widest block mb-2">E-mail de Acesso</label>
-                <input 
-                  type="email" 
-                  required
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="E-MAIL@DOMINIO.COM" 
-                  className="w-full bg-zinc-950 border border-zinc-800 p-4 font-mono text-[10px] uppercase tracking-widest text-white placeholder-zinc-700 focus:outline-none focus:border-white transition-colors"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="font-mono text-[9px] text-zinc-500 uppercase tracking-widest block mb-2">Telefone / WhatsApp</label>
-                  <input 
-                    type="text" 
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    placeholder="(11) 99999-9999" 
-                    className="w-full bg-zinc-950 border border-zinc-800 p-4 font-mono text-[10px] uppercase tracking-widest text-white placeholder-zinc-700 focus:outline-none focus:border-white transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="font-mono text-[9px] text-zinc-500 uppercase tracking-widest block mb-2">Instagram (Opcional)</label>
-                  <input 
-                    type="text" 
-                    value={formData.instagram}
-                    onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
-                    placeholder="@SEUPERFIL" 
-                    className="w-full bg-zinc-950 border border-zinc-800 p-4 font-mono text-[10px] uppercase tracking-widest text-white placeholder-zinc-700 focus:outline-none focus:border-white transition-colors"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {status === 'error' && (
-              <div className="border border-brand-red/50 bg-brand-red/10 p-4 font-mono text-[10px] text-brand-red uppercase tracking-widest text-center">
-                {errorMessage}
-              </div>
-            )}
-
-            <button 
-              type="submit"
-              disabled={status === 'loading'}
-              className="w-full bg-white text-brand-black py-5 font-mono text-[11px] uppercase tracking-widest hover:bg-brand-red hover:text-white transition-colors duration-300 shadow-2xl disabled:opacity-50"
-            >
-              {status === 'loading' ? '[ REGISTRANDO PROTOCOLO... ]' : '[ SOLICITAR ACESSO VIP ]'}
-            </button>
-          </form>
-        )}
-
+          <div className="bg-zinc-950/80 border border-zinc-900/80 p-8 backdrop-blur-sm relative overflow-hidden">
+            <AnimatePresence mode="wait">
+              {status === 'idle' || status === 'error' ? (
+                <motion.form 
+                  key="form"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  onSubmit={handleSubmit} 
+                  className="space-y-6"
+                >
+                  <div className="space-y-2">
+                    <label htmlFor="email" className="font-mono text-[8px] text-zinc-500 uppercase tracking-widest">Identificação (E-mail)</label>
+                    <input 
+                      type="email" 
+                      id="email" 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="seu@email.com"
+                      className="w-full bg-brand-black border-b border-zinc-800 px-0 py-3 font-mono text-sm text-white placeholder-zinc-700 focus:outline-none focus:border-white transition-colors rounded-none"
+                      required
+                    />
+                  </div>
+                  {status === 'error' && (
+                    <p className="font-mono text-[9px] text-brand-red uppercase tracking-wider">Falha na decodificação. E-mail já registrado ou conexão instável.</p>
+                  )}
+                  <button type="submit" disabled={isSubmitting} className="w-full bg-white text-brand-black py-4 font-mono text-[10px] uppercase tracking-widest hover:bg-brand-red hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-wait">
+                    {isSubmitting ? '[ PROCESSANDO... ]' : '[ DECODIFICAR ACESSO ]'}
+                  </button>
+                </motion.form>
+              ) : (
+                <motion.div 
+                  key="success"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="text-center py-6 space-y-6"
+                >
+                  <div className="w-12 h-12 mx-auto border border-zinc-800 rounded-full flex items-center justify-center bg-brand-black relative">
+                    <span className="w-2 h-2 bg-brand-red rounded-full animate-pulse"></span>
+                    <span className="absolute w-full h-full border border-brand-red rounded-full animate-ping opacity-20"></span>
+                  </div>
+                  <div className="space-y-2">
+                    <h3 className="font-serif text-xl text-white uppercase tracking-widest">Credenciais Recebidas</h3>
+                    <p className="font-mono text-[10px] text-zinc-500 uppercase tracking-widest leading-relaxed">Seu dossiê está em análise. O acesso ao Cofre do Lote Zero será enviado por canal seguro (e-mail) caso aprovado.</p>
+                  </div>
+                  <Link href="/" className="inline-block mt-4 text-zinc-400 font-mono text-[9px] uppercase tracking-[0.2em] hover:text-white border-b border-zinc-800 pb-1 hover:border-white transition-colors">Retornar à Base</Link>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </FadeIn>
       </div>
-    </div>
+    </main>
   );
 }
