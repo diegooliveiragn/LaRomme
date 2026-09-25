@@ -1,198 +1,165 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { useCart } from '@/context/CartContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
+
+// Inicializando o motor visual do MP com a Chave PÚBLICA.
+initMercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY || '', { locale: 'pt-BR' });
 
 export default function CheckoutPage() {
-  const { items, subtotal } = useCart() as any;
-  const [mounted, setMounted] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('pix');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paymentStatus, setPaymentStatus] = useState<any>(null);
+  const [pixCode, setPixCode] = useState('');
+  const [qrCodeImg, setQrCodeImg] = useState('');
 
-  // Estados do Endereço
-  const [cep, setCep] = useState('');
-  const [endereco, setEndereco] = useState('');
-  const [bairro, setBairro] = useState('');
-  const [cidade, setCidade] = useState('');
-  const [estado, setEstado] = useState('');
-  const [numero, setNumero] = useState('');
-  const [complemento, setComplemento] = useState('');
-  const [isLoadingCep, setIsLoadingCep] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
-
-  const cartItems = items || [];
-
-  // Lógica Automática de Busca de CEP
-  const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, ''); // Apenas números
-    if (value.length > 8) value = value.slice(0, 8);
-    setCep(value);
-
-    if (value.length === 8) {
-      setIsLoadingCep(true);
-      try {
-        const response = await fetch(`https://viacep.com.br/ws/${value}/json/`);
-        const data = await response.json();
-        
-        if (!data.erro) {
-          setEndereco(data.logradouro || '');
-          setBairro(data.bairro || '');
-          setCidade(data.localidade || '');
-          setEstado(data.uf || '');
-        } else {
-          setEndereco(''); setBairro(''); setCidade(''); setEstado('');
+  const customization = {
+    paymentMethods: {
+      pix: 'all',
+      creditCard: 'all',
+      maxInstallments: 3,
+    },
+    visual: {
+      style: {
+        theme: 'dark', // Essencial para o estilo brutalista da LaRomme
+        customVariables: {
+          textPrimaryColor: '#FFFFFF',
+          textSecondaryColor: '#9CA3AF',
+          inputBackgroundColor: '#09090b',
+          inputTextColor: '#FFFFFF',
+          baseColor: '#FFFFFF',
         }
-      } catch (error) {
-        console.error("Erro ao buscar CEP", error);
-      } finally {
-        setIsLoadingCep(false);
       }
     }
   };
 
-  const handleCheckoutProcess = () => {
-    setIsProcessing(true);
-    // Simulação de processamento (Aqui entrará o Stripe/MercadoPago no futuro)
-    setTimeout(() => {
-      alert("Integração financeira em modo 'on-hold'. A captação de dados logísticos foi validada.");
-      setIsProcessing(false);
-    }, 2000);
+  const initialization = {
+    amount: 320.00, // Valor exemplo da camiseta Origo
+    preferenceId: 'simulacao_lote_zero',
   };
 
-  if (cartItems.length === 0) {
-    return (
-      <div className="bg-brand-black min-h-screen text-brand-offwhite flex flex-col items-center justify-center pt-32 pb-32 px-6">
-        <span className="font-mono text-[10px] text-zinc-600 block uppercase tracking-widest mb-4">STATUS: 404 // SACOLA VAZIA</span>
-        <h1 className="font-serif text-3xl uppercase tracking-wider text-white mb-8">Sua alocação está vazia</h1>
-        <Link href="/colecao/origo" className="bg-white text-brand-black px-8 py-4 font-mono text-[10px] uppercase tracking-widest hover:bg-brand-red hover:text-white transition-colors shadow-2xl">
-          [ Retornar à Coleção ]
-        </Link>
-      </div>
-    );
-  }
+  const onSubmit = async (formData: any) => {
+    setIsProcessing(true);
+    setPaymentStatus(null);
+    setPixCode('');
 
-  const frete: number = 0;
-  const numericSubtotal = Number(subtotal) || 0;
-  const total = numericSubtotal + frete;
+    try {
+      // 1. Enviar os dados do cliente para o NOSSO backend seguro
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+      
+      // 2. Tratar a resposta
+      if (data.status === 'approved') {
+        setPaymentStatus('approved');
+      } else if (data.status === 'pending' && data.qr_code) {
+        // Se for Pix, o banco retorna o status pendente e os códigos
+        setPaymentStatus('pix_pending');
+        setPixCode(data.qr_code);
+        setQrCodeImg(`data:image/jpeg;base64,${data.qr_code_base64}`);
+      } else {
+        setPaymentStatus('rejected');
+      }
+    } catch (error) {
+      console.error(error);
+      setPaymentStatus('error');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
-    <div className="bg-brand-black min-h-screen text-brand-offwhite pt-32 pb-32 px-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-12 border-b border-zinc-900 pb-6">
-          <span className="font-mono text-[10px] text-brand-red uppercase tracking-widest block mb-2">Protocolo de Transferência</span>
-          <h1 className="font-serif text-3xl sm:text-4xl uppercase tracking-wider text-white">Checkout</h1>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
-          
-          {/* COLUNA ESQUERDA: FORMULÁRIOS */}
-          <div className="lg:col-span-7 space-y-12">
-            
-            {/* Bloco 1: Identificação */}
-            <section className="space-y-6">
-              <h2 className="font-mono text-[11px] text-zinc-400 uppercase tracking-widest border-b border-zinc-900 pb-3">01. Identificação</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <input type="text" placeholder="NOME COMPLETO" className="w-full bg-zinc-950 border border-zinc-800 p-4 font-mono text-[10px] uppercase tracking-widest text-white placeholder-zinc-600 focus:outline-none focus:border-white transition-colors" />
-                <input type="email" placeholder="E-MAIL (CHAVE DE ACESSO)" className="w-full bg-zinc-950 border border-zinc-800 p-4 font-mono text-[10px] uppercase tracking-widest text-white placeholder-zinc-600 focus:outline-none focus:border-white transition-colors" />
-                <input type="text" placeholder="CPF" className="w-full bg-zinc-950 border border-zinc-800 p-4 font-mono text-[10px] uppercase tracking-widest text-white placeholder-zinc-600 focus:outline-none focus:border-white transition-colors sm:col-span-2" />
-              </div>
-            </section>
-
-            {/* Bloco 2: Logística (ViaCEP Automático) */}
-            <section className="space-y-6">
-              <div className="flex justify-between items-end border-b border-zinc-900 pb-3">
-                <h2 className="font-mono text-[11px] text-zinc-400 uppercase tracking-widest">02. Coordenadas de Envio</h2>
-                {isLoadingCep && <span className="font-mono text-[9px] text-brand-red animate-pulse">Buscando coordenadas...</span>}
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <input type="text" value={cep} onChange={handleCepChange} placeholder="CEP (APENAS NÚMEROS)" maxLength={8} className="w-full bg-zinc-950 border border-zinc-800 p-4 font-mono text-[10px] uppercase tracking-widest text-white placeholder-zinc-600 focus:outline-none focus:border-white transition-colors sm:col-span-1" />
-                <input type="text" value={endereco} onChange={(e) => setEndereco(e.target.value)} placeholder="ENDEREÇO" className="w-full bg-zinc-950 border border-zinc-800 p-4 font-mono text-[10px] uppercase tracking-widest text-white placeholder-zinc-600 focus:outline-none focus:border-white transition-colors sm:col-span-2" />
-                <input type="text" value={numero} onChange={(e) => setNumero(e.target.value)} placeholder="NÚMERO" className="w-full bg-zinc-950 border border-zinc-800 p-4 font-mono text-[10px] uppercase tracking-widest text-white placeholder-zinc-600 focus:outline-none focus:border-white transition-colors" />
-                <input type="text" value={complemento} onChange={(e) => setComplemento(e.target.value)} placeholder="COMPLEMENTO" className="w-full bg-zinc-950 border border-zinc-800 p-4 font-mono text-[10px] uppercase tracking-widest text-white placeholder-zinc-600 focus:outline-none focus:border-white transition-colors sm:col-span-2" />
-                <input type="text" value={bairro} onChange={(e) => setBairro(e.target.value)} placeholder="BAIRRO" className="w-full bg-zinc-950 border border-zinc-800 p-4 font-mono text-[10px] uppercase tracking-widest text-white placeholder-zinc-600 focus:outline-none focus:border-white transition-colors sm:col-span-3" />
-                <input type="text" value={cidade} onChange={(e) => setCidade(e.target.value)} placeholder="CIDADE" className="w-full bg-zinc-950 border border-zinc-800 p-4 font-mono text-[10px] uppercase tracking-widest text-white placeholder-zinc-600 focus:outline-none focus:border-white transition-colors sm:col-span-2" />
-                <input type="text" value={estado} onChange={(e) => setEstado(e.target.value)} placeholder="ESTADO (UF)" className="w-full bg-zinc-950 border border-zinc-800 p-4 font-mono text-[10px] uppercase tracking-widest text-white placeholder-zinc-600 focus:outline-none focus:border-white transition-colors sm:col-span-1" />
-              </div>
-            </section>
-
-            {/* Bloco 3: Pagamento */}
-            <section className="space-y-6">
-              <h2 className="font-mono text-[11px] text-zinc-400 uppercase tracking-widest border-b border-zinc-900 pb-3">03. Método de Liquidação</h2>
-              <div className="grid grid-cols-2 gap-4">
-                <button onClick={() => setPaymentMethod('pix')} className={`p-6 border transition-all duration-300 flex flex-col items-center justify-center gap-2 ${paymentMethod === 'pix' ? 'border-brand-red bg-zinc-900' : 'border-zinc-800 bg-zinc-950 hover:border-zinc-500'}`}>
-                  <span className="font-mono text-[11px] uppercase tracking-widest text-white">PIX</span>
-                  <span className="font-mono text-[9px] text-zinc-500">Aprovação Imediata</span>
-                </button>
-                <button onClick={() => setPaymentMethod('card')} className={`p-6 border transition-all duration-300 flex flex-col items-center justify-center gap-2 ${paymentMethod === 'card' ? 'border-brand-red bg-zinc-900' : 'border-zinc-800 bg-zinc-950 hover:border-zinc-500'}`}>
-                  <span className="font-mono text-[11px] uppercase tracking-widest text-white">CARTÃO</span>
-                  <span className="font-mono text-[9px] text-zinc-500">Até 3x sem juros</span>
-                </button>
-              </div>
-            </section>
-          </div>
-
-          {/* COLUNA DIREITA: RESUMO DA COMPRA (STICKY) */}
-          <div className="lg:col-span-5 lg:sticky lg:top-32">
-            <div className="bg-zinc-950 border border-zinc-900 p-6 sm:p-8 space-y-8 shadow-2xl">
-              <h2 className="font-serif text-xl uppercase tracking-wider text-white border-b border-zinc-900 pb-4">Estrutura de Alocação</h2>
-              
-              <div className="space-y-4 max-h-[30vh] overflow-y-auto pr-2 custom-scrollbar">
-                {cartItems.map((item: any, idx: number) => (
-                  <div key={idx} className="flex gap-4 items-center">
-                    <div className="w-12 h-16 bg-zinc-900 relative overflow-hidden border border-zinc-800 flex-shrink-0">
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover grayscale" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-serif text-[12px] uppercase tracking-wider text-white">{item.name}</h3>
-                      <p className="font-mono text-[9px] text-zinc-500 uppercase">Tam: {item.size} | Qtd: {item.quantity}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-mono text-[11px] text-white">R$ {(Number(item.price) * Number(item.quantity)).toFixed(2)}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="border-t border-zinc-900 pt-6 space-y-4 font-mono text-xs text-zinc-400">
-                <div className="flex justify-between">
-                  <span>Subtotal</span>
-                  <span className="text-white">R$ {numericSubtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Logística (Envio)</span>
-                  <span className="text-white">{frete === 0 ? 'LOTE ZERO (ISENTO)' : `R$ ${frete.toFixed(2)}`}</span>
-                </div>
-                <div className="border-t border-zinc-900 pt-4 flex justify-between font-mono text-sm text-white font-bold">
-                  <span>Total</span>
-                  <span className="text-brand-red">R$ {total.toFixed(2)}</span>
-                </div>
-              </div>
-
-              {/* Botão com Loading State */}
-              <button 
-                onClick={handleCheckoutProcess}
-                disabled={isProcessing}
-                className="w-full bg-white text-brand-black py-5 font-mono text-[11px] uppercase tracking-widest hover:bg-brand-red hover:text-white transition-colors duration-300 mt-8 shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isProcessing ? '[ PROCESSANDO PROTOCOLO... ]' : '[ Processar Liquidação ]'}
-              </button>
-              
-              <div className="text-center mt-4">
-                <span className="font-mono text-[9px] text-zinc-600 uppercase tracking-widest">
-                  Transação protegida por criptografia ponta a ponta.
-                </span>
-              </div>
+    <main className="min-h-screen bg-brand-black text-white pt-24 px-6 pb-20 font-mono">
+      <div className="max-w-4xl mx-auto flex flex-col md:flex-row gap-12">
+        
+        {/* Lado Esquerdo: Resumo do Lote */}
+        <div className="w-full md:w-1/3">
+          <h2 className="font-serif text-xl uppercase tracking-widest mb-6 border-b border-zinc-800 pb-2">Manifesto</h2>
+          <div className="bg-zinc-950 border border-zinc-900 p-6 space-y-4">
+            <div>
+              <span className="block text-[9px] text-zinc-500 uppercase tracking-widest">Item</span>
+              <span className="text-sm font-bold text-white uppercase tracking-wider">Camiseta Boxy Heavyweight - Origo</span>
+            </div>
+            <div className="flex justify-between border-t border-zinc-900 pt-4">
+              <span className="text-[10px] text-zinc-400 uppercase tracking-widest">Subtotal</span>
+              <span className="text-xs">R$ 320,00</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-[10px] text-zinc-400 uppercase tracking-widest">Frete (VIP)</span>
+              <span className="text-xs text-brand-red">Cortesia</span>
+            </div>
+            <div className="flex justify-between border-t border-zinc-800 pt-4">
+              <span className="text-xs font-bold text-white uppercase tracking-widest">Total</span>
+              <span className="text-sm font-bold">R$ 320,00</span>
             </div>
           </div>
+        </div>
 
+        {/* Lado Direito: Adquirente */}
+        <div className="w-full md:w-2/3">
+          <h1 className="font-serif text-2xl sm:text-3xl uppercase tracking-wider mb-2">Checkout Criptografado</h1>
+          <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-8">Conexão segura com Mercado Pago Adquirente S.A.</p>
+
+          <AnimatePresence mode="wait">
+            {!paymentStatus && (
+              <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                 <div className="bg-zinc-950/50 p-1 rounded-sm">
+                   {/* O componente mágico do SDK que renderiza o formulário dark */}
+                   <Payment
+                      initialization={initialization}
+                      customization={customization as any}
+                      onSubmit={onSubmit as any}
+                   />
+                 </div>
+              </motion.div>
+            )}
+
+            {isProcessing && !paymentStatus && (
+              <div className="text-center py-20 text-[10px] text-zinc-500 uppercase tracking-widest animate-pulse border border-zinc-900 bg-zinc-950">
+                Processando Transação...
+              </div>
+            )}
+
+            {paymentStatus === 'approved' && (
+              <motion.div key="approved" initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-zinc-950 border border-zinc-800 p-8 text-center space-y-4">
+                <div className="w-12 h-12 border border-white mx-auto rounded-full flex items-center justify-center bg-white text-black font-bold">✓</div>
+                <h3 className="font-serif text-xl uppercase tracking-widest">Transação Aprovada</h3>
+                <p className="text-[10px] text-zinc-400 uppercase tracking-widest">A alocação do seu lote foi confirmada. Acompanhe a esteira de produção (Arella) via e-mail.</p>
+              </motion.div>
+            )}
+
+            {paymentStatus === 'pix_pending' && (
+              <motion.div key="pix" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-zinc-950 border border-zinc-800 p-8 space-y-6 text-center">
+                <h3 className="font-serif text-xl uppercase tracking-widest text-brand-red">Protocolo Pix Gerado</h3>
+                <p className="text-[10px] text-zinc-400 uppercase tracking-widest">O código é válido por 30 minutos. A alocação da peça será garantida após a compensação.</p>
+                
+                {qrCodeImg && (
+                  <div className="bg-white p-4 inline-block mx-auto border-4 border-zinc-800">
+                    <img src={qrCodeImg} alt="QR Code PIX" className="w-48 h-48" />
+                  </div>
+                )}
+                
+                <div className="space-y-2">
+                  <span className="block text-[9px] text-zinc-500 uppercase tracking-widest">Pix Copia e Cola</span>
+                  <input type="text" value={pixCode} readOnly className="w-full bg-brand-black border border-zinc-800 p-3 text-[10px] text-zinc-300 font-mono text-center focus:outline-none" />
+                </div>
+              </motion.div>
+            )}
+
+            {(paymentStatus === 'rejected' || paymentStatus === 'error') && (
+              <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-brand-red/10 border border-brand-red p-8 text-center space-y-4">
+                <h3 className="font-serif text-xl text-brand-red uppercase tracking-widest">Falha na Liquidação</h3>
+                <p className="text-[10px] text-zinc-300 uppercase tracking-widest">Seu banco recusou a transação ou houve instabilidade na rede adquirente.</p>
+                <button onClick={() => setPaymentStatus(null)} className="mt-4 border border-zinc-800 px-4 py-2 text-[9px] uppercase tracking-widest hover:bg-zinc-900 transition-colors">Tentar Novamente</button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
-    </div>
+    </main>
   );
 }
