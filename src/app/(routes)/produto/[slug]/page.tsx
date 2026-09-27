@@ -1,165 +1,153 @@
 'use client';
 
-import { useState } from 'react';
-import { notFound } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
-import { PRODUCTS_ORIGO } from '@/data/products';
-import { useCart } from '@/context/CartContext';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
-// Componente: Gaveta Brutalista (Acordeão)
-const Accordion = ({ title, children, defaultOpen = false }: any) => {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-  return (
-    <div className="border-b border-zinc-900">
-      <button 
-        onClick={() => setIsOpen(!isOpen)} 
-        className="w-full py-5 flex justify-between items-center text-left hover:text-brand-red transition-colors"
-      >
-        <span className="font-mono text-[10px] uppercase tracking-widest">{title}</span>
-        <span className="font-mono text-[14px]">{isOpen ? '-' : '+'}</span>
-      </button>
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div 
-            initial={{ height: 0, opacity: 0 }} 
-            animate={{ height: 'auto', opacity: 1 }} 
-            exit={{ height: 0, opacity: 0 }} 
-            className="overflow-hidden"
-          >
-            <div className="pb-6 font-sans text-xs text-zinc-400 uppercase tracking-widest leading-relaxed">
-              {children}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
+export default function ProdutoPage({ params }: { params: { slug: string } }) {
+  const router = useRouter();
+  const [selectedSize, setSelectedSize] = useState<string | null>(null);
 
-export default function ProductPage({ params }: { params: { slug: string } }) {
-  const rawProduct = PRODUCTS_ORIGO.find((p) => p.slug === params.slug);
-  const cart = useCart() as any;
-  const [selectedSize, setSelectedSize] = useState<string>('');
+  // Mock do Lote Zero
+  const stock = { P: 8, M: 0, G: 15, GG: 5 };
 
-  if (!rawProduct) return notFound();
-
-  // Cast seguro para permitir acesso resiliente a propriedades do objeto
-  const product = rawProduct as any;
-
-  const handleAddToCart = () => {
-    if (!selectedSize) {
-      alert('Aviso: Selecione a dimensão estrutural antes de alocar o artefato.');
-      return;
+  // --- MOTOR DE TELEMETRIA (OLHO DE DEUS) ---
+  const trackEvent = async (eventType: string, details: any) => {
+    let sessionId = localStorage.getItem('lr_session');
+    if (!sessionId) {
+      sessionId = 'sess_' + Math.random().toString(36).substring(2, 10);
+      localStorage.setItem('lr_session', sessionId);
     }
+    const isCeo = localStorage.getItem('lr_ceo_mode') === 'true';
 
-    if (cart) {
-      if (typeof cart.addToCart === 'function') {
-        cart.addToCart(product, selectedSize, 1);
-      } else if (typeof cart.addItem === 'function') {
-        cart.addItem(product, selectedSize, 1);
-      }
-      if (typeof cart.openCart === 'function') {
-        cart.openCart();
-      }
+    try {
+      await fetch('/api/telemetry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          event_type: eventType,
+          path: `/produto/${params.slug || 'boxy'}`,
+          details: { ...details, is_ceo: isCeo }
+        })
+      });
+    } catch (e) {}
+  };
+
+  useEffect(() => {
+    const startTime = Date.now();
+    trackEvent('page_view', { item: 'Boxy Heavyweight' });
+
+    return () => {
+      const timeSpent = Math.round((Date.now() - startTime) / 1000);
+      if (timeSpent > 5) trackEvent('time_on_page', { seconds: timeSpent });
+    };
+  }, []);
+
+  const handleSizeClick = (size: string, qty: number) => {
+    setSelectedSize(size);
+    if (qty === 0) {
+      // O cliente clicou no tamanho esgotado: Demanda Reprimida capturada!
+      trackEvent('intent_out_of_stock', { size_clicked: size });
     } else {
-      alert("Artefato alocado com sucesso.");
+      trackEvent('intent_select_size', { size_clicked: size });
     }
   };
 
-  const displayImages: any[] = product.images || [];
-  const descriptionText = product.description || product.details || product.summary || 'Artefato de alta densidade da coleção Origo.';
+  const handleCheckout = () => {
+    if (!selectedSize || stock[selectedSize as keyof typeof stock] === 0) return;
+    trackEvent('intent_checkout', { size: selectedSize, price: 320 });
+    router.push('/checkout');
+  };
 
   return (
-    <div className="bg-brand-black min-h-screen text-brand-offwhite pt-32 pb-32 px-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24 relative items-start">
-          
-          {/* LADO ESQUERDO: Galeria Editorial (Scrollável) */}
-          <div className="lg:col-span-7 space-y-6">
-            {displayImages.map((imgItem: any, idx: number) => {
-              const imgSrc = typeof imgItem === 'string' ? imgItem : imgItem?.src;
-              const imgAlt = typeof imgItem === 'string' ? `${product.name} - Vista${idx + 1}` : (imgItem?.alt || product.name);
+    <main className="min-h-screen bg-[#050505] text-white pt-24 px-6 pb-20 font-sans selection:bg-emerald-500 selection:text-black">
+      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-24">
+        
+        {/* LADO ESQUERDO: IMAGEM BRUTALISTA */}
+        <div className="aspect-[3/4] bg-zinc-900 border border-zinc-800 flex items-center justify-center relative overflow-hidden group">
+          <span className="text-zinc-700 font-mono text-sm tracking-widest uppercase rotate-90 absolute -right-8">Heavyweight 260gsm</span>
+          <div className="w-full h-full bg-[url('https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=1000')] bg-cover bg-center mix-blend-luminosity opacity-80 group-hover:opacity-100 transition-opacity duration-700"></div>
+        </div>
 
-              return (
-                <div key={idx} className="relative aspect-[3/4] bg-zinc-950 w-full overflow-hidden border border-zinc-900 group">
-                  <img 
-                    src={imgSrc} 
-                    alt={imgAlt} 
-                    className="absolute inset-0 w-full h-full object-cover grayscale opacity-80 group-hover:opacity-100 group-hover:grayscale-0 transition-all duration-700"
-                    loading={idx === 0 ? "eager" : "lazy"} 
-                  />
-                </div>
-              );
-            })}
+        {/* LADO DIREITO: ENGENHARIA PSICOLÓGICA */}
+        <div className="flex flex-col justify-center space-y-10">
+          
+          <div className="space-y-4">
+            <span className="text-[10px] border border-zinc-700 px-3 py-1 uppercase tracking-widest text-zinc-400 font-mono">
+              [ Lote Zero • Tiragem Restrita ]
+            </span>
+            <h1 className="text-4xl lg:text-5xl font-serif uppercase tracking-wider text-white leading-tight">
+              Camiseta Boxy <br/><span className="text-zinc-500">Heavyweight</span>
+            </h1>
+            <p className="text-2xl font-mono text-white">R$ 320,00</p>
           </div>
 
-          {/* LADO DIREITO: Painel de Comando (Fixo/Sticky) */}
-          <div className="lg:col-span-5 lg:sticky lg:top-32 w-full">
-            <div className="space-y-10">
-              
-              {/* Título e Preço */}
-              <div className="space-y-4 border-b border-zinc-900 pb-8">
-                <span className="font-mono text-[10px] text-brand-red uppercase tracking-widest block">Drop 01 // Origo</span>
-                <h1 className="font-serif text-4xl sm:text-5xl uppercase tracking-wider text-white">{product.name}</h1>
-                <p className="font-mono text-lg text-zinc-300">R$ {Number(product.price).toFixed(2)}</p>
-              </div>
+          <div className="space-y-3 border-l-2 border-zinc-800 pl-4">
+            <p className="text-sm text-zinc-400 leading-relaxed max-w-md">
+              Construção arquitetônica em algodão 260gsm. Desenvolvida não para a próxima estação, mas para a próxima década. Caimento encorpado que impõe presença sem ostentação.
+            </p>
+            {/* ANCORAGEM DE REDUÇÃO DE FRICÇÃO */}
+            <p className="text-[11px] text-emerald-500 font-mono font-bold uppercase tracking-wide">
+              ✦ Garantia White Glove: Primeira troca por tamanho 100% por nossa conta.
+            </p>
+          </div>
 
-              {/* Descrição Principal */}
-              <p className="font-sans text-xs text-zinc-400 uppercase tracking-widest leading-relaxed">
-                {descriptionText}
-              </p>
-
-              {/* Grade de Dimensões */}
-              <div className="space-y-4 pt-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-mono text-[10px] text-zinc-500 uppercase tracking-widest">Dimensões Estruturais</span>
-                  <a href="/tamanho" target="_blank" rel="noopener noreferrer" className="font-mono text-[10px] text-zinc-400 hover:text-white uppercase tracking-widest underline underline-offset-4 transition-colors">
-                    Guia de Medidas
-                  </a>
-                </div>
-                <div className="grid grid-cols-4 gap-3">
-                  {(product.sizes || ['P', 'M', 'G', 'GG']).map((size: string) => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`py-3 font-mono text-[10px] uppercase tracking-widest border transition-all duration-300 ${
-                        selectedSize === size
-                          ? 'border-brand-red bg-brand-red text-white'
-                          : 'border-zinc-800 text-zinc-400 hover:border-brand-offwhite hover:text-brand-black hover:bg-brand-offwhite'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Botão de Alocação */}
-              <button
-                onClick={handleAddToCart}
-                className="w-full bg-white text-brand-black py-5 font-mono text-[11px] uppercase tracking-widest hover:bg-brand-red hover:text-white transition-colors duration-500 shadow-2xl"
-              >
-                {selectedSize ? '[ Alocar Artefato ]' : '[ Selecione a Dimensão ]'}
-              </button>
-
-              {/* Acordeões Técnicos */}
-              <div className="pt-8 border-t border-zinc-900">
-                <Accordion title="Composição & Gramatura" defaultOpen={true}>
-                  Tecido de alta densidade projetado para manter a estrutura e o caimento. Algodão premium (100%) com gramatura superior (280gsm), garantindo opacidade absoluta e resistência ao tempo.
-                </Accordion>
-                <Accordion title="Corte & Caimento">
-                  Modelagem arquitetônica inspirada em linhas brutalistas. Caimento boxy, ombros deslocados (drop shoulder) e proporções ampliadas para gerar movimento e silhueta sem contato excessivo com o corpo.
-                </Accordion>
-                <Accordion title="Logística & Envio">
-                  Este é um item do Lote Zero. A logística é tratada com extrema diligência. Envios realizados em embalagem selada da LaRomme. Prazo de processamento de 2 a 4 dias úteis após a aprovação da alocação.
-                </Accordion>
-              </div>
-
+          {/* SELETOR DE TAMANHOS */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-xs uppercase tracking-widest text-zinc-500 font-mono">Arquitetura de Tamanho</span>
+              <button className="text-[10px] text-zinc-400 underline uppercase font-mono hover:text-white transition-colors">Guia de Medidas</button>
+            </div>
+            <div className="grid grid-cols-4 gap-3">
+              {Object.entries(stock).map(([size, qty]) => (
+                <button
+                  key={size}
+                  onClick={() => handleSizeClick(size, qty)}
+                  className={`py-3 text-sm font-mono border transition-all ${
+                    qty === 0 
+                      ? 'border-zinc-900 bg-zinc-900/30 text-zinc-600 line-through cursor-not-allowed'
+                      : selectedSize === size 
+                        ? 'border-white bg-white text-black font-bold'
+                        : 'border-zinc-800 text-zinc-400 hover:border-zinc-500'
+                  }`}
+                >
+                  {size}
+                </button>
+              ))}
+            </div>
+            
+            {/* MICRO-COPY DINÂMICO PARA ESCASSEZ */}
+            <div className="h-4">
+              {selectedSize && stock[selectedSize as keyof typeof stock] === 0 && (
+                <span className="text-[10px] text-amber-500 font-mono uppercase tracking-widest block animate-pulse">
+                  [ LOTE ABSORVIDO ] • Registramos seu interesse.
+                </span>
+              )}
+              {selectedSize && stock[selectedSize as keyof typeof stock] > 0 && stock[selectedSize as keyof typeof stock] <= 5 && (
+                <span className="text-[10px] text-emerald-500 font-mono uppercase tracking-widest block">
+                  Disponibilidade Crítica • Estoque Confirmado.
+                </span>
+              )}
             </div>
           </div>
 
+          {/* BOTÃO DE CHECKOUT PSICOLÓGICO */}
+          <button
+            onClick={handleCheckout}
+            disabled={!selectedSize || stock[selectedSize as keyof typeof stock] === 0}
+            className={`w-full py-5 text-sm uppercase tracking-widest font-bold transition-all ${
+              !selectedSize || stock[selectedSize as keyof typeof stock] === 0
+                ? 'bg-zinc-900 text-zinc-600 cursor-not-allowed'
+                : 'bg-white text-black hover:bg-zinc-200'
+            }`}
+          >
+            {selectedSize && stock[selectedSize as keyof typeof stock] === 0 
+              ? '[ INDISPONÍVEL ]' 
+              : '[ GARANTIR POSSE ]'}
+          </button>
         </div>
+
       </div>
-    </div>
+    </main>
   );
 }
