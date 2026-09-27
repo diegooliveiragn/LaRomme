@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
 
+// Inicialização com a chave pública local ou de nuvem
 initMercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY || '', { locale: 'pt-BR' });
 
 export default function CheckoutPage() {
@@ -12,6 +13,7 @@ export default function CheckoutPage() {
   const [pixCode, setPixCode] = useState('');
   const [qrCodeImg, setQrCodeImg] = useState('');
 
+  // Configuração Visual e de Métodos
   const customization = {
     paymentMethods: {
       pix: 'all',
@@ -34,11 +36,17 @@ export default function CheckoutPage() {
     }
   };
 
+  // O SEGREDO DO PIX: O Mercado Pago exige identificação completa para renderizar a aba PIX
   const initialization = {
     amount: 320.00,
-    preferenceId: 'simulacao_lote_zero',
     payer: {
       email: 'testuser@laromme.com',
+      firstName: 'Test',
+      lastName: 'User',
+      identification: {
+        type: 'CPF',
+        number: '12345678909' // CPF genérico para liberar o front-end
+      }
     }
   };
 
@@ -52,6 +60,7 @@ export default function CheckoutPage() {
         body: JSON.stringify(formData),
       });
       const data = await response.json();
+      
       if (data.status === 'approved') {
         setPaymentStatus('approved');
       } else if (data.status === 'pending' && data.qr_code) {
@@ -71,6 +80,8 @@ export default function CheckoutPage() {
   return (
     <main className="min-h-screen bg-brand-black text-white pt-24 px-6 pb-20 font-mono">
       <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-12">
+        
+        {/* RESUMO DO LOTE */}
         <div className="w-full md:w-1/3">
           <h2 className="font-serif text-xl uppercase tracking-widest mb-6 border-b border-zinc-800 pb-2">Manifesto</h2>
           <div className="bg-zinc-950 border border-zinc-900 p-6 space-y-4">
@@ -89,9 +100,11 @@ export default function CheckoutPage() {
           </div>
         </div>
 
+        {/* ÁREA TRANSACIONAL */}
         <div className="w-full md:w-2/3">
           <h1 className="font-serif text-2xl sm:text-3xl uppercase tracking-wider mb-2">Checkout Criptografado</h1>
           <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-8">Conexão segura com Mercado Pago Adquirente S.A.</p>
+          
           <AnimatePresence mode="wait">
             {!paymentStatus && (
               <motion.div key="form" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
