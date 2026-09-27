@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { MercadoPagoConfig, Payment } from 'mercadopago';
 
 const client = new MercadoPagoConfig({
-  accessToken: process.env.MP_ACCESS_TOKEN || 'APP_USR-8200222016080718-092510-00543ef160f32881f08966dee98aa8ee-3717076176',
+  accessToken: process.env.MP_ACCESS_TOKEN || '',
   options: { timeout: 8000 }
 });
 
@@ -11,24 +11,20 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const payment = new Payment(client);
 
-    // E-mail obrigatório do Buyer Test User fornecido pelo Mercado Pago
-    const buyerTestEmail = 'test_user_1157108230930541456@testuser.com';
-    
-    // Sanitização e fallback de CPF válido para testes
-    const rawCpf = body.payer?.identification?.number || '22880752042';
-    const cleanCpf = rawCpf.replace(/\D/g, '') || '22880752042';
+    const rawCpf = body.payer?.identification?.number || '';
+    const cleanCpf = rawCpf.replace(/\D/g, '');
 
     const requestOptions = {
       body: {
-        transaction_amount: Number(body.transactionAmount || body.transaction_amount || 320),
-        description: body.description || 'LaRomme - Coleção Origo',
+        transaction_amount: 1.00, // Valor simbólico de teste real
+        description: 'LaRomme - Teste de Homologação Lote Zero',
         payment_method_id: body.paymentMethodId || body.payment_method_id || 'pix',
         token: body.token,
         installments: body.installments ? Number(body.installments) : 1,
         payer: {
-          email: buyerTestEmail,
-          first_name: 'Comprador',
-          last_name: 'Teste',
+          email: body.payer?.email || 'contato@laromme.com',
+          first_name: body.payer?.firstName || 'Cliente',
+          last_name: body.payer?.lastName || 'LaRomme',
           identification: {
             type: 'CPF',
             number: cleanCpf
@@ -51,7 +47,7 @@ export async function POST(req: NextRequest) {
     console.error("Erro no Mercado Pago:", error);
     return NextResponse.json({
       error: "Falha no processamento.",
-      details: error.message || error.cause || "Verifique as credenciais da adquirente."
+      details: error.message || error.cause || "Verifique a conta do Mercado Pago."
     }, { status: 500 });
   }
 }
