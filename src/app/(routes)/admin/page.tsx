@@ -8,32 +8,25 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
-interface VipUser {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  instagram?: string;
-  created_at: string;
-}
-
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<'vip' | 'kanban' | 'financas'>('vip');
-  const [vipList, setVipList] = useState<VipUser[]>([]);
+  const [activeTab, setActiveTab] = useState<'cockpit' | 'financas' | 'arsenal' | 'producao' | 'logistica' | 'vip'>('cockpit');
+  const [productionModel, setProductionModel] = useState<'whitelabel' | 'fracionado'>('whitelabel');
+  const [vipList, setVipList] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Módulos Financeiros (Simulação Integrada ao Lote Zero)
-  const financialMetrics = {
-    grossRevenue: 320.00,
-    approvedTransactions: 1,
-    pendingPix: 0,
-    averageTicket: 320.00,
-    conversionRate: '100%',
-  };
+  // MOCK DE ESTOQUE (ARSENAL)
+  const [stock, setStock] = useState([
+    { sku: 'BOXY-BLK-P', item: 'Camiseta Boxy Heavyweight - P', qty: 8, status: 'DISPONÍVEL' },
+    { sku: 'BOXY-BLK-M', item: 'Camiseta Boxy Heavyweight - M', qty: 2, status: 'CRÍTICO' },
+    { sku: 'BOXY-BLK-G', item: 'Camiseta Boxy Heavyweight - G', qty: 15, status: 'DISPONÍVEL' },
+    { sku: 'BOXY-BLK-GG', item: 'Camiseta Boxy Heavyweight - GG', qty: 5, status: 'DISPONÍVEL' },
+  ]);
 
-  const transactions = [
-    { id: 'LR-82001', method: 'PIX', amount: 'R$ 320,00', payer: 'Dinha Damasceno', status: 'APROVADO', date: '2026-09-27' }
-  ];
+  // MOCK DE EXPEDIÇÃO (LOGÍSTICA)
+  const [orders, setOrders] = useState([
+    { id: 'LR-001', client: 'Dinha Damasceno', tracking: 'BR982341239BR', status: 'DESPACHADO', value: 'R$ 320,00' },
+    { id: 'LR-002', client: 'Gabriel Santos', tracking: '', status: 'AGUARDANDO ENVIO', value: 'R$ 320,00' },
+  ]);
 
   useEffect(() => {
     fetchVipUsers();
@@ -42,166 +35,276 @@ export default function AdminPage() {
   const fetchVipUsers = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('vip_access')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (data && !error) {
-        setVipList(data);
-      }
+      const { data } = await supabase.from('vip_access').select('*').order('created_at', { ascending: false });
+      if (data) setVipList(data);
     } catch (e) {
-      console.error("Erro ao carregar banco:", e);
+      console.error(e);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-[#050505] text-white pt-24 px-6 pb-20 font-mono">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <main className="min-h-screen bg-[#050505] text-white pt-20 px-4 md:px-8 pb-20 font-mono">
+      <div className="max-w-7xl mx-auto space-y-6">
         
-        {/* HEADER DO SISTEMA */}
-        <div className="border-b border-zinc-900 pb-6 flex flex-col md:flex-row justify-between md:items-end gap-4">
+        {/* HEADER EXECUTIVO */}
+        <div className="border-b border-zinc-900 pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
           <div>
-            <h1 className="font-serif text-3xl uppercase tracking-widest text-white">Córtex OS</h1>
-            <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Sistema de Gestão Integrada LaRomme</p>
+            <div className="flex items-center gap-3">
+              <h1 className="font-serif text-2xl sm:text-3xl uppercase tracking-widest text-white">Córtex OS</h1>
+              <span className="text-[9px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-2 py-0.5 tracking-widest">SOLO FOUNDER EDITION</span>
+            </div>
+            <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Centro de Comando Unificado • LaRomme Lote Zero</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 bg-zinc-950 border border-zinc-900 px-3 py-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-[10px] text-emerald-400 uppercase tracking-widest">Banco Supabase Operacional</span>
+            <span className="text-[10px] text-zinc-300 uppercase tracking-widest">Servidor Vercel / Supabase OK</span>
           </div>
         </div>
 
-        {/* NAVEGAÇÃO DE ABAS */}
-        <div className="flex gap-4 border-b border-zinc-900 pb-4">
-          <button 
-            onClick={() => setActiveTab('vip')} 
-            className={`px-4 py-2 text-xs uppercase tracking-widest border transition-colors ${activeTab === 'vip' ? 'border-white bg-white text-black font-bold' : 'border-zinc-800 text-zinc-400 hover:text-white'}`}>
-            [ SENADO VIP ]
-          </button>
-          <button 
-            onClick={() => setActiveTab('kanban')} 
-            className={`px-4 py-2 text-xs uppercase tracking-widest border transition-colors ${activeTab === 'kanban' ? 'border-white bg-white text-black font-bold' : 'border-zinc-800 text-zinc-400 hover:text-white'}`}>
-            [ KANBAN ARELLA ]
-          </button>
-          <button 
-            onClick={() => setActiveTab('financas')} 
-            className={`px-4 py-2 text-xs uppercase tracking-widest border transition-colors ${activeTab === 'financas' ? 'border-white bg-white text-black font-bold' : 'border-zinc-800 text-zinc-400 hover:text-white'}`}>
-            [ FINANÇAS ]
-          </button>
+        {/* NAVEGAÇÃO PRINCIPAL */}
+        <div className="flex flex-wrap gap-2 border-b border-zinc-900 pb-4">
+          {[
+            { id: 'cockpit', label: '1. VISÃO 360' },
+            { id: 'financas', label: '2. FINANÇAS' },
+            { id: 'arsenal', label: '3. ARSENAL (ESTOQUE)' },
+            { id: 'producao', label: '4. PRODUÇÃO' },
+            { id: 'logistica', label: '5. LOGÍSTICA' },
+            { id: 'vip', label: '6. SENADO VIP' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`px-3 py-2 text-[11px] uppercase tracking-widest border transition-colors ${
+                activeTab === tab.id ? 'border-white bg-white text-black font-bold' : 'border-zinc-900 bg-zinc-950 text-zinc-400 hover:text-white'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        {/* CONTEÚDO: SENADO VIP */}
-        {activeTab === 'vip' && (
-          <section className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-sm font-bold text-zinc-300 uppercase tracking-widest">Base de Operações VIP ({vipList.length})</h2>
-              <button onClick={fetchVipUsers} className="border border-zinc-800 px-3 py-1 text-[10px] uppercase tracking-widest hover:bg-zinc-900 transition-colors">[ ATUALIZAR ]</button>
+        {/* TAB 1: VISÃO 360 (COCKPIT) */}
+        {activeTab === 'cockpit' && (
+          <div className="space-y-6">
+            {/* KPI METRICS */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-zinc-950 border border-zinc-900 p-5 space-y-1">
+                <span className="text-[9px] text-zinc-500 uppercase tracking-widest">Faturamento Acumulado</span>
+                <p className="text-xl sm:text-2xl font-bold text-white">R$ 640,00</p>
+                <span className="text-[9px] text-emerald-400 block">+100% vs Meta Inicial</span>
+              </div>
+              <div className="bg-zinc-950 border border-zinc-900 p-5 space-y-1">
+                <span className="text-[9px] text-zinc-500 uppercase tracking-widest">Envios Pendentes</span>
+                <p className="text-xl sm:text-2xl font-bold text-amber-400">1 Pedido</p>
+                <span className="text-[9px] text-zinc-500 block">Aguardando Etiqueta</span>
+              </div>
+              <div className="bg-zinc-950 border border-zinc-900 p-5 space-y-1">
+                <span className="text-[9px] text-zinc-500 uppercase tracking-widest">Saúde de Estoque</span>
+                <p className="text-xl sm:text-2xl font-bold text-white">30 Peças</p>
+                <span className="text-[9px] text-amber-500 block">Tamanho M Crítico (2 rest.)</span>
+              </div>
+              <div className="bg-zinc-950 border border-zinc-900 p-5 space-y-1">
+                <span className="text-[9px] text-zinc-500 uppercase tracking-widest">Membros Senado VIP</span>
+                <p className="text-xl sm:text-2xl font-bold text-white">{vipList.length}</p>
+                <span className="text-[9px] text-zinc-500 block">Leads Capturados</span>
+              </div>
             </div>
 
-            <div className="border border-zinc-900 bg-zinc-950 overflow-x-auto">
+            {/* BARRA DE PROGRESSO DO LOTE */}
+            <div className="bg-zinc-950 border border-zinc-900 p-6 space-y-3">
+              <div className="flex justify-between text-xs uppercase tracking-widest">
+                <span>Capacidade de Absorção - Lote Zero</span>
+                <span className="text-emerald-400 font-bold">60% Concluído (30 / 50 peças)</span>
+              </div>
+              <div className="w-full bg-zinc-900 h-3 border border-zinc-800">
+                <div className="bg-white h-full w-[60%]"></div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 2: FINANÇAS */}
+        {activeTab === 'financas' && (
+          <div className="bg-zinc-950 border border-zinc-900 p-6 space-y-4">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-300">Livro Razão de Liquidação</h2>
+            <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-zinc-900 text-zinc-400 uppercase tracking-widest text-[9px] border-b border-zinc-800">
+                <thead className="bg-zinc-900 text-zinc-400 text-[9px] uppercase tracking-widest border-b border-zinc-800">
                   <tr>
-                    <th className="p-4">Identificação</th>
-                    <th className="p-4">Contato</th>
-                    <th className="p-4">Instagram</th>
-                    <th className="p-4">Ingresso</th>
-                    <th className="p-4">Status</th>
+                    <th className="p-3">ID</th>
+                    <th className="p-3">Cliente</th>
+                    <th className="p-3">Método</th>
+                    <th className="p-3">Valor</th>
+                    <th className="p-3">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-900">
+                  <tr>
+                    <td className="p-3 font-bold text-white">LR-001</td>
+                    <td className="p-3 text-zinc-300">Dinha Damasceno</td>
+                    <td className="p-3 text-zinc-400">PIX</td>
+                    <td className="p-3 font-bold text-white">R$ 320,00</td>
+                    <td className="p-3 text-emerald-400 uppercase font-bold">APROVADO</td>
+                  </tr>
+                  <tr>
+                    <td className="p-3 font-bold text-white">LR-002</td>
+                    <td className="p-3 text-zinc-300">Gabriel Santos</td>
+                    <td className="p-3 text-zinc-400">CARTÃO DE CRÉDITO</td>
+                    <td className="p-3 font-bold text-white">R$ 320,00</td>
+                    <td className="p-3 text-emerald-400 uppercase font-bold">APROVADO</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: ARSENAL (ESTOQUE) */}
+        {activeTab === 'arsenal' && (
+          <div className="bg-zinc-950 border border-zinc-900 p-6 space-y-4">
+            <div className="flex justify-between items-center border-b border-zinc-900 pb-3">
+              <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-300">Matriz de Estoque Físico</h2>
+              <span className="text-[10px] text-zinc-500 uppercase">Sincronização em Tempo Real com o Checkout</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {stock.map((item) => (
+                <div key={item.sku} className="border border-zinc-900 p-4 bg-zinc-900/40 flex justify-between items-center">
+                  <div>
+                    <span className="text-[9px] text-zinc-500 block uppercase">{item.sku}</span>
+                    <span className="text-xs font-bold text-white uppercase">{item.item}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-lg font-bold block text-white">{item.qty} un.</span>
+                    <span className={`text-[9px] uppercase px-2 py-0.5 border ${item.status === 'CRÍTICO' ? 'border-amber-800 text-amber-400 bg-amber-950' : 'border-zinc-800 text-zinc-400'}`}>
+                      {item.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: PRODUÇÃO HÍBRIDA */}
+        {activeTab === 'producao' && (
+          <div className="space-y-6">
+            <div className="flex gap-4 border-b border-zinc-900 pb-3 items-center justify-between">
+              <span className="text-xs uppercase tracking-widest text-zinc-400">Modelo Operacional:</span>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setProductionModel('whitelabel')}
+                  className={`px-3 py-1 text-[10px] uppercase border ${productionModel === 'whitelabel' ? 'border-white text-white font-bold' : 'border-zinc-800 text-zinc-500'}`}
+                >
+                  White Label (Pacote Fechado)
+                </button>
+                <button
+                  onClick={() => setProductionModel('fracionado')}
+                  className={`px-3 py-1 text-[10px] uppercase border ${productionModel === 'fracionado' ? 'border-white text-white font-bold' : 'border-zinc-800 text-zinc-500'}`}
+                >
+                  Linha Fracionada (Oficinas)
+                </button>
+              </div>
+            </div>
+
+            {productionModel === 'whitelabel' ? (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-zinc-950 border border-zinc-900 p-4 space-y-3">
+                  <span className="text-[10px] font-bold uppercase text-zinc-400">1. Pedido em Fornecedor</span>
+                  <div className="border border-zinc-800 p-3 bg-zinc-900/50 text-xs">
+                    <p className="font-bold text-white">50x Boxy Heavyweight 260gsm</p>
+                    <span className="text-[9px] text-zinc-500">Fornecedor: Private Label BR</span>
+                  </div>
+                </div>
+                <div className="bg-zinc-950 border border-zinc-900 p-4 space-y-3">
+                  <span className="text-[10px] font-bold uppercase text-amber-400">2. Em Confecção / Etiquetagem</span>
+                  <div className="border border-amber-900/50 p-3 bg-amber-950/20 text-xs">
+                    <p className="font-bold text-amber-200">Personalização de Ribana & Tag</p>
+                    <span className="text-[9px] text-amber-500">Previsão: 5 dias úteis</span>
+                  </div>
+                </div>
+                <div className="bg-zinc-950 border border-zinc-900 p-4 space-y-3">
+                  <span className="text-[10px] font-bold uppercase text-emerald-400">3. Recebido no HQ (Pronto)</span>
+                  <div className="border border-emerald-900/50 p-3 bg-emerald-950/20 text-xs">
+                    <p className="font-bold text-emerald-200">Qualidade Aprovada</p>
+                    <span className="text-[9px] text-emerald-500">Pronto para Envio</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {['Modelagem & Pilotagem', 'Estamparia / Serigrafia', 'Oficina de Costura', 'Controle de Qualidade'].map((stage, idx) => (
+                  <div key={idx} className="bg-zinc-950 border border-zinc-900 p-4 space-y-2">
+                    <span className="text-[10px] text-zinc-500 uppercase font-bold">{idx + 1}. {stage}</span>
+                    <div className="text-xs text-zinc-400 border border-zinc-800 p-3">Aguardando Lote</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 5: LOGÍSTICA & EXPEDIÇÃO */}
+        {activeTab === 'logistica' && (
+          <div className="bg-zinc-950 border border-zinc-900 p-6 space-y-4">
+            <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-300">Fila de Despacho VIP</h2>
+            <div className="space-y-3">
+              {orders.map((ord) => (
+                <div key={ord.id} className="border border-zinc-900 p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-zinc-900/30">
+                  <div>
+                    <span className="text-xs font-bold text-white uppercase">{ord.id} — {ord.client}</span>
+                    <span className="text-[10px] text-zinc-500 block uppercase">Item: Camiseta Boxy Heavyweight</span>
+                  </div>
+                  <div className="flex items-center gap-3 w-full md:w-auto">
+                    <input
+                      type="text"
+                      placeholder="Inserir Rastreio (ex: BR123...)"
+                      defaultValue={ord.tracking}
+                      className="bg-black border border-zinc-800 px-3 py-1.5 text-xs text-white uppercase focus:border-white outline-none w-full md:w-64"
+                    />
+                    <button className="bg-white text-black text-[10px] font-bold px-3 py-2 uppercase tracking-widest hover:bg-zinc-300 transition-colors">
+                      [ SALVAR ]
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 6: SENADO VIP */}
+        {activeTab === 'vip' && (
+          <div className="bg-zinc-950 border border-zinc-900 p-6 space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-300">Base de Dados VIP ({vipList.length})</h2>
+              <button onClick={fetchVipUsers} className="border border-zinc-800 px-3 py-1 text-[10px] uppercase hover:bg-zinc-900 transition-colors">[ REFRESH ]</button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-zinc-900 text-zinc-400 text-[9px] uppercase tracking-widest border-b border-zinc-800">
+                  <tr>
+                    <th className="p-3">Nome / E-mail</th>
+                    <th className="p-3">Telefone</th>
+                    <th className="p-3">Instagram</th>
+                    <th className="p-3">Data</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-900">
                   {loading ? (
-                    <tr><td colSpan={5} className="p-8 text-center text-zinc-500 uppercase tracking-widest">Carregando registros...</td></tr>
-                  ) : vipList.length === 0 ? (
-                    <tr><td colSpan={5} className="p-8 text-center text-zinc-500 uppercase tracking-widest">Nenhum registro no Senado VIP.</td></tr>
-                  ) : (
-                    vipList.map((user) => (
-                      <tr key={user.id} className="hover:bg-zinc-900/50 transition-colors">
-                        <td className="p-4">
-                          <div className="font-bold text-white uppercase">{user.name}</div>
-                          <div className="text-[10px] text-zinc-500">{user.email}</div>
-                        </td>
-                        <td className="p-4 text-zinc-300">{user.phone}</td>
-                        <td className="p-4 text-zinc-400">{user.instagram || '-'}</td>
-                        <td className="p-4 text-zinc-400">{new Date(user.created_at).toLocaleDateString('pt-BR')}</td>
-                        <td className="p-4">
-                          <span className="px-2 py-1 text-[9px] border border-emerald-900 bg-emerald-950 text-emerald-400 uppercase">PENDING</span>
-                        </td>
-                      </tr>
-                    ))
-                  )}
+                    <tr><td colSpan={4} className="p-4 text-zinc-500 text-center">Buscando registros...</td></tr>
+                  ) : vipList.map((user) => (
+                    <tr key={user.id}>
+                      <td className="p-3 font-bold text-white">{user.name} <span className="text-zinc-500 font-normal block text-[10px]">{user.email}</span></td>
+                      <td className="p-3 text-zinc-300">{user.phone}</td>
+                      <td className="p-3 text-zinc-400">{user.instagram || '-'}</td>
+                      <td className="p-3 text-zinc-500">{new Date(user.created_at).toLocaleDateString('pt-BR')}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
-          </section>
-        )}
-
-        {/* CONTEÚDO: KANBAN ARELLA */}
-        {activeTab === 'kanban' && (
-          <section className="bg-zinc-950 border border-zinc-900 p-12 text-center space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-400">Módulo Kanban Arella</h3>
-            <p className="text-xs text-zinc-600 max-w-md mx-auto uppercase">Aguardando alocação dos lotes físicos de corte e costura para controle da esteira de produção.</p>
-          </section>
-        )}
-
-        {/* CONTEÚDO: FINANÇAS */}
-        {activeTab === 'financas' && (
-          <section className="space-y-8">
-            {/* CARDS DE MÉTRICAS */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-zinc-950 border border-zinc-900 p-6 space-y-2">
-                <span className="block text-[9px] text-zinc-500 uppercase tracking-widest">Faturamento Bruto</span>
-                <span className="text-2xl font-bold text-white font-mono">R$ {financialMetrics.grossRevenue.toFixed(2)}</span>
-              </div>
-              <div className="bg-zinc-950 border border-zinc-900 p-6 space-y-2">
-                <span className="block text-[9px] text-zinc-500 uppercase tracking-widest">Vendas Homologadas</span>
-                <span className="text-2xl font-bold text-emerald-400 font-mono">{financialMetrics.approvedTransactions}</span>
-              </div>
-              <div className="bg-zinc-950 border border-zinc-900 p-6 space-y-2">
-                <span className="block text-[9px] text-zinc-500 uppercase tracking-widest">Ticket Médio</span>
-                <span className="text-2xl font-bold text-white font-mono">R$ {financialMetrics.averageTicket.toFixed(2)}</span>
-              </div>
-              <div className="bg-zinc-950 border border-zinc-900 p-6 space-y-2">
-                <span className="block text-[9px] text-zinc-500 uppercase tracking-widest">Taxa de Conversão Pix</span>
-                <span className="text-2xl font-bold text-white font-mono">{financialMetrics.conversionRate}</span>
-              </div>
-            </div>
-
-            {/* TABELA DE LIQUIDAÇÕES */}
-            <div className="space-y-4">
-              <h2 className="text-sm font-bold text-zinc-300 uppercase tracking-widest">Livro Razão de Transações (Lote Zero)</h2>
-              <div className="border border-zinc-900 bg-zinc-950 overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-zinc-900 text-zinc-400 uppercase tracking-widest text-[9px] border-b border-zinc-800">
-                    <tr>
-                      <th className="p-4">ID Transação</th>
-                      <th className="p-4">Método</th>
-                      <th className="p-4">Cliente</th>
-                      <th className="p-4">Valor</th>
-                      <th className="p-4">Data</th>
-                      <th className="p-4">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-900">
-                    {transactions.map((tx) => (
-                      <tr key={tx.id} className="hover:bg-zinc-900/50 transition-colors">
-                        <td className="p-4 font-bold text-white uppercase">{tx.id}</td>
-                        <td className="p-4 text-zinc-400 uppercase">{tx.method}</td>
-                        <td className="p-4 text-zinc-300">{tx.payer}</td>
-                        <td className="p-4 font-bold text-white">{tx.amount}</td>
-                        <td className="p-4 text-zinc-400">{tx.date}</td>
-                        <td className="p-4">
-                          <span className="px-2 py-1 text-[9px] border border-emerald-900 bg-emerald-950 text-emerald-400 uppercase font-bold">{tx.status}</span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </section>
+          </div>
         )}
 
       </div>
