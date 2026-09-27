@@ -1,200 +1,190 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { initMercadoPago, Payment } from '@mercadopago/sdk-react';
-
-initMercadoPago(process.env.NEXT_PUBLIC_MP_PUBLIC_KEY || '', { locale: 'pt-BR' });
+import { useRouter } from 'next/navigation';
 
 export default function CheckoutPage() {
-  const [method, setMethod] = useState<'pix' | 'card'>('pix');
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState<any>(null);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [pixData, setPixData] = useState({ qrCode: '', base64: '' });
+  const router = useRouter();
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({ name: '', email: '', document: '', address: '' });
+  const [vipPassword, setVipPassword] = useState('');
   
-  // Campos do Pix
-  const [email, setEmail] = useState('');
-  const [cpf, setCpf] = useState('');
+  const generateMockOrderId = () => `LR-${Math.floor(10000 + Math.random() * 90000)}`;
 
-  const generatePix = async () => {
-    if (!email) return alert("Insira um e-mail válido.");
-    setIsProcessing(true);
-    setErrorMessage('');
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    const orderId = generateMockOrderId();
+    const serialCode = `LR-D00-BOXY-${Math.floor(1000 + Math.random() * 9000)}`;
 
     try {
-      const response = await fetch('/api/checkout', {
+      // 1. Aciona o disparo do E-mail Transacional White Glove
+      await fetch('/api/email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          transactionAmount: 320.00,
-          paymentMethodId: 'pix',
-          payer: { 
-            email: email, 
-            firstName: 'Cliente', 
-            lastName: 'LaRomme', 
-            identification: { type: 'CPF', number: cpf } 
-          }
-        }),
+          clientName: formData.name.split(' ')[0] || 'Membro',
+          clientEmail: formData.email,
+          orderId: orderId,
+          itemSize: 'M', // Pegar dinâmico do carrinho futuro
+          serialCode: serialCode
+        })
       });
 
-      const data = await response.json();
-      if (data.status === 'pending' && data.qr_code) {
-        setPixData({ qrCode: data.qr_code, base64: data.qr_code_base64 });
-        setPaymentStatus('pix_pending');
-      } else {
-        setErrorMessage(data.details || 'Transação recusada pelo banco.');
-        setPaymentStatus('error');
+      // 2. Aciona a Telemetria
+      let sessionId = localStorage.getItem('lr_session');
+      if (sessionId) {
+        await fetch('/api/telemetry', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: sessionId,
+            event_type: 'purchase_complete',
+            path: '/checkout',
+            details: { value: 320, orderId }
+          })
+        });
       }
-    } catch (e: any) {
-      setErrorMessage('Erro de conexão com o servidor.');
-      setPaymentStatus('error');
-    } finally {
-      setIsProcessing(false);
+    } catch (error) {
+      console.error('Erro na integração pós-venda:', error);
     }
+
+    setTimeout(() => {
+      setLoading(false);
+      setStep(3); // Vai para a tela de Sucesso + Soft Onboarding
+    }, 1500);
   };
 
-  const customization = {
-    paymentMethods: { creditCard: 'all', pix: 'none', maxInstallments: 3 },
-    visual: {
-      style: {
-        theme: 'dark',
-        customVariables: {
-          formBackgroundColor: '#09090b',
-          baseColor: '#ffffff',
-          textPrimaryColor: '#ffffff',
-          textSecondaryColor: '#a1a1aa',
-          inputBackgroundColor: '#000000',
-          inputTextColor: '#ffffff',
-          errorColor: '#ef4444',
-          buttonTextColor: '#000000',
-          buttonBackgroundColor: '#ffffff',
-        }
-      }
-    }
-  };
-
-  const initialization = { amount: 320.00, preferenceId: 'simulacao_lote_zero' };
-
-  const onSubmitCard = async (formData: any) => {
-    setIsProcessing(true);
-    setErrorMessage('');
-    try {
-      const res = await fetch('/api/checkout', { 
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' }, 
-        body: JSON.stringify(formData) 
-      });
-      const data = await res.json();
-      if (data.status === 'approved') {
-        setPaymentStatus('approved');
-      } else {
-        setErrorMessage(data.details || 'Cartão recusado.');
-        setPaymentStatus('rejected');
-      }
-    } catch (e) { 
-      setPaymentStatus('error'); 
-    } finally { 
-      setIsProcessing(false); 
-    }
+  const handleVipOnboarding = () => {
+    // Soft Onboarding: Salva e-mail e ativa sessão VIP imediatamente
+    localStorage.setItem('lr_user_email', formData.email);
+    localStorage.setItem('lr_ceo_mode', 'false');
+    router.push('/conta');
   };
 
   return (
-    <main className="min-h-screen bg-brand-black text-white pt-24 px-6 pb-20 font-mono">
-      <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-12">
+    <main className="min-h-screen bg-[#050505] text-white pt-24 px-6 pb-20 font-sans selection:bg-emerald-500 selection:text-black">
+      <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12">
         
-        {/* RESUMO DO LOTE */}
-        <div className="w-full md:w-1/3">
-          <h2 className="font-serif text-xl uppercase tracking-widest mb-6 border-b border-zinc-800 pb-2">Manifesto</h2>
-          <div className="bg-zinc-950 border border-zinc-900 p-6 space-y-4">
+        {/* RESUMO DO PEDIDO */}
+        <div className="bg-[#0d0d10] border border-zinc-800 p-8 h-fit space-y-6">
+          <span className="text-[10px] text-zinc-500 uppercase tracking-widest block font-mono">O Arsenal Selecionado</span>
+          <div className="flex justify-between items-center border-b border-zinc-800 pb-4">
             <div>
-              <span className="block text-[9px] text-zinc-500 uppercase tracking-widest">Item</span>
-              <span className="text-sm font-bold text-white uppercase tracking-wider">Camiseta Boxy Heavyweight</span>
+              <p className="font-bold uppercase tracking-wider">Camiseta Boxy Heavyweight</p>
+              <p className="text-xs text-zinc-400 mt-1">Lote Zero • Tamanho M</p>
             </div>
-            <div className="flex justify-between border-t border-zinc-900 pt-4">
-              <span className="text-[10px] text-zinc-400 uppercase tracking-widest">Subtotal</span>
-              <span className="text-xs">R$ 320,00</span>
-            </div>
-            <div className="flex justify-between border-t border-zinc-800 pt-4">
-              <span className="text-xs font-bold text-white uppercase tracking-widest">Total</span>
-              <span className="text-sm font-bold">R$ 320,00</span>
-            </div>
+            <p className="font-mono text-white">R$ 320,00</p>
+          </div>
+          <div className="space-y-2 text-xs font-mono text-zinc-400">
+            <div className="flex justify-between"><span>Subtotal</span><span className="text-white">R$ 320,00</span></div>
+            <div className="flex justify-between"><span>Frete Expresso</span><span className="text-emerald-400">Cortesia White Glove</span></div>
+          </div>
+          <div className="flex justify-between items-center border-t border-zinc-800 pt-4 font-mono font-bold">
+            <span className="text-sm">TOTAL</span>
+            <span className="text-xl">R$ 320,00</span>
           </div>
         </div>
 
-        {/* ÁREA DE PAGAMENTO */}
-        <div className="w-full md:w-2/3">
-          <h1 className="font-serif text-2xl sm:text-3xl uppercase tracking-wider mb-2">Checkout Criptografado</h1>
-          <p className="text-[10px] text-zinc-500 uppercase tracking-widest mb-8">Conexão P2P Segura com Adquirente.</p>
+        {/* FLUXO DE PAGAMENTO / ONBOARDING */}
+        <div className="space-y-8">
+          
+          {step === 1 && (
+            <form onSubmit={(e) => { e.preventDefault(); setStep(2); }} className="space-y-6 animate-in fade-in">
+              <div>
+                <h1 className="text-xl font-serif uppercase tracking-widest border-b border-zinc-800 pb-2 mb-6">Identificação</h1>
+                <div className="space-y-4">
+                  <input type="email" name="email" required placeholder="E-mail" onChange={handleInputChange} className="w-full bg-black border border-zinc-800 px-4 py-3 text-sm text-white outline-none focus:border-white transition-colors" />
+                  <input type="text" name="name" required placeholder="Nome Completo" onChange={handleInputChange} className="w-full bg-black border border-zinc-800 px-4 py-3 text-sm text-white outline-none focus:border-white transition-colors" />
+                  <input type="text" name="document" required placeholder="CPF" onChange={handleInputChange} className="w-full bg-black border border-zinc-800 px-4 py-3 text-sm text-white outline-none focus:border-white transition-colors" />
+                </div>
+              </div>
+              <button type="submit" className="w-full bg-white text-black text-xs font-bold uppercase tracking-widest py-4 hover:bg-zinc-200">
+                [ CONTINUAR PARA PAGAMENTO ]
+              </button>
+            </form>
+          )}
 
-          <AnimatePresence mode="wait">
-            {!paymentStatus && !isProcessing && (
-              <motion.div key="methods" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-6">
+          {step === 2 && (
+            <form onSubmit={handlePaymentSubmit} className="space-y-6 animate-in fade-in">
+              <div>
+                <h1 className="text-xl font-serif uppercase tracking-widest border-b border-zinc-800 pb-2 mb-6">Liquidação</h1>
                 
-                <div className="flex gap-6 border-b border-zinc-800 pb-4">
-                  <button onClick={() => setMethod('pix')} className={`text-xs uppercase tracking-widest pb-1 transition-colors ${method === 'pix' ? 'text-white border-b-2 border-white font-bold' : 'text-zinc-500 hover:text-zinc-300'}`}>Pix (Imediato)</button>
-                  <button onClick={() => setMethod('card')} className={`text-xs uppercase tracking-widest pb-1 transition-colors ${method === 'card' ? 'text-white border-b-2 border-white font-bold' : 'text-zinc-500 hover:text-zinc-300'}`}>Cartão de Crédito</button>
-                </div>
-
-                {/* ABA PIX */}
-                {method === 'pix' && (
-                  <div className="bg-zinc-950 p-6 border border-zinc-900 space-y-4">
-                    <div className="space-y-2">
-                      <label className="block text-[10px] text-zinc-400 uppercase">E-mail para Confirmação</label>
-                      <input type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#000000] border border-zinc-800 p-4 text-sm text-white uppercase focus:border-white outline-none transition-colors" required />
+                <div className="space-y-3">
+                  <label className="flex items-center gap-3 p-4 border border-emerald-500 bg-emerald-950/20 cursor-pointer">
+                    <input type="radio" name="payment" defaultChecked className="accent-emerald-500" />
+                    <div>
+                      <p className="font-bold text-sm">Pix Instantâneo</p>
+                      <p className="text-xs text-emerald-400 mt-1">Aprovação imediata. Peça reservada no ato.</p>
                     </div>
-                    <div className="space-y-2">
-                      <label className="block text-[10px] text-zinc-400 uppercase">CPF do Titular (Opcional para Testes)</label>
-                      <input type="text" placeholder="000.000.000-00" value={cpf} onChange={(e) => setCpf(e.target.value)} className="w-full bg-[#000000] border border-zinc-800 p-4 text-sm text-white uppercase focus:border-white outline-none transition-colors" />
+                  </label>
+                  <label className="flex items-center gap-3 p-4 border border-zinc-800 opacity-50 cursor-not-allowed">
+                    <input type="radio" name="payment" disabled />
+                    <div>
+                      <p className="font-bold text-sm text-zinc-500">Cartão de Crédito</p>
+                      <p className="text-xs text-zinc-600 mt-1">Indisponível no Lote Zero.</p>
                     </div>
-                    <button onClick={generatePix} className="w-full bg-white text-black py-4 text-xs font-bold uppercase tracking-widest hover:bg-zinc-300 transition-colors mt-4">
-                      [ GERAR PROTOCOLO PIX ]
-                    </button>
-                  </div>
-                )}
-
-                {/* ABA CARTÃO */}
-                {method === 'card' && (
-                  <div className="bg-zinc-950 p-4 border border-zinc-900">
-                    <style dangerouslySetInnerHTML={{__html: `
-                      iframe { color-scheme: dark !important; }
-                      .mp-wrapper { background: #09090b !important; }
-                      input { color: #ffffff !important; background-color: #000000 !important; }
-                    `}} />
-                    <Payment initialization={initialization} customization={customization as any} onSubmit={onSubmitCard as any} />
-                  </div>
-                )}
-              </motion.div>
-            )}
-
-            {isProcessing && (
-              <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20 border border-zinc-900 bg-zinc-950">
-                <span className="text-[10px] text-zinc-400 uppercase tracking-widest animate-pulse">Processando Liquidação Junto ao Banco...</span>
-              </motion.div>
-            )}
-
-            {paymentStatus === 'pix_pending' && (
-              <motion.div key="pix_success" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-zinc-950 border border-zinc-800 p-8 text-center space-y-6">
-                <h3 className="font-serif text-xl uppercase text-white tracking-widest">Protocolo Pix Gerado</h3>
-                <div className="bg-white p-4 inline-block mx-auto border-4 border-zinc-800">
-                  <img src={`data:image/jpeg;base64,${pixData.base64}`} alt="QR Code PIX" className="w-48 h-48" />
+                  </label>
                 </div>
-                <div className="space-y-2">
-                  <span className="block text-[9px] text-zinc-500 uppercase tracking-widest">Pix Copia e Cola</span>
-                  <input type="text" value={pixData.qrCode} readOnly className="w-full bg-[#000000] border border-zinc-800 p-4 text-[10px] text-white font-mono text-center focus:outline-none" />
-                </div>
-                <button onClick={() => setPaymentStatus(null)} className="text-[9px] text-zinc-500 uppercase underline">Gerar Novo Código</button>
-              </motion.div>
-            )}
+              </div>
+              
+              <div className="flex gap-4">
+                <button type="button" onClick={() => setStep(1)} className="px-6 py-4 border border-zinc-800 text-zinc-400 text-xs uppercase hover:text-white transition-colors">Voltar</button>
+                <button type="submit" disabled={loading} className="flex-1 bg-white text-black text-xs font-bold uppercase tracking-widest py-4 hover:bg-zinc-200 transition-colors disabled:opacity-50">
+                  {loading ? '[ PROCESSANDO... ]' : '[ FINALIZAR POSSE ]'}
+                </button>
+              </div>
+            </form>
+          )}
 
-            {(paymentStatus === 'rejected' || paymentStatus === 'error') && (
-              <motion.div key="error" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="bg-brand-red/10 border border-brand-red p-8 text-center space-y-4">
-                <h3 className="font-serif text-xl text-brand-red uppercase tracking-widest">Falha na Liquidação</h3>
-                <p className="text-[10px] text-zinc-300 uppercase tracking-widest">{errorMessage || 'O adquirente recusou a transação.'}</p>
-                <button onClick={() => setPaymentStatus(null)} className="mt-4 border border-zinc-800 px-4 py-2 text-[9px] uppercase tracking-widest hover:bg-zinc-900 transition-colors">Tentar Novamente</button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* TELA DE SUCESSO + SOFT ONBOARDING (A MÁGICA DA CONVERSÃO DE CONTAS) */}
+          {step === 3 && (
+            <div className="space-y-8 animate-in slide-in-from-right-4">
+              <div className="bg-emerald-950/30 border border-emerald-500/50 p-6 space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
+                  <h2 className="font-bold text-emerald-400 uppercase tracking-widest">POSSE FIRMADA.</h2>
+                </div>
+                <p className="text-sm text-zinc-300 leading-relaxed">
+                  Liquidação aprovada. Seu Certificado de Posse foi enviado para <strong>{formData.email}</strong>.
+                </p>
+              </div>
+
+              <div className="bg-[#0d0d10] border border-zinc-800 p-8 text-center space-y-6">
+                <div>
+                  <span className="text-[10px] text-zinc-500 uppercase tracking-widest block font-mono mb-2">[ Acesso Restrito ]</span>
+                  <h3 className="text-xl font-serif uppercase tracking-widest">Senado VIP LaRomme</h3>
+                  <p className="text-xs text-zinc-400 mt-3 max-w-sm mx-auto leading-relaxed">
+                    Sua peça foi garantida. Defina uma senha de acesso abaixo para ativar sua conta de membro, acompanhar o rastreio da expedição em tempo real e acessar o Cofre de Drops Secretos.
+                  </p>
+                </div>
+
+                <div className="max-w-xs mx-auto space-y-4 pt-4">
+                  <input 
+                    type="password" 
+                    placeholder="Defina uma Senha" 
+                    value={vipPassword}
+                    onChange={(e) => setVipPassword(e.target.value)}
+                    className="w-full bg-black border border-zinc-700 px-4 py-3 text-center text-sm text-white outline-none focus:border-white transition-colors"
+                  />
+                  <button 
+                    onClick={handleVipOnboarding}
+                    disabled={!vipPassword}
+                    className="w-full bg-white text-black text-xs font-bold uppercase tracking-widest py-3 hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:bg-zinc-800 disabled:text-zinc-500"
+                  >
+                    [ ATIVAR CONTA VIP ]
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
     </main>
