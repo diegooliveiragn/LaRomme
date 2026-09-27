@@ -11,7 +11,10 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const payment = new Payment(client);
 
-    // Sanitização e fallback de CPF válido para testes (Algoritmo Mod11 aprovado pelo BC)
+    // E-mail obrigatório do Buyer Test User fornecido pelo Mercado Pago
+    const buyerTestEmail = 'test_user_1157108230930541456@testuser.com';
+    
+    // Sanitização e fallback de CPF válido para testes
     const rawCpf = body.payer?.identification?.number || '22880752042';
     const cleanCpf = rawCpf.replace(/\D/g, '') || '22880752042';
 
@@ -23,9 +26,9 @@ export async function POST(req: NextRequest) {
         token: body.token,
         installments: body.installments ? Number(body.installments) : 1,
         payer: {
-          email: body.payer?.email || 'cliente@laromme.com',
-          first_name: body.payer?.firstName || 'Cliente',
-          last_name: body.payer?.lastName || 'VIP',
+          email: buyerTestEmail,
+          first_name: 'Comprador',
+          last_name: 'Teste',
           identification: {
             type: 'CPF',
             number: cleanCpf
