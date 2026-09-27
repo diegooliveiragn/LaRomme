@@ -16,8 +16,8 @@ export async function POST(req: NextRequest) {
 
     const requestOptions = {
       body: {
-        transaction_amount: 1.00, // Valor simbólico de teste real
-        description: 'LaRomme - Teste de Homologação Lote Zero',
+        transaction_amount: 320.00, // <-- Restauração para o valor real da Boxy
+        description: 'LaRomme - Coleção Origo',
         payment_method_id: body.paymentMethodId || body.payment_method_id || 'pix',
         token: body.token,
         installments: body.installments ? Number(body.installments) : 1,
@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
     console.error("Erro no Mercado Pago:", error);
     return NextResponse.json({
       error: "Falha no processamento.",
-      details: error.message || error.cause || "Verifique a conta do Mercado Pago."
+      details: error.message || error.cause || "Erro de conexão."
     }, { status: 500 });
   }
 }
