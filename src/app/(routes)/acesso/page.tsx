@@ -1,114 +1,98 @@
 'use client';
+
 import { useState } from 'react';
-import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FadeIn } from '@/components/ui/FadeIn';
-import { supabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
 
-export default function AccessPage() {
-  const [formData, setFormData] = useState({ nome: '', email: '', telefone: '', instagram: '' });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [errorMessage, setErrorMessage] = useState('');
+const CEO_EMAIL = 'diegooliveiragn@gmail.com';
 
-  const maskPhone = (value: string) => {
-    const v = value.replace(/\D/g, '').substring(0, 11);
-    if (v.length === 0) return '';
-    if (v.length <= 2) return `(${v}`;
-    if (v.length <= 3) return `(${v.substring(0,2)}) ${v.substring(2)}`;
-    if (v.length <= 7) return `(${v.substring(0,2)}) ${v.substring(2,3)} ${v.substring(3)}`;
-    return `(${v.substring(0,2)}) ${v.substring(2,3)} ${v.substring(3,7)}-${v.substring(7)}`;
-  };
+export default function AcessoPage() {
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState('');
 
-  const handleInstagram = (value: string) => {
-    let clean = value.replace(/\s+/g, ''); // Impede espaços
-    if (clean.length > 0 && !clean.startsWith('@')) clean = '@' + clean;
-    return clean;
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    if (name === 'telefone') {
-      setFormData(prev => ({ ...prev, [name]: maskPhone(value) }));
-    } else if (name === 'instagram') {
-      setFormData(prev => ({ ...prev, [name]: handleInstagram(value) }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.email || !formData.nome || !formData.telefone) return;
-    setIsSubmitting(true);
-    setErrorMessage('');
-    
-    try {
-      const { error } = await supabase.from('senado_vip').insert([{ 
-        nome: formData.nome, email: formData.email, telefone: formData.telefone, 
-        instagram: formData.instagram, origin: 'acesso_page', status: 'pending' 
-      }]);
-      if (error) {
-         if (error.code === '23505') throw new Error('E-mail já registrado.');
-         throw error;
+    setLoading(true);
+    setMessage('');
+
+    setTimeout(() => {
+      setLoading(false);
+      const isCeo = email.toLowerCase() === CEO_EMAIL;
+      
+      // Salva sessão localmente
+      localStorage.setItem('lr_user_email', email);
+      localStorage.setItem('lr_ceo_mode', isCeo ? 'true' : 'false');
+
+      if (isCeo) {
+        setMessage('CHAVE MESTRE RECONHECIDA. Redirecionando para Córtex OS...');
+        setTimeout(() => router.push('/cortex'), 1200);
+      } else {
+        setMessage('ACESSO SENADO VIP CONFIRMADO. Bem-vindo de volta.');
+        setTimeout(() => router.push('/conta'), 1200);
       }
-      setStatus('success');
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Falha na conexão com o banco.');
-      setStatus('error');
-    } finally {
-      setIsSubmitting(false);
-    }
+    }, 1000);
   };
 
   return (
-    <main className="relative min-h-screen bg-brand-black flex flex-col justify-center items-center pt-24 px-6 overflow-hidden">
-      <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-zinc-900/40 via-brand-black to-brand-black pointer-events-none"></div>
-      <div className="relative z-10 w-full max-w-2xl mx-auto">
-        <FadeIn direction="up">
-          <div className="text-center mb-12">
-            <h1 className="font-serif text-3xl sm:text-4xl text-white uppercase tracking-wider mb-4">Senado VIP</h1>
-            <p className="font-sans text-xs text-zinc-400 uppercase tracking-widest">Insira suas coordenadas para o primeiro drop.</p>
+    <main className="min-h-screen bg-[#050505] text-white pt-28 px-4 flex items-center justify-center font-mono selection:bg-emerald-500 selection:text-black">
+      <div className="max-w-md w-full bg-[#0d0d10] border border-zinc-800 p-8 rounded-lg space-y-6 shadow-2xl">
+        
+        <div className="text-center space-y-2">
+          <span className="text-[10px] border border-zinc-700 px-3 py-1 uppercase tracking-widest text-zinc-400">
+            Acesso Restrito • LaRomme
+          </span>
+          <h1 className="text-2xl font-serif uppercase tracking-widest text-white pt-2">Senado VIP</h1>
+          <p className="text-[11px] text-zinc-500">Entre para acessar seu Certificado de Posse e Drops Secretos.</p>
+        </div>
+
+        <form onSubmit={handleAuth} className="space-y-4">
+          <div className="space-y-1">
+            <label className="text-[10px] text-zinc-400 uppercase tracking-wider block">E-mail Cadastrado</label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="seuemail@dominio.com"
+              className="w-full bg-black border border-zinc-800 px-4 py-3 text-xs text-white outline-none focus:border-white transition-colors"
+            />
           </div>
-          <div className="bg-zinc-950 border border-zinc-900 p-6 sm:p-10">
-            <AnimatePresence mode="wait">
-              {status === 'idle' || status === 'error' ? (
-                <motion.form key="form" onSubmit={handleSubmit} className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="font-mono text-[10px] text-zinc-400 uppercase">Nome Completo</label>
-                    <input type="text" name="nome" value={formData.nome} onChange={handleChange} className="w-full bg-brand-black border border-zinc-800 px-4 py-3 font-mono text-sm font-medium text-white uppercase focus:outline-none focus:border-white transition-colors" required />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="font-mono text-[10px] text-zinc-400 uppercase">E-mail</label>
-                    <input type="email" name="email" value={formData.email} onChange={handleChange} className="w-full bg-brand-black border border-zinc-800 px-4 py-3 font-mono text-sm font-medium text-white uppercase focus:outline-none focus:border-white transition-colors" required />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="font-mono text-[10px] text-zinc-400 uppercase">Telefone</label>
-                      <input type="text" name="telefone" value={formData.telefone} onChange={handleChange} placeholder="(XX) X XXXX-XXXX" maxLength={16} className="w-full bg-brand-black border border-zinc-800 px-4 py-3 font-mono text-sm font-medium text-white uppercase focus:outline-none focus:border-white transition-colors" required />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="font-mono text-[10px] text-zinc-400 uppercase">Instagram (Opcional)</label>
-                      <input type="text" name="instagram" value={formData.instagram} onChange={handleChange} placeholder="@seu_usuario" className="w-full bg-brand-black border border-zinc-800 px-4 py-3 font-mono text-sm font-medium text-white uppercase focus:outline-none focus:border-white transition-colors" />
-                    </div>
-                  </div>
-                  {status === 'error' && (
-                    <p className="text-[10px] text-brand-red uppercase text-center mt-4 border border-brand-red p-2 bg-brand-red/10">{errorMessage}</p>
-                  )}
-                  <button type="submit" disabled={isSubmitting} className="w-full bg-white text-black py-4 font-mono text-[11px] font-bold uppercase hover:bg-zinc-300 transition-colors mt-6">
-                    {isSubmitting ? '[ PROCESSANDO... ]' : '[ SOLICITAR ACESSO VIP ]'}
-                  </button>
-                </motion.form>
-              ) : (
-                <motion.div key="success" className="text-center py-10 space-y-6">
-                  <h3 className="font-serif text-xl text-white uppercase">Coordenadas Recebidas</h3>
-                  <p className="text-[10px] text-zinc-400 uppercase">Seu acesso foi registrado.</p>
-                  <Link href="/" className="text-[10px] text-zinc-500 uppercase hover:text-white border-b border-zinc-800 hover:border-white transition-colors pb-1">Retornar à Base</Link>
-                </motion.div>
-              )}
-            </AnimatePresence>
+
+          <div className="space-y-1">
+            <label className="text-[10px] text-zinc-400 uppercase tracking-wider block">Senha de Membro</label>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••••••"
+              className="w-full bg-black border border-zinc-800 px-4 py-3 text-xs text-white outline-none focus:border-white transition-colors"
+            />
           </div>
-        </FadeIn>
+
+          {message && (
+            <p className={`text-[11px] text-center ${email.toLowerCase() === CEO_EMAIL ? 'text-amber-400' : 'text-emerald-400'}`}>
+              {message}
+            </p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-4 bg-white text-black text-xs uppercase font-bold tracking-widest hover:bg-zinc-200 transition-colors disabled:opacity-50"
+          >
+            {loading ? '[ VERIFICANDO ACCESS KEY... ]' : '[ AUTENTICAR ACESSO ]'}
+          </button>
+        </form>
+
+        <div className="border-t border-zinc-800/80 pt-4 text-center">
+          <p className="text-[10px] text-zinc-500">
+            Ainda não é membro do Lote Zero? <a href="/checkout" className="text-zinc-300 underline">Adquira sua posse no site</a>.
+          </p>
+        </div>
+
       </div>
     </main>
   );
