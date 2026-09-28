@@ -2,14 +2,20 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@supabase/supabase-js';
 import { playHapticSound } from '@/lib/sound';
+
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
 
 export default function CheckoutPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [copiedPix, setCopiedPix] = useState(false);
 
-  // FORMULÁRIO DE ENTREGA
+  // DADOS DE ENTREGA E CLIENTE
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [cpf, setCpf] = useState('');
@@ -24,17 +30,103 @@ export default function CheckoutPage() {
     playHapticSound();
     setLoading(true);
 
-    setTimeout(() => {
+    try {
+      // 1. UPSERT DO CLIENTE EM CUSTOMERS
+      let customerId = null;
+      const { data: existingCustomer } = await supabase
+        .from('customers')
+        .select('id, total_purchases, ltv')
+        .eq('email', email)
+        .single();
+
+      if (existingCustomer) {
+        customerId = existingCustomer.id;
+        await supabase.from('customers').update({
+          full_name: fullName,
+          phone,
+          city,
+          state,
+          total_purchases: (existingCustomer.total_purchases || 0) + 1,
+          ltv: Number(existingCustomer.ltv || 0) + 320.00
+        }).eq('id', customerId);
+      } else {
+        const { data: newCustomer } = await supabase.from('customers').insert([{
+          full_name: fullName,
+          email,
+          phone,
+          city,
+          state,
+          rfm_tag: 'NEWBIE',
+          total_purchases: 1,
+          ltv: 320.00
+        }]).select('id').single();
+
+        if (newCustomer) customerId = newCustomer.id;
+      }
+
+      // 2. REGISTRO DO PEDIDO EM ORDERS
+      const orderNumber = `LR-${Math.floor(100000 + Math.random() * 900000)}`;
+      const netProfit = 320.00 - 60.00 - 10.50 - (320 * 0.06) - (320 * 0.04);
+
+      const { data: newOrder } = await supabase.from('orders').insert([{
+        order_number: orderNumber,
+        customer_id: customerId,
+        total_amount: 320.00,
+        net_profit: netProfit,
+        payment_method: 'PIX',
+        payment_status: 'PAGO',
+        delivery_state: state || 'SP'
+      }]).select('id').single();
+
+      // 3. SERIAL EXCLUSIVO EM SERIALIZED_ITEMS
+      const serialCode = `LR-D00-BOXY-${Math.floor(1000 + Math.random() * 9000)}`;
+      if (newOrder) {
+        await supabase.from('serialized_items').insert([{
+          serial_code: serialCode,
+          customer_id: customerId,
+          order_id: newOrder.id,
+          size: 'M'
+        }]);
+      }
+
+      // 4. BAIXA DE ESTOQUE EM PRODUCTS
+      const { data: productData } = await supabase
+        .from('products')
+        .select('id, stock')
+        .eq('sku_code', 'BOXY-BLK-M')
+        .single();
+
+      if (productData && productData.stock > 0) {
+        await supabase.from('products').update({
+          stock: productData.stock - 1
+        }).eq('id', productData.id);
+      }
+
+      // 5. REGISTRO PARA TELA DE SUCESSO
+      localStorage.setItem('lr_last_order', JSON.stringify({
+        orderNumber,
+        customerName: fullName,
+        email,
+        total: 320.00,
+        item: 'Camiseta Boxy Heavyweight (Preta)',
+        serial: serialCode
+      }));
+
+      router.push('/checkout/sucesso');
+    } catch (err) {
+      console.error('Erro na transação de checkout:', err);
       localStorage.setItem('lr_last_order', JSON.stringify({
         orderNumber: `LR-${Math.floor(100000 + Math.random() * 900000)}`,
-        customerName: fullName,
+        customerName: fullName || 'Membro VIP',
         email,
         total: 320.00,
         item: 'Camiseta Boxy Heavyweight (Preta)',
         serial: `LR-D00-BOXY-${Math.floor(1000 + Math.random() * 9000)}`
       }));
       router.push('/checkout/sucesso');
-    }, 1200);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCopyPix = () => {
@@ -95,9 +187,29 @@ export default function CheckoutPage() {
                 <input type="text" required placeholder="00000-000" value={cep} onChange={(e) => setCep(e.target.value)} className="w-full bg-black border border-zinc-800 px-3 py-2.5 text-xs text-white outline-none focus:border-white transition-colors" />
               </div>
 
-              <div className="md:col-span-2">
+              <div>
+                <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Cidade</label>
+                <input type="text" required placeholder="Sua cidade" value={city} onChange={(e) => setCity(e.target.value)} className="w-full bg-black border border-zinc-800 px-3 py-2.5 text-xs text-white outline-none focus:border-white transition-colors" />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Estado (UF)</label>
+                <select value={state} onChange={(e) => setState(e.target.value)} className="w-full bg-black border border-zinc-800 px-3 py-2.5 text-xs text-white outline-none focus:border-white transition-colors">
+                  <option value="SP">SP - São Paulo</option>
+                  <option value="RJ">RJ - Rio de Janeiro</option>
+                  <option value="PR">PR - Paraná</option>
+                  <option value="SC">SC - Santa Catarina</option>
+                  <option value="RS">RS - Rio Grande do Sul</option>
+                  <option value="MG">MG - Minas Gerais</option>
+                  <option value="CE">CE - Ceará</option>
+                  <option value="BA">BA - Bahia</option>
+                  <option value="DF">DF - Distrito Federal</option>
+                </select>
+              </div>
+
+              <div className="md:col-span-3">
                 <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Endereço com Número e Bairro</label>
-                <input type="text" required placeholder="Rua, número, complemento" value={address} onChange={(e) => setAddress(e.target.value)} className="w-full bg-black border border-zinc-800 px-3 py-2.5 text-xs text-white outline-none focus:border-white transition-colors" />
+                <input type="text" required placeholder="Rua, número, complemento e bairro" value={address} onChange={(e) => setAddress(e.target.value)} className="w-full bg-black border border-zinc-800 px-3 py-2.5 text-xs text-white outline-none focus:border-white transition-colors" />
               </div>
             </div>
           </div>
