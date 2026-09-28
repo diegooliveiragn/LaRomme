@@ -64,20 +64,23 @@ export default function Home() {
 
   return (
     <main className="relative min-h-[100dvh] bg-black text-white flex flex-col justify-between overflow-hidden font-sans">
+      
+      {/* SEU VÍDEO PRÓPRIO LOCAL (100% ESCALA DE CINZA & OPACIDADE) */}
       <div className="absolute inset-0 z-0">
         <video
           autoPlay
           loop
           muted
           playsInline
-          className="w-full h-full object-cover opacity-40 mix-blend-luminosity"
-          poster="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2073&auto=format&fit=crop"
+          className="w-full h-full object-cover grayscale opacity-40 filter contrast-125"
         >
-          <source src="https://assets.mixkit.co/videos/preview/mixkit-dramatic-dark-ocean-waves-4216-large.mp4" type="video/mp4" />
+          <source src="/hero-beach.mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/60"></div>
+        {/* Degradê preto para garantir leitura perfeita da marca */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/70"></div>
       </div>
 
+      {/* CABEÇALHO */}
       <header className="relative z-10 w-full px-6 pt-14 pb-4 flex justify-between items-center max-w-7xl mx-auto">
         <span className="font-serif text-xl tracking-widest text-white">LaRomme.</span>
         <Link 
@@ -89,6 +92,7 @@ export default function Home() {
         </Link>
       </header>
 
+      {/* CENTRO PULSANTE */}
       <div className="relative z-10 flex-1 flex items-center justify-center px-6">
         <h1
           className={`text-3xl md:text-5xl lg:text-6xl font-serif text-white text-center tracking-[0.15em] transition-opacity duration-1000 ${
@@ -99,6 +103,7 @@ export default function Home() {
         </h1>
       </div>
 
+      {/* RODAPÉ */}
       <div className="relative z-10 w-full px-6 pb-12 pt-6 max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
         <div className="w-full md:w-auto">
           {registered ? (
