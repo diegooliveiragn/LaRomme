@@ -65,7 +65,7 @@ export default function Home() {
   return (
     <main className="relative min-h-[100dvh] bg-black text-white flex flex-col justify-between overflow-hidden font-sans">
       
-      {/* SEU VÍDEO PRÓPRIO LOCAL (100% ESCALA DE CINZA & OPACIDADE) */}
+      {/* VÍDEO HERO EM ESCALA DE CINZA */}
       <div className="absolute inset-0 z-0">
         <video
           autoPlay
@@ -76,13 +76,19 @@ export default function Home() {
         >
           <source src="/hero-beach.mp4" type="video/mp4" />
         </video>
-        {/* Degradê preto para garantir leitura perfeita da marca */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/70"></div>
       </div>
 
-      {/* CABEÇALHO */}
+      {/* CABEÇALHO RESTAURADO COM ÍCONE DO CAPACETE ROMANO */}
       <header className="relative z-10 w-full px-6 pt-14 pb-4 flex justify-between items-center max-w-7xl mx-auto">
-        <span className="font-serif text-xl tracking-widest text-white">LaRomme.</span>
+        <Link href="/" onClick={playHapticSound} className="flex items-center gap-3 group">
+          {/* SVG ÍCONE DO CAPACETE ROMANO */}
+          <svg className="w-6 h-6 text-white fill-current transition-transform duration-300 group-hover:scale-105" viewBox="0 0 24 24">
+            <path d="M12 2C9.5 2 7 3.5 7 6V9C7 11.21 8.79 13 11 13V15H8C6.34 15 5 16.34 5 18V21H19V18C19 16.34 17.66 15 16 15H13V13C15.21 13 17 11.21 17 9V6C17 3.5 14.5 2 12 2ZM11 4.1C11.32 4.03 11.66 4 12 4C12.34 4 12.68 4.03 13 4.1V11H11V4.1ZM9 6.5C9.8 6.1 10.8 6 12 6C13.2 6 14.2 6.1 15 6.5V9C15 10.1 14.1 11 13 11H11C9.9 11 9 10.1 9 9V6.5Z"/>
+          </svg>
+          <span className="font-serif text-xl tracking-widest text-white">LaRomme.</span>
+        </Link>
+
         <Link 
           href="/acesso" 
           onClick={() => { playHapticSound(); trackEvent('nav_senado_vip_click'); }} 
@@ -92,7 +98,7 @@ export default function Home() {
         </Link>
       </header>
 
-      {/* CENTRO PULSANTE */}
+      {/* TEXTO CENTRAL */}
       <div className="relative z-10 flex-1 flex items-center justify-center px-6">
         <h1
           className={`text-3xl md:text-5xl lg:text-6xl font-serif text-white text-center tracking-[0.15em] transition-opacity duration-1000 ${
