@@ -1,8 +1,9 @@
 ﻿'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { playHapticSound } from '@/lib/sound';
+import { trackEvent } from '@/lib/telemetry';
 import Link from 'next/link';
 
 export default function ProdutoSlugPage({ params }: { params: { slug: string } }) {
@@ -13,6 +14,10 @@ export default function ProdutoSlugPage({ params }: { params: { slug: string } }
   const [height, setHeight] = useState(178);
   const [weight, setWeight] = useState(78);
   const [fitPreference, setFitPreference] = useState<'adjusted' | 'boxy'>('boxy');
+
+  useEffect(() => {
+    trackEvent('product_view', { slug: params.slug });
+  }, [params.slug]);
 
   const recommendedSize = useMemo(() => {
     let score = (height - 170) * 0.4 + (weight - 70) * 0.6;
@@ -26,10 +31,12 @@ export default function ProdutoSlugPage({ params }: { params: { slug: string } }
     playHapticSound();
     setSelectedSize(recommendedSize);
     setShowFitEngine(false);
+    trackEvent('fit_engine_applied', { recommendedSize, height, weight, fitPreference });
   };
 
   const handleBuyNow = () => {
     playHapticSound();
+    trackEvent('checkout_initiated', { slug: params.slug, size: selectedSize, price: 320 });
     router.push('/checkout');
   };
 
@@ -75,7 +82,11 @@ export default function ProdutoSlugPage({ params }: { params: { slug: string } }
               <span className="text-[10px] text-zinc-400 uppercase tracking-widest">Tamanho Selecionado</span>
               <button
                 type="button"
-                onClick={() => { playHapticSound(); setShowFitEngine(!showFitEngine); }}
+                onClick={() => {
+                  playHapticSound();
+                  setShowFitEngine(!showFitEngine);
+                  if (!showFitEngine) trackEvent('fit_engine_open', { slug: params.slug });
+                }}
                 className="text-[10px] text-zinc-300 underline underline-offset-4 hover:text-white transition-colors uppercase tracking-widest"
               >
                 Provador Preditivo
@@ -91,7 +102,11 @@ export default function ProdutoSlugPage({ params }: { params: { slug: string } }
                   <button
                     key={size}
                     type="button"
-                    onClick={() => { playHapticSound(); setSelectedSize(size); }}
+                    onClick={() => {
+                      playHapticSound();
+                      setSelectedSize(size);
+                      trackEvent('size_selected', { size, slug: params.slug });
+                    }}
                     className={baseClass + " " + colorClass}
                   >
                     {size}
