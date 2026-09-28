@@ -1,18 +1,42 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import { playHapticSound } from '@/lib/sound';
+import Link from 'next/link';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
-export default function HomeManifesto() {
+export default function Home() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [registered, setRegistered] = useState(false);
+  
+  const [fadeState, setFadeState] = useState(0);
+  const [isVisible, setIsVisible] = useState(true);
+
+  // A sequência de códigos culturais da marca
+  const phrases = [
+    "LaRomme.",
+    "A força de Roma.",
+    "O movimento de Fortaleza.",
+    "Lote Zero."
+  ];
+
+  // Motor de Fade-In / Fade-Out silencioso
+  useEffect(() => {
+    const cycleText = setInterval(() => {
+      setIsVisible(false);
+      setTimeout(() => {
+        setFadeState((prev) => (prev + 1) % phrases.length);
+        setIsVisible(true);
+      }, 1200); // Tempo respirando no escuro
+    }, 4500); // Tempo de leitura
+    return () => clearInterval(cycleText);
+  }, [phrases.length]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +47,7 @@ export default function HomeManifesto() {
 
     try {
       await supabase.from('customers').insert([{
-        full_name: 'Lead Lote Zero',
+        full_name: 'Senado VIP - Waitlist',
         email: email,
         rfm_tag: 'WAITLIST_LOTE_ZERO',
         total_purchases: 0,
@@ -31,7 +55,6 @@ export default function HomeManifesto() {
       }]);
       setRegistered(true);
     } catch (err) {
-      console.error(err);
       setRegistered(true);
     } finally {
       setLoading(false);
@@ -39,89 +62,86 @@ export default function HomeManifesto() {
   };
 
   return (
-    <main className="relative min-h-screen bg-black text-white flex flex-col items-center justify-between px-6 py-12 font-sans overflow-hidden">
+    <main className="relative min-h-[100dvh] bg-black text-white flex flex-col justify-between overflow-hidden font-sans">
       
-      {/* CAMADA DE FUNDO DA PRAIA (MANTIDA COM OVERLAY ESCURO) */}
-      <div className="absolute inset-0 z-0 opacity-40 mix-blend-luminosity pointer-events-none">
+      {/* CAMADA CINEMATOGRÁFICA DE FUNDO (PERFORMANCE MOBILE) */}
+      <div className="absolute inset-0 z-0">
         <video
           autoPlay
           loop
           muted
           playsInline
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover opacity-40 mix-blend-luminosity"
           poster="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2073&auto=format&fit=crop"
         >
           <source src="https://assets.mixkit.co/videos/preview/mixkit-dramatic-dark-ocean-waves-4216-large.mp4" type="video/mp4" />
         </video>
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/80"></div>
+        {/* Degradê sutil para proteger a leitura no topo e rodapé */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/60"></div>
       </div>
 
-      {/* HEADER SUPERIOR */}
-      <header className="z-10 w-full max-w-5xl flex justify-between items-center font-mono text-xs border-b border-zinc-800/80 pb-4">
-        <span className="font-bold tracking-widest text-white uppercase">LaRomme.</span>
-        <div className="flex items-center gap-2 bg-black/60 border border-zinc-800 px-3 py-1 rounded-full backdrop-blur-md">
-          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
-          <span className="text-[10px] text-amber-400 uppercase tracking-wider font-bold">LOTE ZERO • FORJANDO</span>
-        </div>
+      {/* CABEÇALHO (COM SAFE AREA PADDING PARA IPHONE) */}
+      <header className="relative z-10 w-full px-6 pt-14 pb-4 flex justify-between items-center max-w-7xl mx-auto">
+        <span className="font-serif text-xl tracking-widest text-white">LaRomme.</span>
+        <Link 
+          href="/acesso" 
+          onClick={playHapticSound} 
+          className="text-[10px] md:text-xs font-sans uppercase tracking-widest text-zinc-400 hover:text-white transition-colors"
+        >
+          Senado VIP
+        </Link>
       </header>
 
-      {/* CONTEÚDO CENTRAL: MANIFESTO & CAPTAÇÃO */}
-      <div className="z-10 max-w-2xl w-full my-auto space-y-8 text-center font-mono py-12">
+      {/* CENTRO PULSANTE (EMOÇÃO E MARCA) */}
+      <div className="relative z-10 flex-1 flex items-center justify-center px-6">
+        <h1
+          className={`text-3xl md:text-5xl lg:text-6xl font-serif text-white text-center tracking-[0.15em] transition-opacity duration-1000 ${
+            isVisible ? 'opacity-100' : 'opacity-0'
+          }`}
+        >
+          {phrases[fadeState]}
+        </h1>
+      </div>
+
+      {/* RODAPÉ (CAPTAÇÃO SILENCIOSA E ORIGEM) */}
+      <div className="relative z-10 w-full px-6 pb-12 pt-6 max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
         
-        <div className="space-y-3">
-          <span className="text-[10px] text-amber-400 uppercase tracking-widest block font-bold">
-            ✦ MANIFESTO DE ABERTURA
-          </span>
-          <h1 className="text-3xl md:text-5xl font-serif uppercase tracking-[0.15em] text-white">
-            O Luxo Exige Silêncio.
-          </h1>
-        </div>
-
-        <div className="space-y-4 text-zinc-300 font-sans leading-relaxed text-xs md:text-sm bg-black/50 border border-zinc-800/80 p-6 md:p-8 rounded-lg backdrop-blur-md text-center">
-          <p>
-            Estamos finalizando a fundição do <strong className="text-white">Lote Zero</strong>. Peças de alta gramatura, modelagem Boxy Heavyweight e seriais numéricos gravados a laser.
-          </p>
-          <p className="text-zinc-400 text-[11px]">
-            O estoque será limitado e irrepetível. Cadastre seu e-mail para receber a chave de acesso reservada 1 hora antes do público geral.
-          </p>
-        </div>
-
-        {/* FORMULÁRIO DE ENTRADA NO SENADO VIP */}
-        <div className="pt-2">
+        {/* INPUT DE ACESSO */}
+        <div className="w-full md:w-auto">
           {registered ? (
-            <div className="bg-emerald-950/80 border border-emerald-800 text-emerald-400 p-4 rounded-lg font-mono text-xs backdrop-blur-md">
-              ✓ Credencial registrada. Seu e-mail está na lista de prioridade do Lote Zero.
-            </div>
+            <p className="text-xs font-sans tracking-widest text-emerald-400 uppercase text-center md:text-left">
+              Sua credencial foi ativada.
+            </p>
           ) : (
-            <form onSubmit={handleRegister} className="max-w-md mx-auto space-y-3">
+            <form 
+              onSubmit={handleRegister} 
+              className="flex flex-col sm:flex-row gap-0 sm:gap-4 items-center border-b border-zinc-600/50 pb-2 transition-colors focus-within:border-white"
+            >
               <input
                 type="email"
                 required
-                placeholder="seu.email@dominio.com"
+                placeholder="E-mail para acesso restrito"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-black/80 border border-zinc-700 px-4 py-3.5 text-xs text-white outline-none focus:border-white transition-colors text-center backdrop-blur-md"
+                className="bg-transparent text-[10px] md:text-xs font-sans tracking-widest text-white placeholder:text-zinc-500 outline-none w-full sm:w-64 text-center sm:text-left py-2"
               />
               <button
                 type="submit"
                 disabled={loading}
-                onClick={playHapticSound}
-                className="w-full bg-white text-black font-bold text-xs uppercase tracking-widest py-4 hover:bg-zinc-200 transition-colors disabled:opacity-50"
+                className="text-[10px] md:text-xs font-sans uppercase tracking-widest text-zinc-400 hover:text-white transition-colors mt-3 sm:mt-0"
               >
-                {loading ? '[ REGISTRANDO... ]' : '[ REQUERER ACESSO ANTECIPADO ]'}
+                {loading ? 'Aguarde' : 'Descobrir'}
               </button>
             </form>
           )}
         </div>
 
+        {/* CÓDIGO TERRITORIAL */}
+        <div className="text-[9px] md:text-[10px] font-sans tracking-widest uppercase text-zinc-500">
+          Fortaleza • CE
+        </div>
+        
       </div>
-
-      {/* FOOTER */}
-      <footer className="z-10 w-full max-w-5xl flex justify-between items-center font-mono text-[9px] text-zinc-500 border-t border-zinc-800/80 pt-4 uppercase">
-        <span>SÃO PAULO • BR</span>
-        <span>© 2026 LAROMME BRAND</span>
-      </footer>
-
     </main>
   );
 }
