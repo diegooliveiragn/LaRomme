@@ -1,8 +1,10 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
+import { playHapticSound } from '@/lib/sound';
+import Link from 'next/link';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -20,39 +22,27 @@ export default function AcessoPage() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    playHapticSound();
     setLoading(true);
     setErrorMsg('');
 
     try {
       if (mode === 'signup') {
         const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/acesso` : undefined;
-
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: redirectUrl
-          }
+        const { error: authError } = await supabase.auth.signUp({
+          email, password, options: { emailRedirectTo: redirectUrl }
         });
-
         if (authError) throw authError;
 
         await supabase.from('customers').insert([{
-          full_name: fullName || 'Membro VIP',
-          email: email,
-          rfm_tag: 'NEWBIE',
-          ltv: 0.00
+          full_name: fullName || 'Membro VIP', email: email, rfm_tag: 'NEWBIE', ltv: 0.00
         }]);
 
         localStorage.setItem('lr_user_email', email);
         alert('Credencial do Senado VIP criada! Verifique seu e-mail para confirmar a conta.');
         setMode('login');
       } else {
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
+        const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
         if (authError) throw authError;
 
         localStorage.setItem('lr_user_email', email);
@@ -65,94 +55,76 @@ export default function AcessoPage() {
         }
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Falha na autenticação. Verifique e-mail e senha.');
+      setErrorMsg(err.message || 'Falha na autenticação. Verifique suas credenciais.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-[#050505] text-white flex items-center justify-center px-6 font-sans">
-      <div className="max-w-md w-full bg-[#0d0d10] border border-zinc-800 p-8 rounded-lg space-y-6">
-        
-        <div className="flex border-b border-zinc-800 pb-4 font-mono text-xs">
-          <button 
-            onClick={() => setMode('login')} 
-            className={`flex-1 py-2 font-bold uppercase tracking-wider transition-colors ${mode === 'login' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}
-          >
-            [ Acessar Senado ]
-          </button>
-          <button 
-            onClick={() => setMode('signup')} 
-            className={`flex-1 py-2 font-bold uppercase tracking-wider transition-colors ${mode === 'signup' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}
-          >
-            [ Criar Credencial VIP ]
-          </button>
+    <main className="min-h-[100dvh] bg-black text-white font-sans flex flex-col items-center">
+      
+      <header className="w-full px-6 pt-14 pb-6 flex justify-between items-center max-w-md mx-auto border-b border-zinc-900">
+        <Link href="/" onClick={playHapticSound} className="font-serif text-xl tracking-widest text-white hover:text-zinc-300 transition-colors">
+          LaRomme.
+        </Link>
+      </header>
+
+      <div className="flex-1 w-full max-w-md mx-auto px-6 flex flex-col justify-center py-12">
+        <div className="mb-10 space-y-2 text-center">
+          <span className="text-[10px] text-zinc-500 uppercase tracking-widest block font-sans">
+            Acesso Restrito
+          </span>
+          <h1 className="text-2xl md:text-3xl font-serif uppercase tracking-widest text-white">
+            Senado VIP
+          </h1>
         </div>
 
-        <div className="text-center space-y-1">
-          <h1 className="text-xl font-serif uppercase tracking-widest">
-            {mode === 'login' ? 'Acesso ao Senado VIP' : 'Nova Credencial VIP'}
-          </h1>
-          <p className="text-xs text-zinc-500 font-mono">
-            {mode === 'login' ? 'Insira seu e-mail e senha cadastrados.' : 'Cadastre-se para acompanhar seus pedidos e seriais.'}
-          </p>
+        <div className="flex border-b border-zinc-900 mb-8 font-sans text-[10px] uppercase tracking-widest">
+          <button 
+            type="button"
+            onClick={() => { playHapticSound(); setMode('login'); }} 
+            className={`flex-1 pb-3 transition-colors ${mode === 'login' ? 'text-white border-b border-white' : 'text-zinc-600 hover:text-zinc-400'}`}
+          >
+            Autenticar
+          </button>
+          <button 
+            type="button"
+            onClick={() => { playHapticSound(); setMode('signup'); }} 
+            className={`flex-1 pb-3 transition-colors ${mode === 'signup' ? 'text-white border-b border-white' : 'text-zinc-600 hover:text-zinc-400'}`}
+          >
+            Criar Credencial
+          </button>
         </div>
 
         {errorMsg && (
-          <div className="bg-red-950/40 border border-red-800 text-red-400 p-3 text-xs font-mono text-center rounded">
+          <div className="bg-red-950/20 border border-red-900 text-red-500 p-4 text-[10px] uppercase tracking-widest font-sans text-center mb-6">
             {errorMsg}
           </div>
         )}
 
         <form onSubmit={handleAuth} className="space-y-4">
           {mode === 'signup' && (
-            <div>
-              <label className="text-[10px] text-zinc-400 font-mono uppercase block mb-1">Nome Completo</label>
-              <input 
-                type="text" 
-                required 
-                placeholder="Seu Nome" 
-                value={fullName} 
-                onChange={(e) => setFullName(e.target.value)} 
-                className="w-full bg-black border border-zinc-800 px-4 py-3 text-sm text-white outline-none focus:border-white transition-colors" 
-              />
-            </div>
+            <input 
+              type="text" required placeholder="Nome Completo" value={fullName} onChange={(e) => setFullName(e.target.value)} 
+              className="w-full bg-[#050505] border border-zinc-800/80 px-4 py-4 text-xs text-white placeholder:text-zinc-600 outline-none focus:border-zinc-500 transition-colors" 
+            />
           )}
-
-          <div>
-            <label className="text-[10px] text-zinc-400 font-mono uppercase block mb-1">E-mail</label>
-            <input 
-              type="email" 
-              required 
-              placeholder="seu.email@dominio.com" 
-              value={email} 
-              onChange={(e) => setEmail(e.target.value)} 
-              className="w-full bg-black border border-zinc-800 px-4 py-3 text-sm text-white outline-none focus:border-white transition-colors" 
-            />
-          </div>
-
-          <div>
-            <label className="text-[10px] text-zinc-400 font-mono uppercase block mb-1">Senha</label>
-            <input 
-              type="password" 
-              required 
-              placeholder="••••••••" 
-              value={password} 
-              onChange={(e) => setPassword(e.target.value)} 
-              className="w-full bg-black border border-zinc-800 px-4 py-3 text-sm text-white outline-none focus:border-white transition-colors" 
-            />
-          </div>
-
+          <input 
+            type="email" required placeholder="E-mail" value={email} onChange={(e) => setEmail(e.target.value)} 
+            className="w-full bg-[#050505] border border-zinc-800/80 px-4 py-4 text-xs text-white placeholder:text-zinc-600 outline-none focus:border-zinc-500 transition-colors" 
+          />
+          <input 
+            type="password" required placeholder="Senha" value={password} onChange={(e) => setPassword(e.target.value)} 
+            className="w-full bg-[#050505] border border-zinc-800/80 px-4 py-4 text-xs text-white placeholder:text-zinc-600 outline-none focus:border-zinc-500 transition-colors" 
+          />
           <button 
-            type="submit" 
-            disabled={loading} 
-            className="w-full bg-white text-black text-xs font-bold font-mono uppercase tracking-widest py-4 hover:bg-zinc-200 transition-colors disabled:opacity-50 mt-2"
+            type="submit" disabled={loading} 
+            className="w-full bg-white text-black font-sans font-bold text-[10px] uppercase tracking-widest py-4 hover:bg-zinc-200 transition-colors disabled:opacity-50 mt-4"
           >
-            {loading ? '[ VERIFICANDO... ]' : mode === 'login' ? '[ AUTENTICAR ACESSO ]' : '[ ATIVAR REGISTRO VIP ]'}
+            {loading ? 'Processando...' : mode === 'login' ? 'Acessar' : 'Garantir Acesso'}
           </button>
         </form>
-
       </div>
     </main>
   );

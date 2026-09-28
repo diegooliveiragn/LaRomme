@@ -1,89 +1,70 @@
-'use client';
+﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { playHapticSound } from '@/lib/sound';
 
 export default function CheckoutSucessoPage() {
-  const [orderInfo, setOrderInfo] = useState<any>(null);
+  const [orderData, setOrderData] = useState<any>(null);
 
   useEffect(() => {
-    const saved = localStorage.getItem('lr_last_order');
-    if (saved) {
-      try {
-        setOrderInfo(JSON.parse(saved));
-      } catch (e) {
-        console.error(e);
-      }
+    const savedOrder = localStorage.getItem('lr_last_order');
+    if (savedOrder) {
+      setOrderData(JSON.parse(savedOrder));
     }
   }, []);
 
   return (
-    <main className="min-h-screen bg-[#050505] text-white font-sans py-16 px-6 flex items-center justify-center">
-      <div className="max-w-md w-full bg-[#0d0d10] border border-zinc-800 p-8 rounded-lg space-y-6 font-mono text-center">
-        
-        <div className="w-12 h-12 bg-emerald-950/60 border border-emerald-500/50 rounded-full flex items-center justify-center mx-auto text-emerald-400 text-xl font-bold shadow-[0_0_15px_rgba(16,185,129,0.2)]">
-          ✓
-        </div>
+    <main className="min-h-[100dvh] bg-black text-white font-sans flex flex-col items-center">
+      
+      <header className="w-full px-6 pt-14 pb-6 flex justify-between items-center max-w-3xl mx-auto border-b border-zinc-900">
+        <span className="font-serif text-xl tracking-widest text-white">LaRomme.</span>
+      </header>
 
-        <div className="space-y-2">
-          <span className="text-[10px] text-emerald-400 uppercase tracking-widest block font-bold">
-            ✦ AQUISIÇÃO REGISTRADA NO SUPABASE
-          </span>
-          <h1 className="text-xl font-serif uppercase tracking-widest text-white">
-            Reserva Confirmada
-          </h1>
-          <p className="text-xs text-zinc-400 leading-relaxed font-sans">
-            Sua peça foi reservada com sucesso. O serial numérico exclusivo foi vinculado ao seu registro de aquisição.
-          </p>
-        </div>
-
-        {orderInfo && (
-          <div className="bg-black border border-zinc-800 p-4 rounded text-left space-y-2 text-xs">
-            <div className="flex justify-between border-b border-zinc-800 pb-2">
-              <span className="text-zinc-500">Pedido:</span>
-              <span className="font-bold text-white">{orderInfo.orderNumber}</span>
-            </div>
-            <div className="flex justify-between border-b border-zinc-800 pb-2">
-              <span className="text-zinc-500">Item:</span>
-              <span className="text-zinc-200">{orderInfo.item}</span>
-            </div>
-            <div className="flex justify-between border-b border-zinc-800 pb-2">
-              <span className="text-zinc-500">Serial Exclusivo:</span>
-              <span className="font-bold text-amber-300">{orderInfo.serial}</span>
-            </div>
-            <div className="flex justify-between pt-1">
-              <span className="text-zinc-500">Titular:</span>
-              <span className="text-zinc-300">{orderInfo.customerName}</span>
-            </div>
+      <div className="flex-1 w-full max-w-3xl mx-auto px-6 flex flex-col justify-center py-12">
+        <div className="bg-[#050505] border border-zinc-900 p-8 md:p-12 space-y-10 text-center">
+          
+          <div className="space-y-4">
+            <span className="text-3xl text-white block">✓</span>
+            <h1 className="text-2xl font-serif uppercase tracking-widest text-white">
+              Aquisição Registrada
+            </h1>
+            <p className="text-[11px] text-zinc-500 tracking-widest uppercase font-sans">
+              O seu pedido foi recebido pelo nosso sistema.
+            </p>
           </div>
-        )}
 
-        {/* CARD SOFT-ONBOARDING SENADO VIP */}
-        <div className="bg-zinc-950 border border-amber-900/40 p-4 rounded text-left space-y-3">
-          <span className="text-[10px] text-amber-400 uppercase font-bold tracking-wider block">
-            [ SENADO VIP • ACESSO RESTRITO ]
-          </span>
-          <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-            Crie sua senha no portal do cliente para acompanhar o status do frete White Glove e visualizar seus seriais ativos.
-          </p>
-          <Link
-            href="/acesso"
-            onClick={playHapticSound}
-            className="block text-center w-full bg-white text-black font-bold text-xs uppercase tracking-widest py-3 hover:bg-zinc-200 transition-colors"
-          >
-            [ ACTIVAR REGISTRO VIP ]
-          </Link>
+          {orderData && (
+            <div className="text-left bg-black border border-zinc-800/80 p-6 space-y-4 max-w-md mx-auto">
+              <div className="flex justify-between text-[10px] uppercase tracking-widest border-b border-zinc-900 pb-2">
+                <span className="text-zinc-500">Documento</span>
+                <span className="text-white">{orderData.orderNumber}</span>
+              </div>
+              <div className="flex justify-between text-[10px] uppercase tracking-widest border-b border-zinc-900 pb-2">
+                <span className="text-zinc-500">Artefato</span>
+                <span className="text-white">{orderData.item}</span>
+              </div>
+              <div className="flex justify-between text-[10px] uppercase tracking-widest">
+                <span className="text-zinc-500">Serial Designado</span>
+                <span className="text-zinc-300">{orderData.serial}</span>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-4 pt-4 max-w-md mx-auto">
+            <p className="text-[10px] text-zinc-500 tracking-widest uppercase font-sans leading-relaxed">
+              Assim que o seu banco confirmar a liquidação do Pix, você receberá o recibo e o código de rastreio White Glove via e-mail.
+            </p>
+            <Link 
+              href="/conta" 
+              onClick={playHapticSound} 
+              className="block w-full bg-white text-black font-sans font-bold text-[10px] uppercase tracking-widest py-4 hover:bg-zinc-200 transition-colors"
+            >
+              Acessar Arquivo Pessoal
+            </Link>
+          </div>
+
         </div>
-
-        <Link
-          href="/"
-          onClick={playHapticSound}
-          className="block text-[10px] text-zinc-500 hover:text-zinc-300 uppercase tracking-widest transition-colors pt-2"
-        >
-          ← Voltar à Galeria
-        </Link>
-
       </div>
     </main>
   );
