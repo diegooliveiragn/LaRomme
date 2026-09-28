@@ -25,9 +25,14 @@ export default function AcessoPage() {
 
     try {
       if (mode === 'signup') {
+        const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}/acesso` : undefined;
+
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            emailRedirectTo: redirectUrl
+          }
         });
 
         if (authError) throw authError;
@@ -40,7 +45,7 @@ export default function AcessoPage() {
         }]);
 
         localStorage.setItem('lr_user_email', email);
-        alert('Credencial do Senado VIP criada com sucesso! Faça login.');
+        alert('Credencial do Senado VIP criada! Verifique seu e-mail para confirmar a conta.');
         setMode('login');
       } else {
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
