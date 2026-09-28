@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
@@ -14,111 +14,89 @@ export default function ColecaoOrigoPage() {
   const [emailVip, setEmailVip] = useState('');
   const [registered, setRegistered] = useState(false);
 
-  // SIMULAÇÃO DE ESTOQUE ESGOTADO (COFRE DE ARQUIVO)
-  const isSoldOut = false; // Mudar para true para ativar modo cofre completo
-
   const handleVipRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     playHapticSound();
-
     if (!emailVip) return;
-
     try {
       await supabase.from('customers').insert([{
-        email: emailVip,
-        full_name: 'Interessado Drop 01',
-        rfm_tag: 'WAITLIST_DROP01'
+        email: emailVip, full_name: 'Lead Lote Zero', rfm_tag: 'WAITLIST_DROP01'
       }]);
       setRegistered(true);
     } catch (e) {
-      console.error(e);
       setRegistered(true);
     }
   };
 
+  const artifacts = [
+    { id: 'vestigium', title: 'Vestigium', desc: 'O que permanece. Algodão heavyweight, estrutura impecável.', type: 'Lifestyle / Boxy', price: 'R$ 320,00' },
+    { id: 'forza', title: 'Forza', desc: 'O que nos faz continuar. Engenharia térmica para intensidade.', type: 'Performance / T-Shirt', price: 'R$ 280,00' },
+    { id: 'libertas', title: 'Libertas', desc: 'Movimento sem restrição. Fluidez absoluta para a arena.', type: 'Performance / Regata', price: 'R$ 240,00' },
+    { id: 'signum', title: 'Signum', desc: 'O sinal de pertencimento. Proteção estruturada.', type: 'Acessório / Cap', price: 'R$ 190,00' }
+  ];
+
   return (
-    <main className="min-h-screen bg-[#050505] text-white font-sans py-12 px-6">
-      <div className="max-w-6xl mx-auto space-y-12">
+    <main className="min-h-[100dvh] bg-black text-white font-sans py-14 px-6 flex flex-col">
+      <div className="max-w-5xl mx-auto w-full space-y-16 flex-1">
         
-        {/* CABEÇALHO DA COLEÇÃO */}
-        <div className="border-b border-zinc-800 pb-8 space-y-2 font-mono">
-          <span className="text-[10px] text-amber-400 uppercase tracking-widest block font-bold">
-            ✦ COLEÇÃO 00 • ORIGO
-          </span>
-          <h1 className="text-3xl font-serif uppercase tracking-widest text-white">
-            {isSoldOut ? 'Cofre de Arquivo (Archive Vault)' : 'Coleção Origo (Lote Zero)'}
-          </h1>
-          <p className="text-xs text-zinc-400 max-w-2xl font-sans leading-relaxed">
-            Peças utilitárias de alta gramatura com seriais gravados a laser. Fabricação numerada e irrepetível.
-          </p>
-        </div>
-
-        {/* GRADE DE PRODUTOS */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          
-          {/* PEÇA 1 */}
-          <div className="bg-[#0d0d10] border border-zinc-800 rounded-lg overflow-hidden group relative">
-            {isSoldOut && (
-              <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-10 flex items-center justify-center">
-                <span className="text-xs font-mono font-bold text-zinc-400 border border-zinc-700 bg-black px-4 py-2 uppercase tracking-widest">
-                  SOLDOUT • ARCHIVE ONLY
-                </span>
-              </div>
-            )}
-            
-            <div className="aspect-[3/4] bg-zinc-900 flex items-center justify-center p-6 text-zinc-600 font-mono text-xs">
-              [ FOTO REGATA BOXY ]
-            </div>
-
-            <div className="p-6 space-y-3 font-mono">
-              <span className="text-[9px] text-zinc-500 uppercase block">SERIAL: LR-D00-001/050</span>
-              <h2 className="text-sm font-bold text-white uppercase">Camiseta Boxy Heavyweight</h2>
-              <div className="flex justify-between items-center pt-2">
-                <span className="text-sm font-bold text-emerald-400">R$ 320,00</span>
-                <Link
-                  href="/produto/regata-brutalista"
-                  onClick={playHapticSound}
-                  className="bg-white text-black font-bold text-[10px] uppercase px-3 py-2 hover:bg-zinc-200 transition-colors"
-                >
-                  [ DETALHES ]
-                </Link>
-              </div>
-            </div>
+        <header className="border-b border-zinc-900 pb-10 space-y-4">
+          <Link href="/" onClick={playHapticSound} className="text-[10px] text-zinc-500 hover:text-white uppercase tracking-widest block font-sans transition-colors">
+            ← Retornar
+          </Link>
+          <div className="pt-4 space-y-2">
+            <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-bold">
+              Coleção 00
+            </span>
+            <h1 className="text-3xl md:text-5xl font-serif uppercase tracking-widest text-white">
+              Origo.
+            </h1>
+            <p className="text-xs text-zinc-500 max-w-xl font-sans leading-relaxed pt-2">
+              A materialização da origem. Quatro artefatos essenciais concebidos para transitar entre a intensidade da arena e a exigência da cidade. Seriais limitados.
+            </p>
           </div>
+        </header>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+          {artifacts.map((art) => (
+            <Link 
+              key={art.id} 
+              href={`/produto/${art.id}`} 
+              onClick={playHapticSound}
+              className="group bg-[#050505] border border-zinc-900 hover:border-zinc-700 p-8 flex flex-col justify-between aspect-square md:aspect-auto md:h-80 transition-colors relative overflow-hidden"
+            >
+              <div className="space-y-1 z-10">
+                <span className="text-[9px] text-zinc-500 uppercase tracking-widest block">{art.type}</span>
+                <h2 className="text-2xl font-serif text-white uppercase tracking-wider group-hover:text-zinc-300 transition-colors">{art.title}</h2>
+              </div>
+              
+              <div className="space-y-4 z-10">
+                <p className="text-[11px] text-zinc-500 pr-8">{art.desc}</p>
+                <div className="flex justify-between items-center border-t border-zinc-900 pt-4">
+                  <span className="text-xs font-sans tracking-widest text-white">{art.price}</span>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 group-hover:text-white transition-colors">Ver Artefato →</span>
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
 
-        {/* CARD CAPTAÇÃO VIP PARA O DROP 01 */}
-        <div className="bg-[#0d0d10] border border-amber-900/40 p-8 rounded-lg font-mono space-y-4 max-w-2xl mx-auto text-center">
-          <span className="text-[10px] text-amber-400 uppercase font-bold tracking-widest block">
-            [ ACESSO ANTECIPADO SILENCIOSO • DROP 01 ]
-          </span>
+        <div className="border-t border-zinc-900 pt-16 pb-8 max-w-md mx-auto text-center space-y-6">
           <h3 className="text-lg font-serif uppercase tracking-widest text-white">
-            Receba o link 1 hora antes do público geral
+            Acesso ao Cofre
           </h3>
-          <p className="text-xs text-zinc-400 font-sans leading-relaxed">
-            Cadastre seu e-mail para garantir prioridade de reserva nos seriais numerados do próximo lote.
+          <p className="text-[11px] text-zinc-500 font-sans leading-relaxed">
+            A produção é intencionalmente escassa. Cadastre sua credencial para receber a chave do Lote Zero antes da abertura oficial.
           </p>
 
           {registered ? (
-            <div className="bg-emerald-950/40 border border-emerald-800 text-emerald-400 p-4 text-xs rounded font-mono">
-              ✓ E-mail registrado no Senado VIP. Você receberá o alerta reservado no lançamento.
+            <div className="text-xs font-sans tracking-widest text-emerald-400 uppercase">
+              Credencial Ativada com Sucesso.
             </div>
           ) : (
-            <form onSubmit={handleVipRegister} className="flex gap-2 max-w-md mx-auto pt-2">
-              <input
-                type="email"
-                required
-                placeholder="seu.email@dominio.com"
-                value={emailVip}
-                onChange={(e) => setEmailVip(e.target.value)}
-                className="flex-1 bg-black border border-zinc-800 px-4 py-3 text-xs text-white outline-none focus:border-white"
-              />
-              <button
-                type="submit"
-                className="bg-white text-black font-bold text-xs uppercase px-6 py-3 hover:bg-zinc-200 transition-colors shrink-0"
-              >
-                [ CADASTRAR ]
+            <form onSubmit={handleVipRegister} className="flex flex-col gap-4 border-b border-zinc-700 pb-2 focus-within:border-white transition-colors">
+              <input type="email" required placeholder="Insira seu melhor e-mail" value={emailVip} onChange={(e) => setEmailVip(e.target.value)} className="bg-transparent text-xs font-sans tracking-widest text-white placeholder:text-zinc-600 outline-none text-center py-2" />
+              <button type="submit" className="text-[10px] font-sans uppercase tracking-widest text-zinc-400 hover:text-white transition-colors">
+                Garantir Prioridade
               </button>
             </form>
           )}
