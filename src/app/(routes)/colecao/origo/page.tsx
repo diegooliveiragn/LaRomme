@@ -1,96 +1,130 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { FadeIn } from '@/components/ui/FadeIn';
+import { createClient } from '@supabase/supabase-js';
+import { playHapticSound } from '@/lib/sound';
 
-const artifacts = [
-  { code: 'ARTEFATO 01', name: 'Camiseta Boxy Algodão (Origo)', category: 'ESTRUTURA // HEAVYWEIGHT', specs: ['Algodão Premium 400g/m² (Estrutura & Conforto)', 'Modelagem Oversized/Boxy com gola estruturada', 'Estampa traseira com Escultura Romana + Coordenadas', 'Acabamento e etiqueta externa frontal'], colors: [{ name: 'OFF WHITE', hex: '#F4F1EA', active: true }], availability: 'RESTRITO // LOTE ZERO' },
-  { code: 'ARTEFATO 02', name: 'Camiseta Sport (Forza)', category: 'ALTA PERFORMANCE // TECH', specs: ['Tecido leve de alta dispersão e respirabilidade', 'Secagem rápida + Proteção UV integrada', 'Modelagem Relaxed Fit com caimento premium', 'Detalhes refletivos de visibilidade e etiqueta externa'], colors: [{ name: 'PRETO', hex: '#111111', active: true }], availability: 'RESTRITO // LOTE ZERO' },
-  { code: 'ARTEFATO 03', name: 'Regata Performance (Forza Tank)', category: 'ALTA PERFORMANCE // ATHLETIC', specs: ['Cavas anatômicas de recorte brutalista', 'Faixa refletiva vertical dorsal de alto impacto', 'Viés lateral em contraste vermelho/branco', 'Tecido técnico respirável de baixa retenção térmica'], colors: [{ name: 'PRETA', hex: '#111111', active: true }, { name: 'BRANCA', hex: '#F4F1EA', active: true }, { name: 'BORDÔ', hex: '#581825', active: true }], availability: 'RESTRITO // LOTE ZERO' },
-  { code: 'ARTEFATO 04', name: 'Boné Arquitetônico (Nox)', category: 'ACESSÓRIOS // HEADWEAR', specs: ['Algodão sarjado de alta densidade estrutural', 'Elmo Romano estilizado bordado na frente', 'Costura técnica vermelha na aba + Tag lateral LR', 'Fivela metálica traseira personalizada com relevo'], colors: [{ name: 'PRETO', hex: '#111111', active: true }], availability: 'RESTRITO // LOTE ZERO' },
-  { code: 'ARTEFATO 05', name: 'Boné Arquitetônico (Silex)', category: 'ACESSÓRIOS // HEADWEAR', specs: ['Algodão sarjado de alta densidade estrutural', 'Tipografia LaRomme bordada em alto relevo com traço vermelho', 'Fecho metálico traseiro ajustável gravado com brasão', 'Modelagem clássica de 6 painéis estruturados'], colors: [{ name: 'OFF WHITE', hex: '#F4F1EA', active: true }], availability: 'RESTRITO // LOTE ZERO' }
-];
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
 
 export default function ColecaoOrigoPage() {
-  
-  // Gatilho de Intenção Fantasma (Envia para o GA4)
-  const handleIntentionTrack = (itemName: string) => {
-    if (typeof window !== 'undefined' && (window as any).gtag) {
-      (window as any).gtag('event', 'capture_intention', {
-        event_category: 'Lote Zero',
-        event_label: itemName,
-        value: 1
-      });
-      console.log(`[Rastreio Fantasma] Intenção registrada para: ${itemName}`);
+  const [emailVip, setEmailVip] = useState('');
+  const [registered, setRegistered] = useState(false);
+
+  // SIMULAÇÃO DE ESTOQUE ESGOTADO (COFRE DE ARQUIVO)
+  const isSoldOut = false; // Mudar para true para ativar modo cofre completo
+
+  const handleVipRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    playHapticSound();
+
+    if (!emailVip) return;
+
+    try {
+      await supabase.from('customers').insert([{
+        email: emailVip,
+        full_name: 'Interessado Drop 01',
+        rfm_tag: 'WAITLIST_DROP01'
+      }]);
+      setRegistered(true);
+    } catch (e) {
+      console.error(e);
+      setRegistered(true);
     }
   };
 
   return (
-    <div className="bg-brand-black min-h-screen text-brand-offwhite pt-32 pb-32 px-6">
-      <div className="max-w-7xl mx-auto space-y-20">
-        <FadeIn direction="down">
-          <div className="border-b border-zinc-900 pb-12 flex flex-col md:flex-row md:items-end justify-between gap-8">
-            <div className="space-y-4">
-              <span className="font-mono text-[10px] text-brand-red uppercase tracking-widest block">Ficha Técnica de Engenharia // MMXXVI</span>
-              <h1 className="font-serif text-5xl sm:text-7xl uppercase tracking-wider text-white">Coleção Origo</h1>
-              <p className="font-sans text-xs text-zinc-400 uppercase tracking-widest max-w-2xl leading-relaxed">Mapeamento de corte, gramatura e matriz cromática dos 5 artefatos fundacionais do Lote Zero.</p>
+    <main className="min-h-screen bg-[#050505] text-white font-sans py-12 px-6">
+      <div className="max-w-6xl mx-auto space-y-12">
+        
+        {/* CABEÇALHO DA COLEÇÃO */}
+        <div className="border-b border-zinc-800 pb-8 space-y-2 font-mono">
+          <span className="text-[10px] text-amber-400 uppercase tracking-widest block font-bold">
+            ✦ COLEÇÃO 00 • ORIGO
+          </span>
+          <h1 className="text-3xl font-serif uppercase tracking-widest text-white">
+            {isSoldOut ? 'Cofre de Arquivo (Archive Vault)' : 'Coleção Origo (Lote Zero)'}
+          </h1>
+          <p className="text-xs text-zinc-400 max-w-2xl font-sans leading-relaxed">
+            Peças utilitárias de alta gramatura com seriais gravados a laser. Fabricação numerada e irrepetível.
+          </p>
+        </div>
+
+        {/* GRADE DE PRODUTOS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          
+          {/* PEÇA 1 */}
+          <div className="bg-[#0d0d10] border border-zinc-800 rounded-lg overflow-hidden group relative">
+            {isSoldOut && (
+              <div className="absolute inset-0 bg-black/80 backdrop-blur-sm z-10 flex items-center justify-center">
+                <span className="text-xs font-mono font-bold text-zinc-400 border border-zinc-700 bg-black px-4 py-2 uppercase tracking-widest">
+                  SOLDOUT • ARCHIVE ONLY
+                </span>
+              </div>
+            )}
+            
+            <div className="aspect-[3/4] bg-zinc-900 flex items-center justify-center p-6 text-zinc-600 font-mono text-xs">
+              [ FOTO REGATA BOXY ]
             </div>
-            <div className="border-l border-zinc-900 pl-6 space-y-1 font-mono text-[9px] text-zinc-600 uppercase tracking-widest">
-              <div>Matriz: 05 Artefatos</div>
-              <div>Origem: Brasil // Roma</div>
-              <div>Status: Aguardando Lançamento</div>
+
+            <div className="p-6 space-y-3 font-mono">
+              <span className="text-[9px] text-zinc-500 uppercase block">SERIAL: LR-D00-001/050</span>
+              <h2 className="text-sm font-bold text-white uppercase">Camiseta Boxy Heavyweight</h2>
+              <div className="flex justify-between items-center pt-2">
+                <span className="text-sm font-bold text-emerald-400">R$ 320,00</span>
+                <Link
+                  href="/produto/regata-brutalista"
+                  onClick={playHapticSound}
+                  className="bg-white text-black font-bold text-[10px] uppercase px-3 py-2 hover:bg-zinc-200 transition-colors"
+                >
+                  [ DETALHES ]
+                </Link>
+              </div>
             </div>
           </div>
-        </FadeIn>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {artifacts.map((item, idx) => (
-            <FadeIn key={item.code} delay={idx * 0.1} duration={0.8}>
-              <div className="bg-zinc-950 border border-zinc-900 p-8 sm:p-10 space-y-8 flex flex-col justify-between group hover:border-zinc-700 transition-all duration-500 relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4 font-mono text-[8px] text-zinc-800 uppercase tracking-widest pointer-events-none select-none">{item.code} // DIAGRAMA TÉCNICO</div>
-                <div className="space-y-6">
-                  <div className="flex justify-between items-center font-mono text-[9px] tracking-widest border-b border-zinc-900 pb-4">
-                    <span className="text-brand-red">{item.code}</span>
-                    <span className="text-zinc-500">{item.category}</span>
-                  </div>
-                  <h2 className="font-serif text-2xl sm:text-3xl uppercase tracking-wider text-white group-hover:text-brand-red transition-colors">{item.name}</h2>
-                  
-                  <div className="bg-black/80 border border-zinc-900 p-6 space-y-3 font-mono text-[10px] text-zinc-400">
-                    <div className="text-[9px] text-zinc-600 uppercase tracking-widest mb-2 flex justify-between"><span>[ ESPECIFICAÇÕES ]</span></div>
-                    <ul className="space-y-2">
-                      {item.specs.map((spec, sIdx) => (
-                        <li key={sIdx} className="flex items-start gap-2"><span className="text-brand-red font-bold">›</span><span className="uppercase">{spec}</span></li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <div className="space-y-2 pt-2">
-                    <span className="font-mono text-[9px] text-zinc-500 uppercase tracking-widest block">MATRIZ CROMÁTICA:</span>
-                    <div className="flex items-center gap-3">
-                      {item.colors.map((c, cIdx) => (
-                        <div key={cIdx} className="flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-3 py-1.5 font-mono text-[9px] text-zinc-300 uppercase tracking-wider">
-                          <span className="w-2.5 h-2.5 rounded-full border border-zinc-700" style={{ backgroundColor: c.hex }}></span><span>{c.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-6 border-t border-zinc-900 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
-                  <span className="font-mono text-[9px] text-zinc-600 uppercase tracking-widest">{item.availability}</span>
-                  <Link 
-                    href="/acesso"
-                    onClick={() => handleIntentionTrack(item.name)}
-                    className="bg-zinc-900 border border-zinc-800 text-white text-center px-6 py-3 font-mono text-[9px] uppercase tracking-widest hover:bg-white hover:text-black transition-all duration-300"
-                  >
-                    [ LIBERAR NO LOTE ZERO ]
-                  </Link>
-                </div>
-              </div>
-            </FadeIn>
-          ))}
         </div>
+
+        {/* CARD CAPTAÇÃO VIP PARA O DROP 01 */}
+        <div className="bg-[#0d0d10] border border-amber-900/40 p-8 rounded-lg font-mono space-y-4 max-w-2xl mx-auto text-center">
+          <span className="text-[10px] text-amber-400 uppercase font-bold tracking-widest block">
+            [ ACESSO ANTECIPADO SILENCIOSO • DROP 01 ]
+          </span>
+          <h3 className="text-lg font-serif uppercase tracking-widest text-white">
+            Receba o link 1 hora antes do público geral
+          </h3>
+          <p className="text-xs text-zinc-400 font-sans leading-relaxed">
+            Cadastre seu e-mail para garantir prioridade de reserva nos seriais numerados do próximo lote.
+          </p>
+
+          {registered ? (
+            <div className="bg-emerald-950/40 border border-emerald-800 text-emerald-400 p-4 text-xs rounded font-mono">
+              ✓ E-mail registrado no Senado VIP. Você receberá o alerta reservado no lançamento.
+            </div>
+          ) : (
+            <form onSubmit={handleVipRegister} className="flex gap-2 max-w-md mx-auto pt-2">
+              <input
+                type="email"
+                required
+                placeholder="seu.email@dominio.com"
+                value={emailVip}
+                onChange={(e) => setEmailVip(e.target.value)}
+                className="flex-1 bg-black border border-zinc-800 px-4 py-3 text-xs text-white outline-none focus:border-white"
+              />
+              <button
+                type="submit"
+                className="bg-white text-black font-bold text-xs uppercase px-6 py-3 hover:bg-zinc-200 transition-colors shrink-0"
+              >
+                [ CADASTRAR ]
+              </button>
+            </form>
+          )}
+        </div>
+
       </div>
-    </div>
+    </main>
   );
 }
