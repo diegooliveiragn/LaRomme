@@ -2,190 +2,157 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { playHapticSound } from '@/lib/sound';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', document: '', address: '' });
-  const [vipPassword, setVipPassword] = useState('');
-  
-  const generateMockOrderId = () => `LR-${Math.floor(10000 + Math.random() * 90000)}`;
+  const [copiedPix, setCopiedPix] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  // FORMULÁRIO DE ENTREGA
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [phone, setPhone] = useState('');
+  const [cep, setCep] = useState('');
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('SP');
 
-  const handlePaymentSubmit = async (e: React.FormEvent) => {
+  const handleFinishPurchase = async (e: React.FormEvent) => {
     e.preventDefault();
+    playHapticSound();
     setLoading(true);
 
-    const orderId = generateMockOrderId();
-    const serialCode = `LR-D00-BOXY-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    try {
-      // 1. Aciona o disparo do E-mail Transacional White Glove
-      await fetch('/api/email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          clientName: formData.name.split(' ')[0] || 'Membro',
-          clientEmail: formData.email,
-          orderId: orderId,
-          itemSize: 'M', // Pegar dinâmico do carrinho futuro
-          serialCode: serialCode
-        })
-      });
-
-      // 2. Aciona a Telemetria
-      let sessionId = localStorage.getItem('lr_session');
-      if (sessionId) {
-        await fetch('/api/telemetry', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            session_id: sessionId,
-            event_type: 'purchase_complete',
-            path: '/checkout',
-            details: { value: 320, orderId }
-          })
-        });
-      }
-    } catch (error) {
-      console.error('Erro na integração pós-venda:', error);
-    }
-
     setTimeout(() => {
-      setLoading(false);
-      setStep(3); // Vai para a tela de Sucesso + Soft Onboarding
-    }, 1500);
+      localStorage.setItem('lr_last_order', JSON.stringify({
+        orderNumber: `LR-${Math.floor(100000 + Math.random() * 900000)}`,
+        customerName: fullName,
+        email,
+        total: 320.00,
+        item: 'Camiseta Boxy Heavyweight (Preta)',
+        serial: `LR-D00-BOXY-${Math.floor(1000 + Math.random() * 9000)}`
+      }));
+      router.push('/checkout/sucesso');
+    }, 1200);
   };
 
-  const handleVipOnboarding = () => {
-    // Soft Onboarding: Salva e-mail e ativa sessão VIP imediatamente
-    localStorage.setItem('lr_user_email', formData.email);
-    localStorage.setItem('lr_ceo_mode', 'false');
-    router.push('/conta');
+  const handleCopyPix = () => {
+    playHapticSound();
+    navigator.clipboard.writeText('00020126580014BR.GOV.BCB.PIX0136laromme-pix-chave-aleatoria-mock5204000053039865405320.005802BR5915LaRomme%20Brand6009Sao%20Paulo62070503***6304E2D1');
+    setCopiedPix(true);
+    setTimeout(() => setCopiedPix(false), 3000);
   };
 
   return (
-    <main className="min-h-screen bg-[#050505] text-white pt-24 px-6 pb-20 font-sans selection:bg-emerald-500 selection:text-black">
-      <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12">
+    <main className="min-h-screen bg-[#050505] text-white font-sans py-12 px-6">
+      <div className="max-w-4xl mx-auto space-y-8">
         
-        {/* RESUMO DO PEDIDO */}
-        <div className="bg-[#0d0d10] border border-zinc-800 p-8 h-fit space-y-6">
-          <span className="text-[10px] text-zinc-500 uppercase tracking-widest block font-mono">O Arsenal Selecionado</span>
-          <div className="flex justify-between items-center border-b border-zinc-800 pb-4">
-            <div>
-              <p className="font-bold uppercase tracking-wider">Camiseta Boxy Heavyweight</p>
-              <p className="text-xs text-zinc-400 mt-1">Lote Zero • Tamanho M</p>
-            </div>
-            <p className="font-mono text-white">R$ 320,00</p>
+        {/* HEADER LIMPO */}
+        <div className="border-b border-zinc-800 pb-6 flex justify-between items-end font-mono">
+          <div>
+            <span className="text-[10px] text-zinc-500 uppercase tracking-widest block">LaRomme / Arquivo</span>
+            <h1 className="text-xl font-serif uppercase tracking-widest mt-1">Checkout de Aquisição</h1>
           </div>
-          <div className="space-y-2 text-xs font-mono text-zinc-400">
-            <div className="flex justify-between"><span>Subtotal</span><span className="text-white">R$ 320,00</span></div>
-            <div className="flex justify-between"><span>Frete Expresso</span><span className="text-emerald-400">Cortesia White Glove</span></div>
-          </div>
-          <div className="flex justify-between items-center border-t border-zinc-800 pt-4 font-mono font-bold">
-            <span className="text-sm">TOTAL</span>
-            <span className="text-xl">R$ 320,00</span>
-          </div>
+          <span className="text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800 px-3 py-1 rounded">
+            ✦ LOTE ZERO • RESERVA ATIVA
+          </span>
         </div>
 
-        {/* FLUXO DE PAGAMENTO / ONBOARDING */}
-        <div className="space-y-8">
+        <form onSubmit={handleFinishPurchase} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {step === 1 && (
-            <form onSubmit={(e) => { e.preventDefault(); setStep(2); }} className="space-y-6 animate-in fade-in">
-              <div>
-                <h1 className="text-xl font-serif uppercase tracking-widest border-b border-zinc-800 pb-2 mb-6">Identificação</h1>
-                <div className="space-y-4">
-                  <input type="email" name="email" required placeholder="E-mail" onChange={handleInputChange} className="w-full bg-black border border-zinc-800 px-4 py-3 text-sm text-white outline-none focus:border-white transition-colors" />
-                  <input type="text" name="name" required placeholder="Nome Completo" onChange={handleInputChange} className="w-full bg-black border border-zinc-800 px-4 py-3 text-sm text-white outline-none focus:border-white transition-colors" />
-                  <input type="text" name="document" required placeholder="CPF" onChange={handleInputChange} className="w-full bg-black border border-zinc-800 px-4 py-3 text-sm text-white outline-none focus:border-white transition-colors" />
-                </div>
-              </div>
-              <button type="submit" className="w-full bg-white text-black text-xs font-bold uppercase tracking-widest py-4 hover:bg-zinc-200">
-                [ CONTINUAR PARA PAGAMENTO ]
-              </button>
-            </form>
-          )}
+          {/* COLUNA 1 & 2: DADOS DE ENTREGA */}
+          <div className="lg:col-span-2 space-y-6 bg-[#0d0d10] border border-zinc-800 p-6 rounded-lg">
+            <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-amber-400 border-b border-zinc-800 pb-3">
+              1. Identificação e Endereço de Entrega
+            </h2>
 
-          {step === 2 && (
-            <form onSubmit={handlePaymentSubmit} className="space-y-6 animate-in fade-in">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <h1 className="text-xl font-serif uppercase tracking-widest border-b border-zinc-800 pb-2 mb-6">Liquidação</h1>
-                
-                <div className="space-y-3">
-                  <label className="flex items-center gap-3 p-4 border border-emerald-500 bg-emerald-950/20 cursor-pointer">
-                    <input type="radio" name="payment" defaultChecked className="accent-emerald-500" />
-                    <div>
-                      <p className="font-bold text-sm">Pix Instantâneo</p>
-                      <p className="text-xs text-emerald-400 mt-1">Aprovação imediata. Peça reservada no ato.</p>
-                    </div>
-                  </label>
-                  <label className="flex items-center gap-3 p-4 border border-zinc-800 opacity-50 cursor-not-allowed">
-                    <input type="radio" name="payment" disabled />
-                    <div>
-                      <p className="font-bold text-sm text-zinc-500">Cartão de Crédito</p>
-                      <p className="text-xs text-zinc-600 mt-1">Indisponível no Lote Zero.</p>
-                    </div>
-                  </label>
+                <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Nome Completo</label>
+                <input type="text" required placeholder="Seu nome completo" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full bg-black border border-zinc-800 px-3 py-2.5 text-xs text-white outline-none focus:border-white transition-colors" />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">E-mail para Rastreio</label>
+                <input type="email" required placeholder="seu.email@dominio.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-black border border-zinc-800 px-3 py-2.5 text-xs text-white outline-none focus:border-white transition-colors" />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">CPF (Nota Fiscal)</label>
+                <input type="text" required placeholder="000.000.000-00" value={cpf} onChange={(e) => setCpf(e.target.value)} className="w-full bg-black border border-zinc-800 px-3 py-2.5 text-xs text-white outline-none focus:border-white transition-colors" />
+              </div>
+
+              <div>
+                <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">WhatsApp / Telefone</label>
+                <input type="tel" required placeholder="(11) 99999-0000" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-black border border-zinc-800 px-3 py-2.5 text-xs text-white outline-none focus:border-white transition-colors" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+              <div>
+                <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">CEP</label>
+                <input type="text" required placeholder="00000-000" value={cep} onChange={(e) => setCep(e.target.value)} className="w-full bg-black border border-zinc-800 px-3 py-2.5 text-xs text-white outline-none focus:border-white transition-colors" />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="text-[10px] font-mono text-zinc-400 uppercase block mb-1">Endereço com Número e Bairro</label>
+                <input type="text" required placeholder="Rua, número, complemento" value={address} onChange={(e) => setAddress(e.target.value)} className="w-full bg-black border border-zinc-800 px-3 py-2.5 text-xs text-white outline-none focus:border-white transition-colors" />
+              </div>
+            </div>
+          </div>
+
+          {/* COLUNA 3: RESUMO E PAGAMENTO PIX */}
+          <div className="space-y-6">
+            <div className="bg-[#0d0d10] border border-zinc-800 p-6 rounded-lg space-y-6">
+              <h2 className="text-xs font-mono font-bold uppercase tracking-wider text-amber-400 border-b border-zinc-800 pb-3">
+                2. Resumo da Reserva
+              </h2>
+
+              <div className="space-y-3 font-mono text-xs">
+                <div className="flex justify-between text-zinc-300">
+                  <span>Camiseta Boxy Heavyweight</span>
+                  <span className="font-bold text-white">R$ 320,00</span>
+                </div>
+                <div className="flex justify-between text-zinc-500 text-[10px]">
+                  <span>Frete Expresso White Glove</span>
+                  <span className="text-emerald-400 uppercase font-bold">GRÁTIS</span>
+                </div>
+                <div className="border-t border-zinc-800 pt-3 flex justify-between text-sm">
+                  <span className="font-bold text-white">TOTAL</span>
+                  <span className="font-bold text-emerald-400">R$ 320,00</span>
                 </div>
               </div>
-              
-              <div className="flex gap-4">
-                <button type="button" onClick={() => setStep(1)} className="px-6 py-4 border border-zinc-800 text-zinc-400 text-xs uppercase hover:text-white transition-colors">Voltar</button>
-                <button type="submit" disabled={loading} className="flex-1 bg-white text-black text-xs font-bold uppercase tracking-widest py-4 hover:bg-zinc-200 transition-colors disabled:opacity-50">
-                  {loading ? '[ PROCESSANDO... ]' : '[ FINALIZAR POSSE ]'}
+
+              {/* ÁREA DE PAGAMENTO PIX INSTANTÂNEO */}
+              <div className="bg-black border border-zinc-800 p-4 rounded space-y-3 font-mono text-center">
+                <span className="text-[10px] text-zinc-400 uppercase block font-bold">Pagamento Instantâneo via Pix</span>
+                <button type="button" onClick={handleCopyPix} className="w-full bg-zinc-900 border border-zinc-700 text-zinc-200 text-[10px] py-2 rounded hover:bg-zinc-800 transition-colors uppercase">
+                  {copiedPix ? '✓ Chave Pix Copiada!' : '[ Copiar Chave Pix ]'}
                 </button>
               </div>
-            </form>
-          )}
 
-          {/* TELA DE SUCESSO + SOFT ONBOARDING (A MÁGICA DA CONVERSÃO DE CONTAS) */}
-          {step === 3 && (
-            <div className="space-y-8 animate-in slide-in-from-right-4">
-              <div className="bg-emerald-950/30 border border-emerald-500/50 p-6 space-y-3">
-                <div className="flex items-center gap-3">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]"></span>
-                  <h2 className="font-bold text-emerald-400 uppercase tracking-widest">POSSE FIRMADA.</h2>
-                </div>
-                <p className="text-sm text-zinc-300 leading-relaxed">
-                  Liquidação aprovada. Seu Certificado de Posse foi enviado para <strong>{formData.email}</strong>.
-                </p>
+              {/* BOTÃO UTILITÁRIO "ZERO DÚVIDA" */}
+              <div className="space-y-2 pt-2">
+                <span className="text-[9px] text-zinc-500 font-mono text-center block uppercase tracking-wider">
+                  ✦ Garantia de Serial Numérico Gravado
+                </span>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  onClick={playHapticSound}
+                  className="w-full bg-white text-black font-mono font-bold text-xs uppercase tracking-widest py-4 hover:bg-zinc-200 transition-colors disabled:opacity-50"
+                >
+                  {loading ? '[ CONFIRMANDO RESERVA... ]' : '[ FINALIZAR COMPRA VIA PIX ]'}
+                </button>
               </div>
 
-              <div className="bg-[#0d0d10] border border-zinc-800 p-8 text-center space-y-6">
-                <div>
-                  <span className="text-[10px] text-zinc-500 uppercase tracking-widest block font-mono mb-2">[ Acesso Restrito ]</span>
-                  <h3 className="text-xl font-serif uppercase tracking-widest">Senado VIP LaRomme</h3>
-                  <p className="text-xs text-zinc-400 mt-3 max-w-sm mx-auto leading-relaxed">
-                    Sua peça foi garantida. Defina uma senha de acesso abaixo para ativar sua conta de membro, acompanhar o rastreio da expedição em tempo real e acessar o Cofre de Drops Secretos.
-                  </p>
-                </div>
-
-                <div className="max-w-xs mx-auto space-y-4 pt-4">
-                  <input 
-                    type="password" 
-                    placeholder="Defina uma Senha" 
-                    value={vipPassword}
-                    onChange={(e) => setVipPassword(e.target.value)}
-                    className="w-full bg-black border border-zinc-700 px-4 py-3 text-center text-sm text-white outline-none focus:border-white transition-colors"
-                  />
-                  <button 
-                    onClick={handleVipOnboarding}
-                    disabled={!vipPassword}
-                    className="w-full bg-white text-black text-xs font-bold uppercase tracking-widest py-3 hover:bg-zinc-200 transition-colors disabled:opacity-50 disabled:bg-zinc-800 disabled:text-zinc-500"
-                  >
-                    [ ATIVAR CONTA VIP ]
-                  </button>
-                </div>
-              </div>
             </div>
-          )}
+          </div>
 
-        </div>
+        </form>
+
       </div>
     </main>
   );
