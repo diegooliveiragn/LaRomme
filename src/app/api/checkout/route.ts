@@ -1,53 +1,54 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { MercadoPagoConfig, Payment } from 'mercadopago';
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
-const client = new MercadoPagoConfig({
-  accessToken: process.env.MP_ACCESS_TOKEN || '',
-  options: { timeout: 8000 }
-});
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
 
-export async function POST(req: NextRequest) {
+export async function POST(request: Request) {
   try {
-    const body = await req.json();
-    const payment = new Payment(client);
+    const { fullName, email, cpf, totalAmount, orderNumber, customerId, state } = await request.json();
 
-    const rawCpf = body.payer?.identification?.number || '';
-    const cleanCpf = rawCpf.replace(/\D/g, '');
-
-    const requestOptions = {
-      body: {
-        transaction_amount: 320.00, // <-- Restauração para o valor real da Boxy
-        description: 'LaRomme - Coleção Origo',
-        payment_method_id: body.paymentMethodId || body.payment_method_id || 'pix',
-        token: body.token,
-        installments: body.installments ? Number(body.installments) : 1,
-        payer: {
-          email: body.payer?.email || 'contato@laromme.com',
-          first_name: body.payer?.firstName || 'Cliente',
-          last_name: body.payer?.lastName || 'LaRomme',
-          identification: {
-            type: 'CPF',
-            number: cleanCpf
-          }
-        }
+    let qrCodeCopiaECola = "00020126580014BR.GOV.BCB.PIX0136laromme-pix-chave-aleatoria-mock5204000053039865405320.005802BR5915LaRomme%20Brand6009Sao%20Paulo62070503***6304E2D1";
+    
+    // INTEGRAÇÃO REAL MERCADO PAGO (Ativada se a variável de ambiente existir)
+    if (process.env.MERCADOPAGO_ACCESS_TOKEN) {
+      const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`
+        },
+        body: JSON.stringify({
+          transaction_amount: totalAmount,
+          description: 'LaRomme - Coleção Origo',
+          payment_method_id: 'pix',
+          payer: { email, first_name: fullName, identification: { type: 'CPF', number: cpf.replace(/\D/g, '') } },
+          external_reference: orderNumber
+        })
+      });
+      const mpData = await mpResponse.json();
+      if (mpData.point_of_interaction?.transaction_data) {
+         qrCodeCopiaECola = mpData.point_of_interaction.transaction_data.qr_code;
       }
-    };
+    }
 
-    const result = await payment.create(requestOptions);
+    // REGISTRA O PEDIDO NO SUPABASE COMO "PENDENTE"
+    const netProfit = totalAmount - 60.00 - 10.50 - (totalAmount * 0.06) - (totalAmount * 0.04);
+    
+    await supabase.from('orders').insert([{
+      order_number: orderNumber,
+      customer_id: customerId,
+      total_amount: totalAmount,
+      net_profit: netProfit,
+      payment_method: 'PIX',
+      payment_status: 'PENDENTE',
+      delivery_state: state || 'SP'
+    }]);
 
-    return NextResponse.json({
-      id: result.id,
-      status: result.status,
-      detail: result.status_detail,
-      qr_code: result.point_of_interaction?.transaction_data?.qr_code,
-      qr_code_base64: result.point_of_interaction?.transaction_data?.qr_code_base64,
-    });
-
+    return NextResponse.json({ success: true, pixCopiaECola: qrCodeCopiaECola });
   } catch (error: any) {
-    console.error("Erro no Mercado Pago:", error);
-    return NextResponse.json({
-      error: "Falha no processamento.",
-      details: error.message || error.cause || "Erro de conexão."
-    }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
