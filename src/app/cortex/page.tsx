@@ -10,32 +10,81 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
+// CONJUNTO DE DADOS MOCK (SIMULAÇÃO DE 1 ANO DE OPERAÇÃO)
+const MOCK_1_YEAR = {
+  orders: [
+    { id: 'm1', order_number: 'LR-90214', total_amount: 320.00, payment_status: 'PAGO', delivery_state: 'SP', created_at: '2026-09-12T10:30:00Z', customers: { full_name: 'Gabriel Siqueira', email: 'gabriel.siqueira@gmail.com', phone: '11988887766' } },
+    { id: 'm2', order_number: 'LR-90215', total_amount: 640.00, payment_status: 'PAGO', delivery_state: 'RJ', created_at: '2026-09-12T11:15:00Z', customers: { full_name: 'Lucas Arantes', email: 'lucas.arantes@hotmail.com', phone: '21997776655' } },
+    { id: 'm3', order_number: 'LR-90216', total_amount: 320.00, payment_status: 'PAGO', delivery_state: 'CE', created_at: '2026-09-12T12:00:00Z', customers: { full_name: 'Renan Vasconcelos', email: 'renan.v@gmail.com', phone: '85991112233' } },
+    { id: 'm4', order_number: 'LR-90217', total_amount: 280.00, payment_status: 'PAGO', delivery_state: 'MG', created_at: '2026-09-12T14:20:00Z', customers: { full_name: 'Mateus Castro', email: 'mcastro@yahoo.com.br', phone: '31984443322' } },
+    { id: 'm5', order_number: 'LR-90218', total_amount: 560.00, payment_status: 'PENDENTE', delivery_state: 'PR', created_at: '2026-09-12T15:45:00Z', customers: { full_name: 'Felipe Diniz', email: 'fdiniz@outlook.com', phone: '41992221100' } },
+    { id: 'm6', order_number: 'LR-90219', total_amount: 320.00, payment_status: 'PAGO', delivery_state: 'RS', created_at: '2026-09-12T16:10:00Z', customers: { full_name: 'Rodrigo Burlamaqui', email: 'burlamaqui@gmail.com', phone: '51981119988' } },
+    { id: 'm7', order_number: 'LR-90220', total_amount: 190.00, payment_status: 'PAGO', delivery_state: 'CE', created_at: '2026-09-12T17:05:00Z', customers: { full_name: 'Caio Menezes', email: 'caio.menezes@gmail.com', phone: '85987654321' } },
+    { id: 'm8', order_number: 'LR-90221', total_amount: 320.00, payment_status: 'PENDENTE', delivery_state: 'SP', created_at: '2026-09-12T18:30:00Z', customers: { full_name: 'Thiago Alencar', email: 'talencar@gmail.com', phone: '11971112233' } }
+  ],
+  expenses: [
+    { id: 'e1', category: 'Meta Ads', description: 'Tráfego Pago Meta Ads • Campanha Lote Zero', amount: 18500.00, date: '2026-09-01' },
+    { id: 'e2', category: 'Software/SaaS', description: 'Assinaturas do Ecossistema (Vercel, Supabase, Resend)', amount: 1450.00, date: '2026-09-05' },
+    { id: 'e3', category: 'Embalagem', description: 'Produção Lote 01 • Caixas Rígidas + Seda', amount: 8200.00, date: '2026-08-20' },
+    { id: 'e4', category: 'Logistica', description: 'Contrato de Coleta Expressa SEDEX/Jadlog', amount: 3100.00, date: '2026-09-10' }
+  ],
+  customers: [
+    { id: 'c1', full_name: 'Gabriel Siqueira', email: 'gabriel.siqueira@gmail.com', phone: '11988887766', rfm_tag: 'MEMBRO_VIP', ltv: 1280.00, created_at: '2026-01-15T10:00:00Z' },
+    { id: 'c2', full_name: 'Lucas Arantes', email: 'lucas.arantes@hotmail.com', phone: '21997776655', rfm_tag: 'SENADOR_GOLD', ltv: 2450.00, created_at: '2026-02-10T14:30:00Z' },
+    { id: 'c3', full_name: 'Renan Vasconcelos', email: 'renan.v@gmail.com', phone: '85991112233', rfm_tag: 'MEMBRO_VIP', ltv: 960.00, created_at: '2026-03-01T09:15:00Z' },
+    { id: 'c4', full_name: 'Mateus Castro', email: 'mcastro@yahoo.com.br', phone: '31984443322', rfm_tag: 'WAITLIST', ltv: 280.00, created_at: '2026-04-12T18:00:00Z' },
+    { id: 'c5', full_name: 'Rodrigo Burlamaqui', email: 'burlamaqui@gmail.com', phone: '51981119988', rfm_tag: 'SENADOR_GOLD', ltv: 1890.00, created_at: '2026-05-20T11:45:00Z' }
+  ],
+  serials: [
+    { id: 's1', serial_code: 'LR-D00-BOXY-0001', customer_id: 'c1', size: 'M' },
+    { id: 's2', serial_code: 'LR-D00-BOXY-0002', customer_id: 'c2', size: 'G' },
+    { id: 's3', serial_code: 'LR-D00-FORZ-0001', customer_id: 'c3', size: 'M' },
+    { id: 's4', serial_code: 'LR-D00-LIBE-0001', customer_id: 'c5', size: 'P' }
+  ],
+  telemetry: [
+    { id: 't1', event_type: 'pdp_view', page_url: '/produto/vestigium', created_at: new Date().toISOString() },
+    { id: 't2', event_type: 'fit_engine_open', page_url: '/produto/vestigium', created_at: new Date(Date.now() - 120000).toISOString() },
+    { id: 't3', event_type: 'checkout_initiated', page_url: '/checkout', created_at: new Date(Date.now() - 300000).toISOString() },
+    { id: 't4', event_type: 'waitlist_signup', page_url: '/', created_at: new Date(Date.now() - 600000).toISOString() }
+  ],
+  totals: {
+    grossRevenue: 1482000.00,
+    paidOrdersCount: 4630,
+    ebitda: 563160.00,
+    ebitdaMargin: 38.0
+  }
+};
+
 export default function CortexStandaloneDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [isCeo, setIsCeo] = useState(false);
+  
+  // TOGGLE DE MODO DEMO / SIMULAÇÃO DE 1 ANO
+  const [isDemoMode, setIsDemoMode] = useState(true);
+
   const [activeTab, setActiveTab] = useState<
     'cockpit' | 'dre' | 'pricing' | 'whitelabel' | 'crm' | 'content' | 'whatsapp' | 'shipments'
   >('cockpit');
 
-  // BANCO DE DADOS
-  const [orders, setOrders] = useState<any[]>([]);
-  const [expenses, setExpenses] = useState<any[]>([]);
-  const [customers, setCustomers] = useState<any[]>([]);
-  const [serials, setSerials] = useState<any[]>([]);
-  const [telemetryEvents, setTelemetryEvents] = useState<any[]>([]);
+  // DADOS VIVOS DO BANCO
+  const [dbOrders, setDbOrders] = useState<any[]>([]);
+  const [dbExpenses, setDbExpenses] = useState<any[]>([]);
+  const [dbCustomers, setDbCustomers] = useState<any[]>([]);
+  const [dbSerials, setDbSerials] = useState<any[]>([]);
+  const [dbTelemetry, setDbTelemetry] = useState<any[]>([]);
   
-  // ESTADO CLIENTE SELECIONADO (DROPDOWN CRM 360)
+  // CLIENTE SELECIONADO (DROPDOWN CRM 360)
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
 
-  // SIMULADOR DE PRECIFICAÇÃO PSICODINÂMICA
+  // SIMULADOR PRECIFICAÇÃO
   const [fabricCost, setFabricCost] = useState(45);
   const [sewingCost, setSewingCost] = useState(25);
   const [tagPackCost, setTagPackCost] = useState(15);
   const [laserSerialCost, setLaserSerialCost] = useState(10);
   const [targetMarkup, setTargetMarkup] = useState(3.2);
 
-  // LANÇAMENTO DE OPEX / SAAS
+  // LANÇAMENTO DE OPEX
   const [expCategory, setExpCategory] = useState('Meta Ads');
   const [expDescription, setExpDescription] = useState('');
   const [expAmount, setExpAmount] = useState('');
@@ -52,17 +101,22 @@ export default function CortexStandaloneDashboard() {
     async function initCortex() {
       const email = localStorage.getItem('lr_user_email');
       const ceoMode = localStorage.getItem('lr_ceo_mode');
+      const demoMode = localStorage.getItem('lr_demo_mode');
+
+      if (demoMode !== null) {
+        setIsDemoMode(demoMode === 'true');
+      }
 
       const isCEOUser = email === 'diegooliveiragn@gmail.com' || ceoMode === 'true';
       setIsCeo(isCEOUser);
 
       try {
         const [
-          { data: dbOrders },
-          { data: dbExpenses },
-          { data: dbCustomers },
-          { data: dbSerials },
-          { data: dbTelemetry }
+          { data: resOrders },
+          { data: resExpenses },
+          { data: resCustomers },
+          { data: resSerials },
+          { data: resTelemetry }
         ] = await Promise.all([
           supabase.from('orders').select('*, customers(*)').order('created_at', { ascending: false }),
           supabase.from('expenses').select('*').order('date', { ascending: false }),
@@ -71,11 +125,11 @@ export default function CortexStandaloneDashboard() {
           supabase.from('telemetry_events').select('*').order('created_at', { ascending: false }).limit(30)
         ]);
 
-        if (dbOrders) setOrders(dbOrders);
-        if (dbExpenses) setExpenses(dbExpenses);
-        if (dbCustomers) setCustomers(dbCustomers);
-        if (dbSerials) setSerials(dbSerials);
-        if (dbTelemetry) setTelemetryEvents(dbTelemetry);
+        if (resOrders) setDbOrders(resOrders);
+        if (resExpenses) setDbExpenses(resExpenses);
+        if (resCustomers) setDbCustomers(resCustomers);
+        if (resSerials) setDbSerials(resSerials);
+        if (resTelemetry) setDbTelemetry(resTelemetry);
       } catch (err) {
         console.error('Erro de sincronização Córtex OS:', err);
       } finally {
@@ -85,6 +139,13 @@ export default function CortexStandaloneDashboard() {
     initCortex();
   }, []);
 
+  const toggleDemoMode = () => {
+    playHapticSound();
+    const nextMode = !isDemoMode;
+    setIsDemoMode(nextMode);
+    localStorage.setItem('lr_demo_mode', String(nextMode));
+  };
+
   const forceCeoAuth = () => {
     playHapticSound();
     localStorage.setItem('lr_user_email', 'diegooliveiragn@gmail.com');
@@ -92,18 +153,42 @@ export default function CortexStandaloneDashboard() {
     setIsCeo(true);
   };
 
-  // MAPA DE DENSIDADE POR ESTADO (GEOINTELIGÊNCIA)
+  // DADOS ATIVOS DEPENDENDO DO MODO (REAL vs DEMO 1 ANO)
+  const orders = isDemoMode ? MOCK_1_YEAR.orders : dbOrders;
+  const expenses = isDemoMode ? MOCK_1_YEAR.expenses : dbExpenses;
+  const customers = isDemoMode ? MOCK_1_YEAR.customers : dbCustomers;
+  const serials = isDemoMode ? MOCK_1_YEAR.serials : dbSerials;
+  const telemetryEvents = isDemoMode ? MOCK_1_YEAR.telemetry : dbTelemetry;
+
+  // GEOINTELIGÊNCIA
   const stateDensity = useMemo(() => {
+    if (isDemoMode) {
+      return { SP: 1850, RJ: 920, CE: 640, MG: 480, PR: 310, RS: 220, SC: 150, BA: 120, DF: 90 };
+    }
     const counts: Record<string, number> = { CE: 0, SP: 0, RJ: 0, MG: 0, PR: 0, RS: 0, SC: 0, BA: 0, DF: 0 };
     orders.forEach((o) => {
       const st = o.delivery_state || 'CE';
       counts[st] = (counts[st] || 0) + 1;
     });
     return counts;
-  }, [orders]);
+  }, [orders, isDemoMode]);
 
-  // CÁLCULO DRE & NCG
+  // CÁLCULO DRE
   const dreMetrics = useMemo(() => {
+    if (isDemoMode) {
+      return {
+        grossRevenue: MOCK_1_YEAR.totals.grossRevenue,
+        cogs: 439850.00,
+        gatewayFees: 59131.80,
+        taxes: 88920.00,
+        grossProfit: 894098.20,
+        totalOpEx: 330938.20,
+        ebitda: MOCK_1_YEAR.totals.ebitda,
+        ebitdaMargin: MOCK_1_YEAR.totals.ebitdaMargin,
+        paidCount: MOCK_1_YEAR.totals.paidOrdersCount
+      };
+    }
+
     const paidOrders = orders.filter((o) => o.payment_status === 'PAGO');
     const grossRevenue = paidOrders.reduce((acc, o) => acc + Number(o.total_amount || 0), 0);
 
@@ -128,17 +213,10 @@ export default function CortexStandaloneDashboard() {
       ebitdaMargin,
       paidCount: paidOrders.length
     };
-  }, [orders, expenses]);
+  }, [orders, expenses, isDemoMode]);
 
-  // CÁLCULO UNIT ECONOMICS
-  const unitCostTotal = useMemo(() => {
-    return fabricCost + sewingCost + tagPackCost + laserSerialCost;
-  }, [fabricCost, sewingCost, tagPackCost, laserSerialCost]);
-
-  const suggestedPrice = useMemo(() => {
-    const raw = unitCostTotal * targetMarkup;
-    return Math.ceil(raw / 10) * 10;
-  }, [unitCostTotal, targetMarkup]);
+  const unitCostTotal = fabricCost + sewingCost + tagPackCost + laserSerialCost;
+  const suggestedPrice = Math.ceil((unitCostTotal * targetMarkup) / 10) * 10;
 
   const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -155,12 +233,11 @@ export default function CortexStandaloneDashboard() {
 
     try {
       const { data } = await supabase.from('expenses').insert([newExp]).select().single();
-      if (data) setExpenses([data, ...expenses]);
-      else setExpenses([{ ...newExp, id: String(Date.now()) }, ...expenses]);
+      if (data && !isDemoMode) setDbExpenses([data, ...dbExpenses]);
       setExpDescription('');
       setExpAmount('');
     } catch (e) {
-      setExpenses([{ ...newExp, id: String(Date.now()) }, ...expenses]);
+      console.error(e);
     } finally {
       setAddingExp(false);
     }
@@ -196,7 +273,7 @@ export default function CortexStandaloneDashboard() {
   if (loading) {
     return (
       <main className="min-h-screen bg-black text-white flex items-center justify-center font-sans text-xs uppercase tracking-widest text-zinc-500">
-        Carregando Córtex OS Standalone...
+        Iniciando Córtex OS Standalone...
       </main>
     );
   }
@@ -204,31 +281,40 @@ export default function CortexStandaloneDashboard() {
   return (
     <div className="min-h-screen bg-[#030303] text-white font-sans flex flex-col">
       
-      {/* CABEÇALHO STANDALONE EXECUTIVO */}
+      {/* CABEÇALHO STANDALONE EXECUTIVO COM ALTERNADOR DE MODO */}
       <header className="w-full px-8 py-5 bg-[#070707] border-b border-zinc-800/80 flex justify-between items-center sticky top-0 z-50">
         <div className="flex items-center gap-6">
           <span className="font-serif text-2xl tracking-[0.2em] text-white">CÓRTEX OS</span>
-          <span className="text-[9px] bg-zinc-900 border border-zinc-700 text-zinc-400 px-3 py-1 uppercase tracking-widest">
-            v2.0 Standalone
-          </span>
+
+          {/* BOTÃO ALTERNADOR DE MODO (DEMO vs REAL) */}
+          <button
+            onClick={toggleDemoMode}
+            className={`text-[9px] border px-3 py-1.5 uppercase tracking-widest font-bold transition-all flex items-center gap-2 ${
+              isDemoMode
+                ? 'bg-amber-950/80 text-amber-400 border-amber-500/50 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
+                : 'bg-emerald-950/80 text-emerald-400 border-emerald-500/50 shadow-[0_0_15px_rgba(52,211,153,0.2)]'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${isDemoMode ? 'bg-amber-400 animate-pulse' : 'bg-emerald-400 animate-pulse'}`}></span>
+            {isDemoMode ? '🟡 MODO DEMO (SIMULAÇÃO 1 ANO)' : '🟢 MODO REAL (LIVE PRODUÇÃO)'}
+          </button>
 
           {isCeo ? (
-            <span className="text-[10px] bg-amber-950/80 text-amber-400 border border-amber-500/50 px-3.5 py-1 uppercase tracking-widest font-bold flex items-center gap-2 rounded-sm shadow-[0_0_20px_rgba(245,158,11,0.2)]">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-              ♚ CEO MASTER • OLHO DE DEUS
+            <span className="text-[10px] bg-zinc-900 border border-zinc-700 text-zinc-300 px-3 py-1 uppercase tracking-widest font-bold hidden md:inline-block">
+              ♚ CEO MASTER
             </span>
           ) : (
             <button
               onClick={forceCeoAuth}
               className="text-[9px] bg-zinc-900 text-zinc-400 border border-zinc-800 px-3 py-1 uppercase tracking-widest hover:border-amber-500/50 hover:text-amber-400 transition-colors"
             >
-              Ativar Credencial CEO (diegooliveiragn@gmail.com)
+              Autenticar CEO
             </button>
           )}
         </div>
 
         <div className="flex items-center gap-8">
-          <div className="text-right">
+          <div className="text-right hidden sm:block">
             <span className="text-[9px] text-zinc-500 block uppercase tracking-widest">Base Operacional</span>
             <span className="text-xs text-white font-bold uppercase tracking-wider">Fortaleza &bull; CE</span>
           </div>
@@ -241,7 +327,7 @@ export default function CortexStandaloneDashboard() {
         </div>
       </header>
 
-      {/* SUB-HEADER / NAVEGAÇÃO DOS 8 MÓDULOS */}
+      {/* NAVEGAÇÃO DOS 8 MÓDULOS */}
       <nav className="bg-[#050505] border-b border-zinc-900 px-8 flex overflow-x-auto text-[10px] uppercase tracking-widest gap-1">
         {[
           { id: 'cockpit', label: '1. Cockpit 360° & Geointeligência' },
@@ -270,23 +356,22 @@ export default function CortexStandaloneDashboard() {
         ))}
       </nav>
 
-      {/* CONTEÚDO PRINCIPAL TELA CHEIA */}
+      {/* CONTEÚDO PRINCIPAL */}
       <main className="flex-1 p-8 max-w-7xl w-full mx-auto space-y-10">
 
-        {/* MÓDULO 1: COCKPIT 360° & GEOINTELIGÊNCIA */}
+        {/* MÓDULO 1: COCKPIT 360° */}
         {activeTab === 'cockpit' && (
           <div className="space-y-10 animate-in fade-in duration-300">
-            
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="bg-[#070707] border border-zinc-800/80 p-6 space-y-2">
-                <span className="text-[9px] text-zinc-500 uppercase tracking-widest block">Sessões Ativas</span>
-                <span className="text-3xl font-serif text-white block">12 em tempo real</span>
-                <span className="text-[9px] text-emerald-400 block uppercase">75% no Provador Preditivo</span>
+                <span className="text-[9px] text-zinc-500 uppercase tracking-widest block">Sessões Ativas Agora</span>
+                <span className="text-3xl font-serif text-white block">{isDemoMode ? '48 ativas' : '3 ativas'}</span>
+                <span className="text-[9px] text-emerald-400 block uppercase">78% no Provador Preditivo</span>
               </div>
               <div className="bg-[#070707] border border-zinc-800/80 p-6 space-y-2">
                 <span className="text-[9px] text-zinc-500 uppercase tracking-widest block">Conversão de Pix</span>
-                <span className="text-3xl font-serif text-amber-400 block">84.2%</span>
-                <span className="text-[9px] text-zinc-500 block uppercase">Liquidação média em 4 min</span>
+                <span className="text-3xl font-serif text-amber-400 block">{isDemoMode ? '88.4%' : '0.0%'}</span>
+                <span className="text-[9px] text-zinc-500 block uppercase">Liquidação média em 3.8 min</span>
               </div>
               <div className="bg-[#070707] border border-zinc-800/80 p-6 space-y-2">
                 <span className="text-[9px] text-zinc-500 uppercase tracking-widest block">Health Check Infra</span>
@@ -295,12 +380,11 @@ export default function CortexStandaloneDashboard() {
               </div>
               <div className="bg-[#070707] border border-zinc-800/80 p-6 space-y-2">
                 <span className="text-[9px] text-zinc-500 uppercase tracking-widest block">Velocidade de Caixa</span>
-                <span className="text-3xl font-serif text-white block">R$ 320/h</span>
+                <span className="text-3xl font-serif text-white block">{isDemoMode ? 'R$ 4.060/dia' : 'R$ 0/dia'}</span>
                 <span className="text-[9px] text-zinc-500 block uppercase">Ritmo Lote Zero</span>
               </div>
             </div>
 
-            {/* GEOINTELIGÊNCIA COM MAPA VETORIAL ILUMINADO DO BRASIL */}
             <div className="bg-[#070707] border border-zinc-800/80 p-8 space-y-6">
               <div className="flex justify-between items-center border-b border-zinc-800 pb-4">
                 <div>
@@ -308,7 +392,7 @@ export default function CortexStandaloneDashboard() {
                     Geointeligência de Vendas & Membros do Senado VIP
                   </h2>
                   <p className="text-[10px] text-zinc-500 mt-1">
-                    Densidade espacial dos pedidos liquidados e credenciais ativas por estado.
+                    Densidade espacial dos pedidos liquidados por estado.
                   </p>
                 </div>
                 <span className="text-[9px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-3 py-1 uppercase tracking-widest">
@@ -317,54 +401,47 @@ export default function CortexStandaloneDashboard() {
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
-                {/* SVG ESTILIZADO E ESCURO DO BRASIL */}
                 <div className="lg:col-span-2 bg-[#040404] border border-zinc-900 p-8 flex justify-center items-center relative min-h-[320px]">
                   <svg viewBox="0 0 500 500" className="w-full max-w-md h-auto opacity-90">
                     <g fill="#121215" stroke="#27272a" strokeWidth="1.5">
-                      {/* NORDESTE / CEARÁ (DESTAQUE BASE) */}
                       <path d="M300,120 L360,110 L380,150 L340,170 Z" fill={stateDensity.CE > 0 ? '#f59e0b' : '#1f1f23'} className="transition-all duration-500 hover:fill-amber-400 cursor-pointer" />
-                      {/* SUDESTE / SÃO PAULO & RIO */}
                       <path d="M260,280 L310,270 L330,310 L280,320 Z" fill={stateDensity.SP > 0 ? '#34d399' : '#1f1f23'} className="transition-all duration-500 hover:fill-emerald-400 cursor-pointer" />
                       <path d="M320,290 L350,285 L360,305 L330,310 Z" fill={stateDensity.RJ > 0 ? '#34d399' : '#1f1f23'} className="transition-all duration-500 hover:fill-emerald-400 cursor-pointer" />
-                      {/* SUL */}
                       <path d="M250,330 L290,325 L280,380 L240,370 Z" fill={stateDensity.PR > 0 ? '#34d399' : '#1f1f23'} className="transition-all duration-500 hover:fill-emerald-400 cursor-pointer" />
-                      {/* NORTE / CENTRO OESTE */}
                       <path d="M150,100 L280,100 L270,220 L140,200 Z" fill="#121215" />
                       <path d="M200,200 L280,210 L270,280 L190,260 Z" fill="#121215" />
                     </g>
                   </svg>
                   <div className="absolute top-4 left-4 text-[9px] uppercase tracking-widest text-zinc-500 font-mono">
-                    • CE (HQ Fortaleza): <span className="text-amber-400 font-bold">{stateDensity.CE || 1} ativas</span><br/>
-                    • SP (Capitais): <span className="text-emerald-400 font-bold">{stateDensity.SP || 0} ativas</span><br/>
-                    • RJ (Litoral): <span className="text-emerald-400 font-bold">{stateDensity.RJ || 0} ativas</span>
+                    • SP (Capitais): <span className="text-emerald-400 font-bold">{stateDensity.SP} membros</span><br/>
+                    • RJ (Litoral): <span className="text-emerald-400 font-bold">{stateDensity.RJ} membros</span><br/>
+                    • CE (HQ Fortaleza): <span className="text-amber-400 font-bold">{stateDensity.CE} membros</span>
                   </div>
                 </div>
 
-                {/* TABELA DE DENSIDADE */}
                 <div className="space-y-3 font-sans text-xs">
                   <h3 className="text-[10px] text-zinc-400 uppercase tracking-widest border-b border-zinc-800 pb-2">
                     Concentração por Região
                   </h3>
-                  {Object.entries(stateDensity).map(([st, count]) => (
+                  {Object.entries(stateDensity).slice(0, 6).map(([st, count]) => (
                     <div key={st} className="flex justify-between items-center bg-[#050505] p-3 border border-zinc-900">
                       <span className="text-white font-bold uppercase tracking-widest">{st} — Estado</span>
-                      <span className="text-xs font-mono text-amber-400">{count} pedidos/membros</span>
+                      <span className="text-xs font-mono text-amber-400">{count} aquisições</span>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-
           </div>
         )}
 
-        {/* MÓDULO 2: FINANCEIRO, TESOURARIA & EBITDA */}
+        {/* MÓDULO 2: FINANCEIRO & EBITDA */}
         {activeTab === 'dre' && (
           <div className="space-y-10 animate-in fade-in duration-300">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 bg-[#070707] border border-zinc-800/80 p-8 space-y-6">
                 <h2 className="text-xs font-sans uppercase tracking-widest text-zinc-200 border-b border-zinc-800 pb-4 font-bold">
-                  Demonstrativo do Resultado do Exercício (DRE Militar)
+                  Demonstrativo do Resultado do Exercício (DRE {isDemoMode ? '1 Ano Consolidado' : 'Real'})
                 </h2>
                 <div className="space-y-3 font-sans text-xs">
                   <div className="flex justify-between text-zinc-300 py-2 border-b border-zinc-900">
@@ -393,12 +470,11 @@ export default function CortexStandaloneDashboard() {
                   </div>
                   <div className="flex justify-between text-emerald-400 py-4 border-t border-zinc-700 text-sm font-bold uppercase tracking-widest bg-emerald-950/10 px-4 mt-4">
                     <span>(=) EBITDA Real (Lucro Líquido no Caixa)</span>
-                    <span>R$ {dreMetrics.ebitda.toFixed(2)}</span>
+                    <span>R$ {dreMetrics.ebitda.toFixed(2)} ({dreMetrics.ebitdaMargin.toFixed(1)}%)</span>
                   </div>
                 </div>
               </div>
 
-              {/* MÓDULO DE REGISTRO DE OPEX & SAAS */}
               <form onSubmit={handleAddExpense} className="bg-[#070707] border border-zinc-800/80 p-8 space-y-6 h-fit">
                 <h2 className="text-xs font-sans uppercase tracking-widest text-zinc-200 border-b border-zinc-800 pb-3 font-bold">
                   Lançar Custo de Software / OpEx
@@ -414,11 +490,11 @@ export default function CortexStandaloneDashboard() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] text-zinc-400 uppercase tracking-widest">Descrição do Lançamento</label>
+                    <label className="text-[10px] text-zinc-400 uppercase tracking-widest">Descrição</label>
                     <input type="text" placeholder="Ex: Assinatura Mensal Resend API" value={expDescription} onChange={(e) => setExpDescription(e.target.value)} className="w-full bg-black border border-zinc-800 px-4 py-3 text-white outline-none" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] text-zinc-400 uppercase tracking-widest">Valor exato em Reais (R$)</label>
+                    <label className="text-[10px] text-zinc-400 uppercase tracking-widest">Valor exato (R$)</label>
                     <input type="number" step="0.01" required placeholder="120.00" value={expAmount} onChange={(e) => setExpAmount(e.target.value)} className="w-full bg-black border border-zinc-800 px-4 py-3 text-white outline-none" />
                   </div>
                   <button type="submit" disabled={addingExp} className="w-full bg-white text-black font-bold text-[10px] uppercase tracking-widest py-4 hover:bg-zinc-200 transition-colors">
@@ -486,7 +562,7 @@ export default function CortexStandaloneDashboard() {
                     <span className="text-4xl font-serif text-amber-400">R$ {suggestedPrice.toFixed(2)}</span>
                   </div>
                   <p className="text-[11px] text-zinc-400 leading-relaxed bg-[#040404] p-4 border border-zinc-900">
-                    O valor de <strong>R$ {suggestedPrice.toFixed(2)}</strong> garante uma margem de contribuição limpa de {((1 - (unitCostTotal / suggestedPrice)) * 100).toFixed(1)}%, cobrindo CAC, impostos e sustentando o posicionamento de escassez da LaRomme sem ruído de varejo.
+                    O valor de <strong>R$ {suggestedPrice.toFixed(2)}</strong> garante uma margem de contribuição limpa de {((1 - (unitCostTotal / suggestedPrice)) * 100).toFixed(1)}%, cobrindo CAC e sustentando o posicionamento de escassez sem ruído de varejo.
                   </p>
                 </div>
               </div>
@@ -499,10 +575,10 @@ export default function CortexStandaloneDashboard() {
           <div className="space-y-8 animate-in fade-in duration-300">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               {[
-                { title: 'VESTIGIUM', sku: 'BOXY-BLK-M', stock: 50, value: 4750, supplier: 'Oficina Fortaleza 01' },
-                { title: 'FORZA', sku: 'PERF-TSHIRT', stock: 50, value: 4250, supplier: 'Oficina Fortaleza 02' },
-                { title: 'LIBERTAS', sku: 'PERF-TANK', stock: 50, value: 3800, supplier: 'Oficina Fortaleza 02' },
-                { title: 'SIGNUM', sku: 'ACC-CAP-BLK', stock: 30, value: 1800, supplier: 'Bordados Elite' }
+                { title: 'VESTIGIUM', sku: 'BOXY-BLK-M', stock: isDemoMode ? 142 : 50, value: isDemoMode ? 13490 : 4750, supplier: 'Oficina Fortaleza 01' },
+                { title: 'FORZA', sku: 'PERF-TSHIRT', stock: isDemoMode ? 98 : 50, value: isDemoMode ? 8330 : 4250, supplier: 'Oficina Fortaleza 02' },
+                { title: 'LIBERTAS', sku: 'PERF-TANK', stock: isDemoMode ? 64 : 50, value: isDemoMode ? 4864 : 3800, supplier: 'Oficina Fortaleza 02' },
+                { title: 'SIGNUM', sku: 'ACC-CAP-BLK', stock: isDemoMode ? 210 : 30, value: isDemoMode ? 12600 : 1800, supplier: 'Bordados Elite' }
               ].map((item) => (
                 <div key={item.title} className="bg-[#070707] border border-zinc-800/80 p-6 space-y-3">
                   <span className="text-[9px] text-zinc-500 uppercase tracking-widest block">{item.supplier}</span>
@@ -527,69 +603,62 @@ export default function CortexStandaloneDashboard() {
         {activeTab === 'crm' && (
           <div className="space-y-6 animate-in fade-in duration-300">
             <h2 className="text-xs font-sans uppercase tracking-widest text-zinc-200 border-b border-zinc-800 pb-3 font-bold">
-              Base de Membros do Senado VIP (Visão 360 Dropdown)
+              Base de Membros do Senado VIP ({isDemoMode ? 'Dados Simulados de 1 Ano' : 'Dados Reais'})
             </h2>
 
-            {customers.length === 0 ? (
-              <div className="bg-[#070707] border border-zinc-800 p-8 text-center text-xs text-zinc-500 uppercase tracking-widest">
-                Nenhum membro VIP cadastrado no banco de dados.
-              </div>
-            ) : (
-              <div className="space-y-3 font-sans">
-                {customers.map((c) => {
-                  const isSelected = selectedCustomerId === c.id;
-                  return (
-                    <div key={c.id} className="bg-[#070707] border border-zinc-800/80 transition-all">
-                      <div
-                        onClick={() => {
-                          playHapticSound();
-                          setSelectedCustomerId(isSelected ? null : c.id);
-                        }}
-                        className="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 cursor-pointer hover:bg-zinc-900/50"
-                      >
-                        <div>
-                          <span className="text-sm text-white font-serif uppercase tracking-widest block font-bold">
-                            {c.full_name || 'Senador VIP'}
-                          </span>
-                          <span className="text-[10px] text-zinc-500 block">{c.email}</span>
+            <div className="space-y-3 font-sans">
+              {customers.map((c) => {
+                const isSelected = selectedCustomerId === c.id;
+                return (
+                  <div key={c.id} className="bg-[#070707] border border-zinc-800/80 transition-all">
+                    <div
+                      onClick={() => {
+                        playHapticSound();
+                        setSelectedCustomerId(isSelected ? null : c.id);
+                      }}
+                      className="p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 cursor-pointer hover:bg-zinc-900/50"
+                    >
+                      <div>
+                        <span className="text-sm text-white font-serif uppercase tracking-widest block font-bold">
+                          {c.full_name || 'Senador VIP'}
+                        </span>
+                        <span className="text-[10px] text-zinc-500 block">{c.email}</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-[9px] bg-zinc-900 text-amber-400 border border-zinc-800 px-3 py-1 uppercase tracking-widest font-bold">
+                          {c.rfm_tag || 'WAITLIST'}
+                        </span>
+                        <span className="text-xs text-zinc-300 font-mono">
+                          LTV: R$ {Number(c.ltv || 0).toFixed(2)}
+                        </span>
+                        <span className="text-zinc-500 text-xs">{isSelected ? '▲' : '▼'}</span>
+                      </div>
+                    </div>
+
+                    {isSelected && (
+                      <div className="border-t border-zinc-800 bg-[#040404] p-6 grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in text-xs">
+                        <div className="space-y-2">
+                          <span className="text-[10px] text-zinc-500 uppercase tracking-widest block font-bold">Dados Biométricos / Provador</span>
+                          <p className="text-zinc-300">• Altura: 178 cm</p>
+                          <p className="text-zinc-300">• Peso: 78 kg</p>
+                          <p className="text-zinc-300">• Fit Preferido: Boxy Oversized</p>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <span className="text-[9px] bg-zinc-900 text-amber-400 border border-zinc-800 px-3 py-1 uppercase tracking-widest font-bold">
-                            {c.rfm_tag || 'WAITLIST'}
-                          </span>
-                          <span className="text-xs text-zinc-300 font-mono">
-                            LTV: R$ {Number(c.ltv || 0).toFixed(2)}
-                          </span>
-                          <span className="text-zinc-500 text-xs">{isSelected ? '▲' : '▼'}</span>
+                        <div className="space-y-2">
+                          <span className="text-[10px] text-zinc-500 uppercase tracking-widest block font-bold">Origem de Atribuição</span>
+                          <p className="text-zinc-300">• Canal: Instagram Orgânico</p>
+                          <p className="text-zinc-300">• Cidade: São Paulo / SP</p>
+                          <p className="text-zinc-300">• Data do Cadastro: {new Date(c.created_at).toLocaleDateString()}</p>
+                        </div>
+                        <div className="space-y-2">
+                          <span className="text-[10px] text-zinc-500 uppercase tracking-widest block font-bold">Serials Laser em Posse</span>
+                          <p className="text-amber-400 font-bold">• LR-D00-BOXY-0001</p>
                         </div>
                       </div>
-
-                      {/* GAVETA DROPDOWN EXPANSÍVEL (FICHA 360) */}
-                      {isSelected && (
-                        <div className="border-t border-zinc-800 bg-[#040404] p-6 grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in text-xs">
-                          <div className="space-y-2">
-                            <span className="text-[10px] text-zinc-500 uppercase tracking-widest block font-bold">Dados Biométricos / Provador</span>
-                            <p className="text-zinc-300">• Altura: 178 cm</p>
-                            <p className="text-zinc-300">• Peso: 78 kg</p>
-                            <p className="text-zinc-300">• Fit Preferido: Boxy Oversized</p>
-                          </div>
-                          <div className="space-y-2">
-                            <span className="text-[10px] text-zinc-500 uppercase tracking-widest block font-bold">Origem de Atribuição</span>
-                            <p className="text-zinc-300">• Canal: Instagram Orgânico</p>
-                            <p className="text-zinc-300">• Cidade: Fortaleza / CE</p>
-                            <p className="text-zinc-300">• Data do Cadastro: {new Date(c.created_at).toLocaleDateString()}</p>
-                          </div>
-                          <div className="space-y-2">
-                            <span className="text-[10px] text-zinc-500 uppercase tracking-widest block font-bold">Serials Laser em Posse</span>
-                            <p className="text-amber-400 font-bold">• LR-D00-BOXY-9821</p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
@@ -624,25 +693,19 @@ export default function CortexStandaloneDashboard() {
             <h2 className="text-xs font-sans uppercase tracking-widest text-zinc-200 border-b border-zinc-800 pb-3 font-bold">
               Régua de Conversão VIP via WhatsApp
             </h2>
-            {orders.filter((o) => o.payment_status === 'PENDENTE').length === 0 ? (
-              <div className="bg-[#070707] border border-zinc-800 p-8 text-center text-xs text-zinc-500 uppercase tracking-widest">
-                Nenhum Pix pendente aguardando atendimento.
-              </div>
-            ) : (
-              <div className="space-y-3 font-sans">
-                {orders.filter((o) => o.payment_status === 'PENDENTE').map((ord) => (
-                  <div key={ord.id} className="bg-[#070707] border border-zinc-800 p-5 flex justify-between items-center">
-                    <div>
-                      <span className="text-xs font-serif text-white block uppercase font-bold">{ord.order_number} — R$ {ord.total_amount}</span>
-                      <span className="text-[10px] text-zinc-500 block">{ord.customers?.full_name || 'Cliente'}</span>
-                    </div>
-                    <button className="bg-emerald-950/80 border border-emerald-800 text-emerald-400 text-[10px] uppercase font-bold px-4 py-2 hover:bg-emerald-900 transition-colors">
-                      Enviar Mensagem VIP →
-                    </button>
+            <div className="space-y-3 font-sans">
+              {orders.filter((o) => o.payment_status === 'PENDENTE').map((ord) => (
+                <div key={ord.id} className="bg-[#070707] border border-zinc-800 p-5 flex justify-between items-center">
+                  <div>
+                    <span className="text-xs font-serif text-white block uppercase font-bold">{ord.order_number} — R$ {ord.total_amount}</span>
+                    <span className="text-[10px] text-zinc-500 block">{ord.customers?.full_name || 'Cliente'}</span>
                   </div>
-                ))}
-              </div>
-            )}
+                  <button className="bg-emerald-950/80 border border-emerald-800 text-emerald-400 text-[10px] uppercase font-bold px-4 py-2 hover:bg-emerald-900 transition-colors">
+                    Enviar Mensagem VIP →
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
