@@ -1,150 +1,180 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { playHapticSound } from '@/lib/sound';
 
-export default function ProdutoPage({ params }: { params: { slug: string } }) {
+export default function ProdutoSlugPage({ params }: { params: { slug: string } }) {
   const router = useRouter();
-  const [selectedSize, setSelectedSize] = useState<string | null>(null);
+  const [selectedSize, setSelectedSize] = useState<'P' | 'M' | 'G'>('M');
+  const [showFitEngine, setShowFitEngine] = useState(false);
 
-  // Mock do Lote Zero
-  const stock = { P: 8, M: 0, G: 15, GG: 5 };
+  // CAMPOS DO PROVADOR PREDITIVO
+  const [height, setHeight] = useState(178);
+  const [weight, setWeight] = useState(78);
+  const [fitPreference, setFitPreference] = useState<'adjusted' | 'boxy'>('boxy');
 
-  // --- MOTOR DE TELEMETRIA (OLHO DE DEUS) ---
-  const trackEvent = async (eventType: string, details: any) => {
-    let sessionId = localStorage.getItem('lr_session');
-    if (!sessionId) {
-      sessionId = 'sess_' + Math.random().toString(36).substring(2, 10);
-      localStorage.setItem('lr_session', sessionId);
-    }
-    const isCeo = localStorage.getItem('lr_ceo_mode') === 'true';
+  // ALGORITMO PREDITIVO DE RECOMENDAÇÃO DE TAMANHO
+  const recommendedSize = useMemo(() => {
+    let score = (height - 170) * 0.4 + (weight - 70) * 0.6;
+    if (fitPreference === 'boxy') score += 5;
 
-    try {
-      await fetch('/api/telemetry', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          session_id: sessionId,
-          event_type: eventType,
-          path: `/produto/${params.slug || 'boxy'}`,
-          details: { ...details, is_ceo: isCeo }
-        })
-      });
-    } catch (e) {}
+    if (score < 5) return 'P';
+    if (score < 18) return 'M';
+    return 'G';
+  }, [height, weight, fitPreference]);
+
+  const handleApplyRecommendedSize = () => {
+    playHapticSound();
+    setSelectedSize(recommendedSize);
+    setShowFitEngine(false);
   };
 
-  useEffect(() => {
-    const startTime = Date.now();
-    trackEvent('page_view', { item: 'Boxy Heavyweight' });
-
-    return () => {
-      const timeSpent = Math.round((Date.now() - startTime) / 1000);
-      if (timeSpent > 5) trackEvent('time_on_page', { seconds: timeSpent });
-    };
-  }, []);
-
-  const handleSizeClick = (size: string, qty: number) => {
-    setSelectedSize(size);
-    if (qty === 0) {
-      // O cliente clicou no tamanho esgotado: Demanda Reprimida capturada!
-      trackEvent('intent_out_of_stock', { size_clicked: size });
-    } else {
-      trackEvent('intent_select_size', { size_clicked: size });
-    }
-  };
-
-  const handleCheckout = () => {
-    if (!selectedSize || stock[selectedSize as keyof typeof stock] === 0) return;
-    trackEvent('intent_checkout', { size: selectedSize, price: 320 });
+  const handleBuyNow = () => {
+    playHapticSound();
     router.push('/checkout');
   };
 
   return (
-    <main className="min-h-screen bg-[#050505] text-white pt-24 px-6 pb-20 font-sans selection:bg-emerald-500 selection:text-black">
-      <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-24">
+    <main className="min-h-screen bg-[#050505] text-white font-sans py-12 px-6">
+      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
         
-        {/* LADO ESQUERDO: IMAGEM BRUTALISTA */}
-        <div className="aspect-[3/4] bg-zinc-900 border border-zinc-800 flex items-center justify-center relative overflow-hidden group">
-          <span className="text-zinc-700 font-mono text-sm tracking-widest uppercase rotate-90 absolute -right-8">Heavyweight 260gsm</span>
-          <div className="w-full h-full bg-[url('https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&q=80&w=1000')] bg-cover bg-center mix-blend-luminosity opacity-80 group-hover:opacity-100 transition-opacity duration-700"></div>
+        {/* GALERIA VISUAL DO PRODUTO */}
+        <div className="space-y-4">
+          <div className="aspect-[3/4] bg-[#0d0d10] border border-zinc-800 rounded-lg flex items-center justify-center relative overflow-hidden group">
+            <span className="font-mono text-zinc-600 text-xs tracking-widest uppercase">
+              [ FOTO HIGH-RES • MALHA 260GSM ]
+            </span>
+            <div className="absolute top-4 left-4 bg-black/80 border border-zinc-700 px-3 py-1 font-mono text-[9px] text-amber-400 rounded uppercase">
+              ✦ MODELAGEM BOXY HEAVYWEIGHT
+            </div>
+          </div>
         </div>
 
-        {/* LADO DIREITO: ENGENHARIA PSICOLÓGICA */}
-        <div className="flex flex-col justify-center space-y-10">
-          
-          <div className="space-y-4">
-            <span className="text-[10px] border border-zinc-700 px-3 py-1 uppercase tracking-widest text-zinc-400 font-mono">
-              [ Lote Zero • Tiragem Restrita ]
-            </span>
-            <h1 className="text-4xl lg:text-5xl font-serif uppercase tracking-wider text-white leading-tight">
-              Camiseta Boxy <br/><span className="text-zinc-500">Heavyweight</span>
-            </h1>
-            <p className="text-2xl font-mono text-white">R$ 320,00</p>
+        {/* INFORMAÇÕES DE COMPRA & FIT ENGINE */}
+        <div className="space-y-8 font-mono">
+          <div className="space-y-2 border-b border-zinc-800 pb-6">
+            <span className="text-[10px] text-zinc-500 uppercase tracking-widest block">COLEÇÃO ORIGO / LOTE ZERO</span>
+            <h1 className="text-2xl font-serif text-white uppercase tracking-widest">Camiseta Boxy Heavyweight</h1>
+            <div className="flex items-center gap-4 pt-2">
+              <span className="text-xl font-bold text-emerald-400">R$ 320,00</span>
+              <span className="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-800 px-2.5 py-1 rounded font-bold">
+                ESTOQUE LIMITADO
+              </span>
+            </div>
           </div>
 
-          <div className="space-y-3 border-l-2 border-zinc-800 pl-4">
-            <p className="text-sm text-zinc-400 leading-relaxed max-w-md">
-              Construção arquitetônica em algodão 260gsm. Desenvolvida não para a próxima estação, mas para a próxima década. Caimento encorpado que impõe presença sem ostentação.
-            </p>
-            {/* ANCORAGEM DE REDUÇÃO DE FRICÇÃO */}
-            <p className="text-[11px] text-emerald-500 font-mono font-bold uppercase tracking-wide">
-              ✦ Garantia White Glove: Primeira troca por tamanho 100% por nossa conta.
-            </p>
-          </div>
-
-          {/* SELETOR DE TAMANHOS */}
+          {/* SELETOR DE TAMANHO COM BOTÃO DO PROVADOR */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-xs uppercase tracking-widest text-zinc-500 font-mono">Arquitetura de Tamanho</span>
-              <button className="text-[10px] text-zinc-400 underline uppercase font-mono hover:text-white transition-colors">Guia de Medidas</button>
+              <span className="text-xs font-bold text-zinc-300 uppercase">Selecione o Tamanho</span>
+              <button
+                type="button"
+                onClick={() => { playHapticSound(); setShowFitEngine(!showFitEngine); }}
+                className="text-[10px] text-amber-400 underline hover:text-amber-300 transition-colors uppercase"
+              >
+                ✦ Provador Preditivo de Caimento
+              </button>
             </div>
-            <div className="grid grid-cols-4 gap-3">
-              {Object.entries(stock).map(([size, qty]) => (
+
+            <div className="grid grid-cols-3 gap-3">
+              {(['P', 'M', 'G'] as const).map((size) => (
                 <button
                   key={size}
-                  onClick={() => handleSizeClick(size, qty)}
-                  className={`py-3 text-sm font-mono border transition-all ${
-                    qty === 0 
-                      ? 'border-zinc-900 bg-zinc-900/30 text-zinc-600 line-through cursor-not-allowed'
-                      : selectedSize === size 
-                        ? 'border-white bg-white text-black font-bold'
-                        : 'border-zinc-800 text-zinc-400 hover:border-zinc-500'
+                  type="button"
+                  onClick={() => { playHapticSound(); setSelectedSize(size); }}
+                  className={`py-3 text-xs font-bold border transition-all ${
+                    selectedSize === size
+                      ? 'bg-white text-black border-white shadow-[0_0_10px_rgba(255,255,255,0.2)]'
+                      : 'bg-black text-zinc-400 border-zinc-800 hover:border-zinc-600'
                   }`}
                 >
                   {size}
                 </button>
               ))}
             </div>
-            
-            {/* MICRO-COPY DINÂMICO PARA ESCASSEZ */}
-            <div className="h-4">
-              {selectedSize && stock[selectedSize as keyof typeof stock] === 0 && (
-                <span className="text-[10px] text-amber-500 font-mono uppercase tracking-widest block animate-pulse">
-                  [ LOTE ABSORVIDO ] • Registramos seu interesse.
-                </span>
-              )}
-              {selectedSize && stock[selectedSize as keyof typeof stock] > 0 && stock[selectedSize as keyof typeof stock] <= 5 && (
-                <span className="text-[10px] text-emerald-500 font-mono uppercase tracking-widest block">
-                  Disponibilidade Crítica • Estoque Confirmado.
-                </span>
-              )}
-            </div>
+
+            {/* MODAL / PAINEL DO PROVADOR PREDITIVO */}
+            {showFitEngine && (
+              <div className="bg-[#0d0d10] border border-amber-900/50 p-5 rounded-lg space-y-4 animate-in fade-in duration-200">
+                <div className="border-b border-zinc-800 pb-2 flex justify-between items-center">
+                  <span className="text-[10px] text-amber-400 font-bold uppercase">Algoritmo de Caimento Preditivo</span>
+                  <button onClick={() => setShowFitEngine(false)} className="text-zinc-500 hover:text-white">✕</button>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <label className="text-[9px] text-zinc-400 block mb-1">Sua Altura: {height} cm</label>
+                    <input type="range" min="150" max="205" value={height} onChange={(e) => setHeight(Number(e.target.value))} className="w-full accent-amber-400" />
+                  </div>
+
+                  <div>
+                    <label className="text-[9px] text-zinc-400 block mb-1">Seu Peso: {weight} kg</label>
+                    <input type="range" min="50" max="130" value={weight} onChange={(e) => setWeight(Number(e.target.value))} className="w-full accent-amber-400" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[9px] text-zinc-400 block mb-1">Caimento Desejado</label>
+                  <div className="grid grid-cols-2 gap-2 text-[10px]">
+                    <button
+                      type="button"
+                      onClick={() => setFitPreference('adjusted')}
+                      className={`p-2 border rounded ${fitPreference === 'adjusted' ? 'border-amber-400 text-amber-300 bg-amber-950/20' : 'border-zinc-800 text-zinc-500'}`}
+                    >
+                      Ajustado ao Corpo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFitPreference('boxy')}
+                      className={`p-2 border rounded ${fitPreference === 'boxy' ? 'border-amber-400 text-amber-300 bg-amber-950/20' : 'border-zinc-800 text-zinc-500'}`}
+                    >
+                      Boxy Oversized (Original)
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-black border border-zinc-800 p-3 rounded flex justify-between items-center">
+                  <span className="text-[10px] text-zinc-400">Tamanho Ideal Recomendado:</span>
+                  <span className="text-sm font-bold text-emerald-400">TAMANHO {recommendedSize}</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleApplyRecommendedSize}
+                  className="w-full bg-amber-400 text-black font-bold text-[10px] uppercase py-2.5 hover:bg-amber-300 transition-colors"
+                >
+                  [ SELECIONAR TAMANHO {recommendedSize} ]
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* BOTÃO DE CHECKOUT PSICOLÓGICO */}
-          <button
-            onClick={handleCheckout}
-            disabled={!selectedSize || stock[selectedSize as keyof typeof stock] === 0}
-            className={`w-full py-5 text-sm uppercase tracking-widest font-bold transition-all ${
-              !selectedSize || stock[selectedSize as keyof typeof stock] === 0
-                ? 'bg-zinc-900 text-zinc-600 cursor-not-allowed'
-                : 'bg-white text-black hover:bg-zinc-200'
-            }`}
-          >
-            {selectedSize && stock[selectedSize as keyof typeof stock] === 0 
-              ? '[ INDISPONÍVEL ]' 
-              : '[ GARANTIR POSSE ]'}
-          </button>
+          {/* BOTÃO PRINCIPAL DE AQUISIÇÃO */}
+          <div className="space-y-3 pt-4">
+            <button
+              type="button"
+              onClick={handleBuyNow}
+              className="w-full bg-white text-black font-bold text-xs uppercase tracking-widest py-4 hover:bg-zinc-200 transition-colors shadow-lg"
+            >
+              [ GARANTIR POSSE • R$ 320,00 ]
+            </button>
+            <span className="text-[9px] text-zinc-500 text-center block uppercase tracking-wider">
+              ✦ Envio Imediato com Frete Expresso e Serial Registrado
+            </span>
+          </div>
+
+          {/* DETALHES TÉCNICOS DA PEÇA */}
+          <div className="border-t border-zinc-800 pt-6 space-y-3 text-xs text-zinc-400 font-sans">
+            <h3 className="font-mono text-white font-bold uppercase text-xs">Especificações da Peça</h3>
+            <ul className="list-disc pl-4 space-y-1 text-[11px] text-zinc-400">
+              <li>100% Algodão Heavyweight de Alta Gramatura (260 g/m²).</li>
+              <li>Gola Ribana de 3cm reforçada para preservação de estrutura.</li>
+              <li>Corte Boxy com ombros caídos e caimento encorpado.</li>
+              <li>Placa de número de série exclusivo em metal escovado no hem.</li>
+            </ul>
+          </div>
+
         </div>
 
       </div>
