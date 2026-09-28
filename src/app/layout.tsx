@@ -1,36 +1,22 @@
-import type { Metadata, Viewport } from 'next';
+﻿import type { Metadata } from 'next';
 import './globals.css';
-import { SensoryWrapper } from '@/components/ui/SensoryWrapper';
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
 import { CartProvider } from '@/context/CartContext';
 
 export const metadata: Metadata = {
-  title: 'LaRomme | Lote Zero',
-  description: 'A origem do vestuário de alta densidade.',
-};
-
-export const viewport: Viewport = {
-  themeColor: '#000000',
-  colorScheme: 'dark',
+  title: 'LaRomme • Brutalist Luxury',
+  description: 'A interseção exata entre a força de Roma e a energia de Fortaleza.',
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <html lang="pt-BR" className="bg-black text-brand-offwhite overscroll-none select-none">
-      <body className="antialiased min-h-screen flex flex-col bg-black text-brand-offwhite overscroll-none">
+    <html lang="pt-BR">
+      <body className="bg-black text-white antialiased overflow-x-hidden">
         <CartProvider>
-          <SensoryWrapper>
-            <Header />
-            <div className="flex-1">
-              {children}
-            </div>
-            <Footer />
-          </SensoryWrapper>
+          {children}
         </CartProvider>
       </body>
     </html>
