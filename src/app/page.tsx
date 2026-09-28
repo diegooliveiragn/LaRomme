@@ -1,119 +1,126 @@
 'use client';
 
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { FadeIn } from '@/components/ui/FadeIn';
+import { useState } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import { playHapticSound } from '@/lib/sound';
 
-export default function HomePage() {
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+);
+
+export default function HomeManifesto() {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [registered, setRegistered] = useState(false);
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    playHapticSound();
+    
+    if (!email) return;
+    setLoading(true);
+
+    try {
+      await supabase.from('customers').insert([{
+        full_name: 'Lead Lote Zero',
+        email: email,
+        rfm_tag: 'WAITLIST_LOTE_ZERO',
+        total_purchases: 0,
+        ltv: 0
+      }]);
+      setRegistered(true);
+    } catch (err) {
+      console.error(err);
+      setRegistered(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <main className="relative bg-brand-black min-h-screen text-brand-offwhite overflow-hidden flex flex-col justify-between pt-24 selection:bg-brand-red selection:text-white">
+    <main className="relative min-h-screen bg-black text-white flex flex-col items-center justify-between px-6 py-12 font-sans overflow-hidden">
       
-      {/* VÍDEO DA PRAIA COM FILTRO P&B E CONTRASTE */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none select-none">
-        <video 
-          autoPlay 
-          loop 
-          muted 
-          playsInline 
-          className="absolute inset-0 w-full h-full object-cover scale-105 opacity-60 filter grayscale contrast-125"
-          style={{ filter: 'grayscale(100%) contrast(125%)' }}
+      {/* CAMADA DE FUNDO DA PRAIA (MANTIDA COM OVERLAY ESCURO) */}
+      <div className="absolute inset-0 z-0 opacity-40 mix-blend-luminosity pointer-events-none">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-full object-cover"
+          poster="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2073&auto=format&fit=crop"
         >
-          <source src="/praia.mp4" type="video/mp4" />
+          <source src="https://assets.mixkit.co/videos/preview/mixkit-dramatic-dark-ocean-waves-4216-large.mp4" type="video/mp4" />
         </video>
-
-        {/* MÁSCARA DE CONTRASTE */}
-        <div className="absolute inset-0 bg-black/40"></div>
-        <div className="absolute inset-0 bg-gradient-to-b from-brand-black/80 via-transparent to-brand-black"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/80"></div>
       </div>
 
-      {/* COORDENADAS SUPERIORES */}
-      <div className="relative z-10 max-w-7xl mx-auto w-full px-6 flex justify-between font-mono text-[9px] text-zinc-500 pointer-events-none hidden sm:flex">
-        <span>+ 03°44'S 38°31'W</span>
-        <span>ANNO MMXXVI +</span>
-      </div>
-
-      {/* CONTEÚDO HERO CENTRAL */}
-      <div className="relative z-10 max-w-7xl mx-auto w-full px-6 pt-12 pb-16 flex-1 flex flex-col justify-center items-center text-center">
-        
-        <FadeIn direction="down" duration={1}>
-          <div className="space-y-2 mb-6">
-            <div className="inline-flex items-center gap-3 border border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md px-4 py-1.5 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-brand-red animate-pulse"></span>
-              <span className="font-mono text-[9px] text-brand-offwhite uppercase tracking-[0.25em] whitespace-nowrap">
-                Senado Privado // Lote Zero
-              </span>
-            </div>
-          </div>
-        </FadeIn>
-
-        <FadeIn duration={1.2} delay={0.2}>
-          <div className="relative inline-block my-2">
-            <h1 className="font-serif text-7xl sm:text-9xl md:text-[150px] uppercase tracking-wider text-white leading-none select-none drop-shadow-2xl">
-              Origo
-            </h1>
-            <span className="font-mono text-[9px] text-zinc-500 uppercase tracking-widest absolute -top-4 right-0 hidden sm:block whitespace-nowrap">
-              [ CAPÍTULO I ]
-            </span>
-          </div>
-        </FadeIn>
-
-        <FadeIn direction="up" duration={1} delay={0.4}>
-          <p className="font-sans text-xs sm:text-sm text-zinc-300 uppercase tracking-[0.2em] max-w-xl mx-auto mt-4 leading-relaxed font-light">
-            A origem do vestuário de alta densidade. Estruturas brutalistas inspiradas na engenharia romana.
-          </p>
-        </FadeIn>
-
-        {/* BOTÕES DE AÇÃO */}
-        <FadeIn direction="up" duration={1} delay={0.6}>
-          <div className="pt-10 flex flex-col sm:flex-row items-center justify-center gap-5 w-full max-w-md mx-auto">
-            <motion.div whileTap={{ scale: 0.97 }} className="w-full sm:w-auto flex-1">
-              <Link 
-                href="/acesso" 
-                className="block w-full bg-white text-brand-black px-8 py-5 font-mono text-[10px] uppercase tracking-widest hover:bg-brand-red hover:text-white transition-all duration-300 shadow-2xl text-center border border-white whitespace-nowrap"
-              >
-                [ REQUISITAR ACESSO ]
-              </Link>
-            </motion.div>
-
-            <motion.div whileTap={{ scale: 0.97 }} className="w-full sm:w-auto flex-1">
-              <Link 
-                href="/colecao/origo" 
-                className="block w-full bg-zinc-950/80 border border-zinc-800 text-zinc-300 px-8 py-5 font-mono text-[10px] uppercase tracking-widest hover:border-white hover:text-white transition-all duration-300 backdrop-blur-sm text-center whitespace-nowrap"
-              >
-                [ DOSSIÊ ORIGO ]
-              </Link>
-            </motion.div>
-          </div>
-        </FadeIn>
-
-      </div>
-
-      {/* BASE TÉCNICA */}
-      <div className="relative z-10 max-w-7xl mx-auto w-full px-6 pb-10 pt-6 border-t border-zinc-900/80">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 font-mono text-[9px] uppercase tracking-widest">
-          
-          <div className="border-l border-zinc-800 pl-4 space-y-1">
-            <span className="text-zinc-600 block whitespace-nowrap">ESTRUTURA</span>
-            <span className="text-white font-bold block whitespace-nowrap">400G/M² HEAVYWEIGHT</span>
-          </div>
-
-          <div className="border-l border-zinc-800 pl-4 space-y-1">
-            <span className="text-zinc-600 block whitespace-nowrap">MATRIZ</span>
-            <span className="text-white font-bold block whitespace-nowrap">05 ARTEFATOS EXCLUSIVOS</span>
-          </div>
-
-          <div className="border-l border-zinc-800 pl-4 space-y-1">
-            <span className="text-zinc-600 block whitespace-nowrap">ENGENHARIA</span>
-            <span className="text-white font-bold block whitespace-nowrap">CORTE BOXY & ATHLETIC</span>
-          </div>
-
-          <div className="border-l border-zinc-800 pl-4 space-y-1">
-            <span className="text-zinc-600 block whitespace-nowrap">STATUS</span>
-            <span className="text-brand-red font-bold block whitespace-nowrap">[ COFRE TRANCADO ]</span>
-          </div>
-
+      {/* HEADER SUPERIOR */}
+      <header className="z-10 w-full max-w-5xl flex justify-between items-center font-mono text-xs border-b border-zinc-800/80 pb-4">
+        <span className="font-bold tracking-widest text-white uppercase">LaRomme.</span>
+        <div className="flex items-center gap-2 bg-black/60 border border-zinc-800 px-3 py-1 rounded-full backdrop-blur-md">
+          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+          <span className="text-[10px] text-amber-400 uppercase tracking-wider font-bold">LOTE ZERO • FORJANDO</span>
         </div>
+      </header>
+
+      {/* CONTEÚDO CENTRAL: MANIFESTO & CAPTAÇÃO */}
+      <div className="z-10 max-w-2xl w-full my-auto space-y-8 text-center font-mono py-12">
+        
+        <div className="space-y-3">
+          <span className="text-[10px] text-amber-400 uppercase tracking-widest block font-bold">
+            ✦ MANIFESTO DE ABERTURA
+          </span>
+          <h1 className="text-3xl md:text-5xl font-serif uppercase tracking-[0.15em] text-white">
+            O Luxo Exige Silêncio.
+          </h1>
+        </div>
+
+        <div className="space-y-4 text-zinc-300 font-sans leading-relaxed text-xs md:text-sm bg-black/50 border border-zinc-800/80 p-6 md:p-8 rounded-lg backdrop-blur-md text-center">
+          <p>
+            Estamos finalizando a fundição do <strong className="text-white">Lote Zero</strong>. Peças de alta gramatura, modelagem Boxy Heavyweight e seriais numéricos gravados a laser.
+          </p>
+          <p className="text-zinc-400 text-[11px]">
+            O estoque será limitado e irrepetível. Cadastre seu e-mail para receber a chave de acesso reservada 1 hora antes do público geral.
+          </p>
+        </div>
+
+        {/* FORMULÁRIO DE ENTRADA NO SENADO VIP */}
+        <div className="pt-2">
+          {registered ? (
+            <div className="bg-emerald-950/80 border border-emerald-800 text-emerald-400 p-4 rounded-lg font-mono text-xs backdrop-blur-md">
+              ✓ Credencial registrada. Seu e-mail está na lista de prioridade do Lote Zero.
+            </div>
+          ) : (
+            <form onSubmit={handleRegister} className="max-w-md mx-auto space-y-3">
+              <input
+                type="email"
+                required
+                placeholder="seu.email@dominio.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full bg-black/80 border border-zinc-700 px-4 py-3.5 text-xs text-white outline-none focus:border-white transition-colors text-center backdrop-blur-md"
+              />
+              <button
+                type="submit"
+                disabled={loading}
+                onClick={playHapticSound}
+                className="w-full bg-white text-black font-bold text-xs uppercase tracking-widest py-4 hover:bg-zinc-200 transition-colors disabled:opacity-50"
+              >
+                {loading ? '[ REGISTRANDO... ]' : '[ REQUERER ACESSO ANTECIPADO ]'}
+              </button>
+            </form>
+          )}
+        </div>
+
       </div>
+
+      {/* FOOTER */}
+      <footer className="z-10 w-full max-w-5xl flex justify-between items-center font-mono text-[9px] text-zinc-500 border-t border-zinc-800/80 pt-4 uppercase">
+        <span>SÃO PAULO • BR</span>
+        <span>© 2026 LAROMME BRAND</span>
+      </footer>
 
     </main>
   );
