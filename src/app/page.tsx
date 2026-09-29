@@ -19,6 +19,10 @@ export default function Home() {
   const [fadeState, setFadeState] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
 
+  // ASSETS OFICIAIS HOSPEDADOS NO SUPABASE STORAGE
+  const LOGO_CAPACETE_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/logo%20branca.png";
+  const LOGO_NOME_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/fcfc607a-ba81-4ff7-998e-2df1f0697b81-removebg-preview.png";
+
   const phrases = [
     "LaRomme.",
     "A força de Roma.",
@@ -66,7 +70,7 @@ export default function Home() {
   return (
     <main className="relative min-h-[100dvh] bg-black text-white flex flex-col justify-between overflow-hidden font-sans">
       
-      {/* VÍDEO HERO EM ESCALA DE CINZENTOS */}
+      {/* VÍDEO HERO EM ESCALA DE CINZA */}
       <div className="absolute inset-0 z-0">
         <video
           autoPlay
@@ -80,14 +84,19 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/70"></div>
       </div>
 
-      {/* CABEÇALHO COM VETOR BRANCO DO CAPACETE E NOME DA MARCA */}
+      {/* CABEÇALHO RESTAURADO COM LOGO E LOGOTIPO OFICIAIS DO SUPABASE */}
       <header className="relative z-10 w-full px-6 pt-14 pb-4 flex justify-between items-center max-w-7xl mx-auto">
-        <Link href="/" onClick={playHapticSound} className="flex items-center gap-3 group">
-          {/* VETOR VIVO DO CAPACETE ROMANO */}
-          <svg className="w-7 h-7 text-white fill-current transition-transform duration-300 group-hover:scale-105" viewBox="0 0 24 24">
-            <path d="M12 2C9.5 2 7 3.5 7 6V9C7 11.21 8.79 13 11 13V15H8C6.34 15 5 16.34 5 18V21H19V18C19 16.34 17.66 15 16 15H13V13C15.21 13 17 11.21 17 9V6C17 3.5 14.5 2 12 2ZM11 4.1C11.32 4.03 11.66 4 12 4C12.34 4 12.68 4.03 13 4.1V11H11V4.1ZM9 6.5C9.8 6.1 10.8 6 12 6C13.2 6 14.2 6.1 15 6.5V9C15 10.1 14.1 11 13 11H11C9.9 11 9 10.1 9 9V6.5Z"/>
-          </svg>
-          <span className="font-serif text-xl tracking-[0.2em] text-white">LaRomme.</span>
+        <Link href="/" onClick={playHapticSound} className="flex items-center gap-3.5 group">
+          <img 
+            src={LOGO_CAPACETE_URL} 
+            alt="Capacete LaRomme" 
+            className="w-8 h-8 md:w-9 md:h-9 object-contain transition-transform duration-300 group-hover:scale-105"
+          />
+          <img 
+            src={LOGO_NOME_URL} 
+            alt="LaRomme" 
+            className="h-5 md:h-6 object-contain hidden sm:block opacity-90 group-hover:opacity-100 transition-opacity duration-300"
+          />
         </Link>
 
         <Link 
@@ -99,14 +108,16 @@ export default function Home() {
         </Link>
       </header>
 
-      {/* ANIMAÇÃO CENTRAL (FRASES + FADE-IN DO CAPACETE GIGANTE) */}
+      {/* ANIMAÇÃO CENTRAL (FRASES + FADE-IN DO CAPACETE EM NUVEM) */}
       <div className="relative z-10 flex-1 flex items-center justify-center px-6">
         <div className={`transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
           {phrases[fadeState] === "LOGO" ? (
              <div className="flex flex-col items-center justify-center animate-in zoom-in-95 duration-1000">
-               <svg className="w-24 h-24 md:w-36 md:h-36 text-white fill-current drop-shadow-[0_0_35px_rgba(255,255,255,0.2)]" viewBox="0 0 24 24">
-                 <path d="M12 2C9.5 2 7 3.5 7 6V9C7 11.21 8.79 13 11 13V15H8C6.34 15 5 16.34 5 18V21H19V18C19 16.34 17.66 15 16 15H13V13C15.21 13 17 11.21 17 9V6C17 3.5 14.5 2 12 2ZM11 4.1C11.32 4.03 11.66 4 12 4C12.34 4 12.68 4.03 13 4.1V11H11V4.1ZM9 6.5C9.8 6.1 10.8 6 12 6C13.2 6 14.2 6.1 15 6.5V9C15 10.1 14.1 11 13 11H11C9.9 11 9 10.1 9 9V6.5Z"/>
-               </svg>
+               <img 
+                 src={LOGO_CAPACETE_URL} 
+                 alt="Símbolo LaRomme" 
+                 className="w-28 h-28 md:w-40 md:h-40 object-contain drop-shadow-[0_0_35px_rgba(255,255,255,0.25)]"
+               />
              </div>
           ) : (
             <h1 className="text-3xl md:text-5xl lg:text-6xl font-serif text-white text-center tracking-[0.15em]">
