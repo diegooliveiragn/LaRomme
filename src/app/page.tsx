@@ -1,166 +1,107 @@
-﻿'use client';
-
-import { useState, useEffect } from 'react';
+﻿import Link from 'next/link';
 import { createClient } from '@supabase/supabase-js';
-import { playHapticSound } from '@/lib/sound';
-import { trackEvent } from '@/lib/telemetry';
-import Link from 'next/link';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
+// Configuração do Supabase Client para Server Components (Apenas Leitura)
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-export default function Home() {
-  const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [registered, setRegistered] = useState(false);
-  
-  const [fadeState, setFadeState] = useState(0);
-  const [isVisible, setIsVisible] = useState(true);
+// Força a página a buscar dados novos sempre que for carregada (Sem Cache Estático)
+export const revalidate = 0;
 
-  const LOGO_CAPACETE_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/logo%20branca.png";
-  const LOGO_NOME_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/fcfc607a-ba81-4ff7-998e-2df1f0697b81-removebg-preview.png";
-
-  const phrases = [
-    "LaRomme.",
-    "A força de Roma.",
-    "O movimento de Fortaleza.",
-    "Lote Zero.",
-    "LOGO" 
-  ];
-
-  useEffect(() => {
-    trackEvent('home_view');
-    const cycleText = setInterval(() => {
-      setIsVisible(false);
-      setTimeout(() => {
-        setFadeState((prev) => (prev + 1) % phrases.length);
-        setIsVisible(true);
-      }, 1200);
-    }, 4500);
-    return () => clearInterval(cycleText);
-  }, [phrases.length]);
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    playHapticSound();
-    
-    if (!email) return;
-    setLoading(true);
-
-    try {
-      await supabase.from('customers').insert([{
-        full_name: 'Senado VIP - Waitlist',
-        email: email,
-        rfm_tag: 'WAITLIST_LOTE_ZERO',
-        total_purchases: 0,
-        ltv: 0
-      }]);
-      trackEvent('waitlist_signup', { email });
-      setRegistered(true);
-    } catch (err) {
-      setRegistered(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+export default async function Home() {
+  // Busca os artefatos cadastrados no Córtex OS diretamente do banco
+  const { data: products } = await supabase
+    .from('products')
+    .select('*')
+    .order('created_at', { ascending: false });
 
   return (
-    <main className="relative min-h-[100dvh] bg-black text-white flex flex-col justify-between overflow-hidden font-sans">
+    <main className="min-h-screen bg-[#030303] text-white font-sans selection:bg-amber-500/30">
       
-      {/* VÍDEO HERO EM ESCALA DE CINZA */}
-      <div className="absolute inset-0 z-0">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline
-          className="w-full h-full object-cover grayscale opacity-40 filter contrast-125"
-        >
-          <source src="/hero-beach.mp4" type="video/mp4" />
-        </video>
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/70"></div>
-      </div>
-
-      {/* CABEÇALHO COM A LOGOMARCA EM BRANCO PURO */}
-      <header className="relative z-10 w-full px-6 pt-14 pb-4 flex justify-between items-center max-w-7xl mx-auto">
-        <Link href="/" onClick={playHapticSound} className="flex items-center gap-3.5 group">
-          <img 
-            src={LOGO_CAPACETE_URL} 
-            alt="Capacete LaRomme" 
-            className="w-8 h-8 md:w-9 md:h-9 object-contain transition-transform duration-300 group-hover:scale-105"
-          />
-          <img 
-            src={LOGO_NOME_URL} 
-            alt="LaRomme" 
-            className="h-5 md:h-6 object-contain hidden sm:block opacity-90 group-hover:opacity-100 transition-opacity duration-300 brightness-0 invert"
-          />
-        </Link>
-
-        <Link 
-          href="/acesso" 
-          onClick={() => { playHapticSound(); trackEvent('nav_senado_vip_click'); }} 
-          className="text-[10px] md:text-xs font-sans uppercase tracking-widest text-zinc-400 hover:text-white transition-colors"
-        >
-          Senado VIP
-        </Link>
+      {/* NAVEGAÇÃO PRINCIPAL (HEADER) */}
+      <header className="flex justify-between items-center p-6 md:p-10 border-b border-zinc-900/80 sticky top-0 bg-[#030303]/90 backdrop-blur-md z-50">
+        <div className="font-serif text-2xl tracking-[0.2em] uppercase">LaRomme</div>
+        <nav className="hidden md:flex gap-8 text-[10px] uppercase tracking-widest text-zinc-500 font-bold">
+          <Link href="/" className="text-white">Lote Zero</Link>
+          <Link href="/sobre" className="hover:text-white transition-colors">Manifesto</Link>
+          <Link href="/conta" className="hover:text-amber-400 transition-colors">Senado VIP</Link>
+        </nav>
+        <div className="flex items-center gap-4 text-[10px] uppercase tracking-widest font-bold">
+          <Link href="/carrinho" className="hover:text-amber-400 transition-colors">Carrinho (0)</Link>
+        </div>
       </header>
 
-      {/* ANIMAÇÃO CENTRAL */}
-      <div className="relative z-10 flex-1 flex items-center justify-center px-6">
-        <div className={`transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
-          {phrases[fadeState] === "LOGO" ? (
-             <div className="flex flex-col items-center justify-center animate-in zoom-in-95 duration-1000">
-               <img 
-                 src={LOGO_CAPACETE_URL} 
-                 alt="Símbolo LaRomme" 
-                 className="w-28 h-28 md:w-40 md:h-40 object-contain drop-shadow-[0_0_35px_rgba(255,255,255,0.25)]"
-               />
-             </div>
-          ) : (
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-serif text-white text-center tracking-[0.15em]">
-              {phrases[fadeState]}
-            </h1>
-          )}
-        </div>
-      </div>
+      {/* HERO SECTION (DOBRA PRINCIPAL) */}
+      <section className="px-6 md:px-10 py-24 md:py-32 flex flex-col items-center justify-center text-center border-b border-zinc-900/80 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900/10 via-[#030303] to-[#030303]">
+        <span className="text-amber-400 font-mono text-[10px] uppercase tracking-[0.3em] mb-4 block font-bold">Drop Exclusivo</span>
+        <h1 className="text-5xl md:text-7xl font-serif uppercase tracking-widest mb-6">Lote Zero</h1>
+        <p className="text-zinc-400 max-w-xl mx-auto text-xs md:text-sm leading-relaxed tracking-widest uppercase">
+          O marco zero da arquitetura de vestuário. Algodão estruturado premium, caimento boxy e produção limitadíssima. 
+          Acesso prioritário para membros.
+        </p>
+      </section>
 
-      {/* RODAPÉ */}
-      <div className="relative z-10 w-full px-6 pb-12 pt-6 max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-        <div className="w-full md:w-auto">
-          {registered ? (
-            <p className="text-xs font-sans tracking-widest text-emerald-400 uppercase text-center md:text-left">
-              Sua credencial foi ativada.
-            </p>
-          ) : (
-            <form 
-              onSubmit={handleRegister} 
-              className="flex flex-col sm:flex-row gap-0 sm:gap-4 items-center border-b border-zinc-600/50 pb-2 transition-colors focus-within:border-white"
-            >
-              <input
-                type="email"
-                required
-                placeholder="E-mail para acesso restrito"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-transparent text-[10px] md:text-xs font-sans tracking-widest text-white placeholder:text-zinc-500 outline-none w-full sm:w-64 text-center sm:text-left py-2"
-              />
-              <button
-                type="submit"
-                disabled={loading}
-                className="text-[10px] md:text-xs font-sans uppercase tracking-widest text-zinc-400 hover:text-white transition-colors mt-3 sm:mt-0"
-              >
-                {loading ? 'Aguarde' : 'Descobrir'}
-              </button>
-            </form>
-          )}
+      {/* VITRINE DINÂMICA (PRODUTOS DO SUPABASE) */}
+      <section className="px-6 md:px-10 py-20 max-w-7xl mx-auto">
+        <div className="flex justify-between items-end mb-12 border-b border-zinc-900/80 pb-4">
+          <h2 className="text-sm md:text-base uppercase tracking-widest font-bold">Artefatos Disponíveis</h2>
+          <span className="text-[10px] text-zinc-500 font-mono uppercase font-bold">
+            {products?.length || 0} {products?.length === 1 ? 'Peça catalogada' : 'Peças catalogadas'}
+          </span>
         </div>
 
-        <div className="text-[9px] md:text-[10px] font-sans tracking-widest uppercase text-zinc-500">
-          Fortaleza • CE
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+          {products && products.length > 0 ? (
+            products.map((product) => (
+              <Link href={`/produto/${product.id}`} key={product.id} className="group block cursor-pointer">
+                
+                {/* Imagem Placeholder (Design Brutalista) */}
+                <div className="aspect-[3/4] bg-[#070707] border border-zinc-900 flex flex-col items-center justify-center mb-5 group-hover:border-amber-500/30 transition-all relative overflow-hidden">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10"></div>
+                  
+                  {/* Logo/Monograma Central */}
+                  <span className="font-serif text-5xl text-zinc-800 tracking-widest group-hover:scale-110 transition-transform duration-700">LR</span>
+                  
+                  {/* Botão Hover */}
+                  <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 opacity-0 group-hover:opacity-100 transition-all duration-500 translate-y-4 group-hover:translate-y-0 w-11/12">
+                    <div className="bg-white text-black text-[10px] font-bold uppercase tracking-widest py-3 text-center w-full hover:bg-amber-400 transition-colors">
+                      Inspecionar Artefato
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Informações do Produto (Puxadas do Banco) */}
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-bold text-sm uppercase tracking-widest group-hover:text-amber-400 transition-colors">{product.name}</h3>
+                    <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">{product.fabric_spec}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-mono text-sm block">R$ {Number(product.sale_price).toFixed(2)}</span>
+                    <span className="text-[9px] text-amber-500/80 font-mono uppercase">{product.sku}</span>
+                  </div>
+                </div>
+              </Link>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-32 border border-dashed border-zinc-800 bg-[#050505]">
+              <span className="font-serif text-2xl text-zinc-600 block mb-2">ARQUIVO VAZIO</span>
+              <p className="text-zinc-500 uppercase tracking-widest text-[10px]">Nenhum artefato foi liberado pelo Córtex OS ainda.</p>
+            </div>
+          )}
         </div>
-      </div>
+      </section>
+
+      {/* RODAPÉ (FOOTER) */}
+      <footer className="border-t border-zinc-900/80 p-6 md:p-10 flex flex-col md:flex-row justify-between items-center gap-4 text-[10px] text-zinc-500 uppercase tracking-widest font-bold bg-[#010101]">
+        <div>&copy; 2026 LaRomme. Todos os direitos reservados.</div>
+        <div className="flex gap-6">
+          <Link href="/sobre" className="hover:text-white transition-colors">A Marca</Link>
+          <Link href="/termos" className="hover:text-white transition-colors">Termos</Link>
+          <Link href="/cortex" className="hover:text-amber-400 transition-colors">Córtex OS</Link>
+        </div>
+      </footer>
     </main>
   );
 }
