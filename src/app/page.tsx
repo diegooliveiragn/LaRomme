@@ -19,7 +19,6 @@ export default function Home() {
   const [fadeState, setFadeState] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
 
-  // ASSETS OFICIAIS HOSPEDADOS NO SUPABASE STORAGE
   const LOGO_CAPACETE_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/logo%20branca.png";
   const LOGO_NOME_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/fcfc607a-ba81-4ff7-998e-2df1f0697b81-removebg-preview.png";
 
@@ -84,7 +83,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/70"></div>
       </div>
 
-      {/* CABEÇALHO RESTAURADO COM LOGO E LOGOTIPO OFICIAIS DO SUPABASE */}
+      {/* CABEÇALHO COM A LOGOMARCA EM BRANCO PURO */}
       <header className="relative z-10 w-full px-6 pt-14 pb-4 flex justify-between items-center max-w-7xl mx-auto">
         <Link href="/" onClick={playHapticSound} className="flex items-center gap-3.5 group">
           <img 
@@ -95,7 +94,7 @@ export default function Home() {
           <img 
             src={LOGO_NOME_URL} 
             alt="LaRomme" 
-            className="h-5 md:h-6 object-contain hidden sm:block opacity-90 group-hover:opacity-100 transition-opacity duration-300"
+            className="h-5 md:h-6 object-contain hidden sm:block opacity-90 group-hover:opacity-100 transition-opacity duration-300 brightness-0 invert"
           />
         </Link>
 
@@ -108,7 +107,7 @@ export default function Home() {
         </Link>
       </header>
 
-      {/* ANIMAÇÃO CENTRAL (FRASES + FADE-IN DO CAPACETE EM NUVEM) */}
+      {/* ANIMAÇÃO CENTRAL */}
       <div className="relative z-10 flex-1 flex items-center justify-center px-6">
         <div className={`transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
           {phrases[fadeState] === "LOGO" ? (
