@@ -10,7 +10,7 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 );
 
-// MOCK DATA MANTIDO PARA O MODO DEMO / SANDBOX
+// MOCK DATA MANTIDO PARA O MODO DEMO (1 ANO DE GOVERNANÇA)
 const MOCK_1_YEAR = {
   orders: [
     { id: 'm1', order_number: 'LR-90214', total_amount: 320.00, payment_status: 'PAGO', delivery_state: 'SP', created_at: '2026-09-12T10:30:00Z', customers: { full_name: 'Gabriel Siqueira' } },
@@ -24,27 +24,28 @@ const MOCK_1_YEAR = {
   ],
   suppliers: [
     { id: 'sup1', name: 'Oficina Fortaleza 01', type: 'Facção de Costura', moq: 100, leadTime: 15, unitCost: 25.00, contact: '(85) 99888-1122' },
+    { id: 'sup2', name: 'Têxtil Santa Catarina', type: 'Tecelagem 260GSM', moq: 300, leadTime: 30, unitCost: 45.00, contact: '(47) 98877-3344' },
   ],
   productsList: [
     { id: 'p1', name: 'Camiseta Boxy Vestigium', sku: 'BOXY-BLK-M', price: 320.00, cost_fabric: 45.00, cost_sewing: 25.00, cost_packaging: 15.00, cost_laser: 10.00, stock: 142, fabric: '100% Algodão 260GSM' },
+    { id: 'p2', name: 'Camiseta Boxy Origo', sku: 'BOXY-WHT-L', price: 340.00, cost_fabric: 48.00, cost_sewing: 27.00, cost_packaging: 15.00, cost_laser: 10.00, stock: 98, fabric: '100% Algodão 280GSM' },
   ],
   customers: [
     { id: 'c1', full_name: 'Gabriel Siqueira', email: 'gabriel.siqueira@gmail.com', phone: '11988887766', rfm_tag: 'MEMBRO_VIP', ltv: 1280.00, created_at: '2026-01-15T10:00:00Z' },
+    { id: 'c2', full_name: 'Lucas Arantes', email: 'lucas.arantes@hotmail.com', phone: '21997776655', rfm_tag: 'SENADOR_GOLD', ltv: 2560.00, created_at: '2026-02-10T11:00:00Z' },
   ]
 };
 
 export default function CortexDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  
-  // O sistema inicia no MODO REAL por padrão, forçando governança séria
-  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(true);
 
   const [activeTab, setActiveTab] = useState('cockpit');
   const [treasurySubTab, setTreasurySubTab] = useState<'dre' | 'matrix' | 'cashflow'>('dre');
 
   // GOVERNANÇA TEMPORAL
-  const [selectedYear, setSelectedYear] = useState<string>('ALL');
+  const [selectedYear, setSelectedYear] = useState<string>('2026');
   const [selectedMonth, setSelectedMonth] = useState<string>('ALL');
 
   // DADOS VIVOS DO SUPABASE
@@ -79,6 +80,8 @@ export default function CortexDashboard() {
   const [supType, setSupType] = useState('');
   const [supMoq, setSupMoq] = useState('');
   const [supLeadTime, setSupLeadTime] = useState('');
+
+  const [stressFactor, setStressFactor] = useState<number>(0);
 
   const fetchCortexData = async () => {
     try {
@@ -116,51 +119,81 @@ export default function CortexDashboard() {
 
   const toggleDemoMode = () => {
     playHapticSound();
-    // Se estiver saindo do Demo Mode e estiver na aba do Simulador, muda a aba pra evitar travamento na UI
-    if (isDemoMode && activeTab === 'webhook_sim') {
-      setActiveTab('cockpit');
-    }
     setIsDemoMode(!isDemoMode);
   };
-
-  // NAVEGAÇÃO DINÂMICA: Isola o Simulador apenas no Demo Mode
-  const navTabs = [
-    { id: 'cockpit', label: '1. Cockpit 360° & Vendas' },
-    { id: 'treasury', label: '2. Financial & Treasury OS' },
-    { id: 'products', label: '3. Artefatos & CMV Fabril' },
-    { id: 'suppliers', label: '4. Fornecedores Whitelabel' },
-    { id: 'crm', label: `5. CRM 360 & Senado VIP (${isDemoMode ? MOCK_1_YEAR.customers.length : dbCustomers.length})` },
-    { id: 'content', label: '6. Content OS & Matriz' },
-    { id: 'logistics', label: '7. Logística White Glove & RMA' },
-  ];
-  if (isDemoMode) {
-    navTabs.push({ id: 'webhook_sim', label: '8. Sandbox: Webhook MP' });
-  }
 
   // --- HANDLERS DOS FORMULÁRIOS ---
   const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!expCategory || !expDesc || !expAmount) return alert("Preencha todos os campos.");
+    
     playHapticSound();
-    const { error } = await supabase.from('expenses').insert([{ type: expType, category: expCategory, description: expDesc, amount: parseFloat(expAmount), date: expDate, status: 'CONCILIADO' }]);
-    if (!error) { alert("Lançamento registrado!"); setExpDesc(''); setExpAmount(''); fetchCortexData(); }
+    const { error } = await supabase.from('expenses').insert([{
+      type: expType,
+      category: expCategory,
+      description: expDesc,
+      amount: parseFloat(expAmount),
+      date: expDate,
+      status: 'CONCILIADO'
+    }]);
+
+    if (!error) {
+      alert("Lançamento registrado!");
+      setExpDesc(''); setExpAmount('');
+      fetchCortexData();
+    } else {
+      alert("Erro ao gravar: " + error.message);
+    }
   };
 
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!prodName || !prodSku || !prodPrice) return alert("Preencha os dados.");
+    if (!prodName || !prodSku || !prodPrice) return alert("Preencha os dados do produto.");
+    
     playHapticSound();
-    const totalCostFabril = (parseFloat(prodFabricCost)||0) + (parseFloat(prodSewingCost)||0) + (parseFloat(prodPackCost)||0) + (parseFloat(prodLaserCost)||0);
-    const { error } = await supabase.from('products').insert([{ name: prodName, sku: prodSku, sale_price: parseFloat(prodPrice), cost_price: totalCostFabril, fabric_spec: prodFabricSpec || '100% Algodão' }]);
-    if (!error) { alert("Artefato cadastrado!"); setProdName(''); setProdSku(''); setProdPrice(''); fetchCortexData(); }
+    const fabricCostNum = parseFloat(prodFabricCost) || 0;
+    const sewingCostNum = parseFloat(prodSewingCost) || 0;
+    const packCostNum = parseFloat(prodPackCost) || 0;
+    const laserCostNum = parseFloat(prodLaserCost) || 0;
+    const totalCostFabril = fabricCostNum + sewingCostNum + packCostNum + laserCostNum;
+
+    const { error } = await supabase.from('products').insert([{
+      name: prodName,
+      sku: prodSku,
+      sale_price: parseFloat(prodPrice),
+      cost_price: totalCostFabril,
+      fabric_spec: prodFabricSpec || '100% Algodão Premium'
+    }]);
+
+    if (!error) {
+      alert("Artefato cadastrado!");
+      setProdName(''); setProdSku(''); setProdPrice('');
+      fetchCortexData();
+    } else {
+      alert("Erro ao gravar produto: " + error.message);
+    }
   };
 
   const handleAddSupplier = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!supName || !supType) return alert("Preencha os dados do fornecedor.");
+    if (!supName || !supType || !supMoq || !supLeadTime) return alert("Preencha os dados do fornecedor.");
+    
     playHapticSound();
-    const { error } = await supabase.from('suppliers').insert([{ name: supName, service_type: supType, moq: parseInt(supMoq)||0, lead_time_days: parseInt(supLeadTime)||0, unit_cost: 0 }]);
-    if (!error) { alert("Fornecedor adicionado!"); setSupName(''); setSupType(''); fetchCortexData(); }
+    const { error } = await supabase.from('suppliers').insert([{
+      name: supName,
+      service_type: supType,
+      moq: parseInt(supMoq),
+      lead_time_days: parseInt(supLeadTime),
+      unit_cost: 0
+    }]);
+
+    if (!error) {
+      alert("Fornecedor adicionado!");
+      setSupName(''); setSupType(''); setSupMoq(''); setSupLeadTime('');
+      fetchCortexData();
+    } else {
+      alert("Erro ao gravar fornecedor: " + error.message);
+    }
   };
 
   // --- SIMULADOR DE WEBHOOK ---
@@ -169,14 +202,44 @@ export default function CortexDashboard() {
     setSimulating(true);
     setSimLog(prev => [...prev, "1. Gerando Cliente Fictício na tabela 'customers'..."]);
 
-    const { data: customerData, error: custErr } = await supabase.from('customers').upsert([{ full_name: 'Senador Teste Pix', email: 'senado.teste@laromme.com', rfm_tag: 'WAITLIST' }], { onConflict: 'email' }).select().single();
-    if (custErr) { setSimLog(prev => [...prev, "ERRO ao criar cliente: " + custErr.message]); setSimulating(false); return; }
+    const { data: customerData, error: custErr } = await supabase
+      .from('customers')
+      .upsert([{
+        full_name: 'Senador Teste Pix',
+        email: 'senado.teste@laromme.com',
+        rfm_tag: 'WAITLIST'
+      }], { onConflict: 'email' })
+      .select()
+      .single();
+
+    if (custErr) {
+      setSimLog(prev => [...prev, "ERRO ao criar cliente: " + custErr.message]);
+      setSimulating(false);
+      return;
+    }
 
     const testOrderNum = 'LR-SIM-' + Math.floor(1000 + Math.random() * 9000);
     setSimLog(prev => [...prev, `2. Criando Pedido ${testOrderNum} (R$ 320,00)...`]);
 
-    const { data: orderData, error: orderErr } = await supabase.from('orders').insert([{ customer_id: customerData.id, order_number: testOrderNum, total_amount: 320.00, payment_status: 'PENDENTE', payment_method: 'PIX', net_profit: 0.00, delivery_state: 'CE' }]).select().single();
-    if (orderErr) { setSimLog(prev => [...prev, "ERRO ao criar pedido: " + orderErr.message]); setSimulating(false); return; }
+    const { data: orderData, error: orderErr } = await supabase
+      .from('orders')
+      .insert([{
+        customer_id: customerData.id,
+        order_number: testOrderNum,
+        total_amount: 320.00,
+        payment_status: 'PENDENTE',
+        payment_method: 'PIX',
+        net_profit: 0.00,
+        delivery_state: 'CE'
+      }])
+      .select()
+      .single();
+
+    if (orderErr) {
+      setSimLog(prev => [...prev, "ERRO ao criar pedido: " + orderErr.message]);
+      setSimulating(false);
+      return;
+    }
 
     setCurrentTestOrderId(orderData.id);
     setSimLog(prev => [...prev, `SUCESSO: Pedido gerado (${orderData.id.slice(0, 8)}...). Pronto para receber Webhook.`]);
@@ -186,14 +249,38 @@ export default function CortexDashboard() {
 
   const handleSimulateWebhookTrigger = async () => {
     if (!currentTestOrderId) return alert("Gere um pedido de teste primeiro.");
+
     playHapticSound();
     setSimulating(true);
     setSimLog(prev => [...prev, `3. Disparando POST para /api/webhooks/mercadopago...`]);
+
     try {
-      const response = await fetch('/api/webhooks/mercadopago', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ order_id: currentTestOrderId, payment_status: 'PAGO' }) });
-      if (response.ok) { setSimLog(prev => [ ...prev, `4. Webhook retornado com SUCESSO 200 OK!`, `5. GATILHO POSTGRESQL DISPARADO: Linha de Entrada gerada no Caixa!` ]); fetchCortexData(); } 
-      else { const result = await response.json(); setSimLog(prev => [...prev, `ERRO no Webhook: ${result.error}`]); }
-    } catch (e: any) { setSimLog(prev => [...prev, `ERRO de Conexão: ${e.message}`]); } finally { setSimulating(false); }
+      const response = await fetch('/api/webhooks/mercadopago', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          order_id: currentTestOrderId,
+          payment_status: 'PAGO'
+        })
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setSimLog(prev => [
+          ...prev, 
+          `4. Webhook retornado com SUCESSO 200 OK!`,
+          `5. GATILHO POSTGRESQL DISPARADO: Linha de Entrada (+ R$ 320,00) gerada no Caixa!`
+        ]);
+        fetchCortexData();
+      } else {
+        setSimLog(prev => [...prev, `ERRO no Webhook: ${result.error}`]);
+      }
+    } catch (e: any) {
+      setSimLog(prev => [...prev, `ERRO de Conexão: ${e.message}`]);
+    } finally {
+      setSimulating(false);
+    }
   };
 
   // FONTE DE DADOS (MOCK VS LIVE)
@@ -201,7 +288,6 @@ export default function CortexDashboard() {
   const activeProducts = isDemoMode ? MOCK_1_YEAR.productsList : dbProducts;
   const activeSuppliers = isDemoMode ? MOCK_1_YEAR.suppliers : dbSuppliers;
   const activeCustomers = isDemoMode ? MOCK_1_YEAR.customers : dbCustomers;
-  const activeOrders = isDemoMode ? MOCK_1_YEAR.orders : dbOrders;
 
   const filteredExpenses = useMemo(() => {
     return rawExpenses.filter((e: any) => {
@@ -226,6 +312,8 @@ export default function CortexDashboard() {
     const ebitda = lucroBruto - opexTotal;
 
     const saldoCaixaAtual = rawExpenses.reduce((acc: number, e: any) => e.type === 'ENTRADA' ? acc + Number(e.amount) : acc - Number(e.amount), 0);
+    const burnRateMensal = opexTotal > 0 ? (opexTotal / 12) : 10000;
+    const cashRunwayMeses = (saldoCaixaAtual / burnRateMensal).toFixed(1);
 
     return {
       receitaBruta: totalEntradas,
@@ -233,33 +321,41 @@ export default function CortexDashboard() {
       receitaLiquida,
       cmvTotal,
       lucroBruto,
+      margemBrutaPercent: receitaLiquida > 0 ? ((lucroBruto / receitaLiquida) * 100).toFixed(1) : '0.0',
       opexTotal,
       ebitda,
-      saldoCaixaAtual
+      margemEbitda: receitaLiquida > 0 ? ((ebitda / receitaLiquida) * 100).toFixed(1) : '0.0',
+      saldoCaixaAtual,
+      burnRateMensal,
+      cashRunwayMeses
     };
   }, [filteredExpenses, rawExpenses]);
 
   const monthlyMatrix = useMemo(() => {
     const months = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12'];
     const labels = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+
     return months.map((m, idx) => {
       const monthExpenses = rawExpenses.filter((e: any) => {
         const itemDate = e.date ? new Date(e.date) : new Date(e.created_at || '2026-01-01');
         const itemYear = itemDate.getFullYear().toString();
         const itemMonth = (itemDate.getMonth() + 1).toString().padStart(2, '0');
-        return (selectedYear === 'ALL' || itemYear === selectedYear) && itemMonth === m;
+        return itemYear === (selectedYear === 'ALL' ? '2026' : selectedYear) && itemMonth === m;
       });
+
       const rec = monthExpenses.filter((e: any) => e.type === 'ENTRADA').reduce((a: number, b: any) => a + Number(b.amount), 0);
       const cmv = monthExpenses.filter((e: any) => e.category === 'Insumos / CMV').reduce((a: number, b: any) => a + Number(b.amount), 0);
       const opex = monthExpenses.filter((e: any) => e.category === 'Tráfego Pago' || e.category === 'OpEx Fixos & SaaS').reduce((a: number, b: any) => a + Number(b.amount), 0);
-      return { label: labels[idx], receita: rec, cmv, opex, ebitda: (rec * 0.93) - cmv - opex };
+      const ebitda = (rec * 0.93) - cmv - opex;
+
+      return { label: labels[idx], receita: rec, cmv, opex, ebitda };
     });
   }, [rawExpenses, selectedYear]);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-black text-white flex items-center justify-center font-sans text-xs uppercase tracking-widest text-zinc-500">
-        Iniciando Córtex OS V3.0 (Ambiente de Produção)...
+        Iniciando Córtex OS V3.0...
       </div>
     );
   }
@@ -267,7 +363,7 @@ export default function CortexDashboard() {
   return (
     <div className="h-screen w-screen bg-[#030303] text-white font-sans flex overflow-hidden">
       
-      {/* SIDEBAR LATERAL DINÂMICA */}
+      {/* SIDEBAR LATERAL RESTAURADA COM AS 8 ABAS OPERACIONAIS */}
       <aside className="w-64 bg-[#070707] border-r border-zinc-800/80 flex flex-col justify-between shrink-0 h-full">
         <div className="p-6 space-y-6">
           <div className="space-y-1">
@@ -283,12 +379,21 @@ export default function CortexDashboard() {
                 : 'bg-emerald-950/80 text-emerald-400 border-emerald-500/50 shadow-[0_0_15px_rgba(52,211,153,0.15)]'
             }`}
           >
-            <span>{isDemoMode ? '🟡 MODO DEMO / SANDBOX' : '🟢 MODO REAL (LIVE)'}</span>
+            <span>{isDemoMode ? '🟡 MODO DEMO' : '🟢 MODO REAL (LIVE)'}</span>
             <span className="text-xs">⇄</span>
           </button>
 
           <nav className="space-y-1 pt-4 border-t border-zinc-800/80 text-[10px] uppercase tracking-widest">
-            {navTabs.map((tab) => (
+            {[
+              { id: 'cockpit', label: '1. Cockpit 360° & Vendas' },
+              { id: 'treasury', label: '2. Financial & Treasury OS' },
+              { id: 'products', label: '3. Artefatos & CMV Fabril' },
+              { id: 'suppliers', label: '4. Fornecedores Whitelabel' },
+              { id: 'crm', label: `5. CRM 360 & Senado VIP (${activeCustomers.length})` },
+              { id: 'content', label: '6. Content OS & Matriz' },
+              { id: 'logistics', label: '7. Logística White Glove & RMA' },
+              { id: 'webhook_sim', label: '8. Simulador Webhook MP' },
+            ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => { playHapticSound(); setActiveTab(tab.id); }}
@@ -314,79 +419,104 @@ export default function CortexDashboard() {
       {/* ÁREA PRINCIPAL */}
       <main className="flex-1 h-screen overflow-y-auto p-10 bg-[#030303]">
         
-        {/* BARRA DE FILTRO TEMPORAL E AVISO DE PRODUÇÃO */}
+        {/* BARRA DE FILTRO TEMPORAL */}
         <div className="mb-8 p-4 bg-[#070707] border border-zinc-800 flex flex-wrap items-center justify-between gap-4 text-xs font-mono">
           <div className="flex items-center gap-3">
             <span className="text-amber-400 font-bold uppercase tracking-widest text-[10px]">Horizonte Temporal:</span>
             <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)} className="bg-black border border-zinc-800 px-3 py-1.5 text-white outline-none">
               <option value="2026">Ano 2026</option>
+              <option value="2025">Ano 2025</option>
               <option value="ALL">Todo o Histórico</option>
             </select>
+            <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="bg-black border border-zinc-800 px-3 py-1.5 text-white outline-none">
+              <option value="ALL">Todos os Meses</option>
+              <option value="09">Setembro</option>
+              <option value="08">Agosto</option>
+            </select>
           </div>
-          <div className="text-[10px] uppercase tracking-widest flex items-center gap-2">
-            {!isDemoMode && <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>}
-            <span className={isDemoMode ? "text-amber-500 font-bold" : "text-emerald-400 font-bold"}>
-              {isDemoMode ? 'AMBIENTE DE SIMULAÇÃO ATIVO' : 'AMBIENTE DE PRODUÇÃO BLINDADO'}
-            </span>
+          <div className="text-[10px] text-zinc-500 uppercase tracking-widest">
+            Status: <span className="text-white font-bold">{isDemoMode ? 'Simulação (Demo)' : 'Conectado ao Supabase (Live)'}</span>
           </div>
         </div>
 
-        {/* MÓDULOS (Omitindo repetições visuais, lógica mantida igual) */}
-        
-        {/* ABA 1: COCKPIT */}
+        {/* ABA 1: COCKPIT 360° */}
         {activeTab === 'cockpit' && (
           <div className="space-y-8 animate-in fade-in duration-300">
-            <div><h1 className="text-xl font-serif text-white uppercase tracking-widest">Cockpit 360° & Vendas</h1></div>
+            <div>
+              <h1 className="text-xl font-serif text-white uppercase tracking-widest">Cockpit 360° & Vendas</h1>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Visão panorâmica consolidada.</p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="bg-[#070707] border border-zinc-800 p-5 space-y-1"><span className="text-[9px] text-zinc-500 uppercase block">Receita Bruta</span><span className="text-xl font-serif text-white block">R$ {financialMetrics.receitaBruta.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
-              <div className="bg-[#070707] border border-zinc-800 p-5 space-y-1"><span className="text-[9px] text-zinc-500 uppercase block">Lucro Bruto</span><span className="text-xl font-serif text-emerald-400 block">R$ {financialMetrics.lucroBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
-              <div className="bg-[#070707] border border-zinc-800 p-5 space-y-1"><span className="text-[9px] text-zinc-500 uppercase block">EBITDA Líquido</span><span className="text-xl font-serif text-amber-400 block">R$ {financialMetrics.ebitda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
-              <div className="bg-[#070707] border border-zinc-800 p-5 space-y-1"><span className="text-[9px] text-zinc-500 uppercase block">Total de Pedidos</span><span className="text-xl font-serif text-white block">{activeOrders.length} pedidos</span></div>
+              <div className="bg-[#070707] border border-zinc-800 p-5 space-y-1">
+                <span className="text-[9px] text-zinc-500 uppercase tracking-widest block">Receita Bruta</span>
+                <span className="text-xl font-serif text-white block">R$ {financialMetrics.receitaBruta.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="bg-[#070707] border border-zinc-800 p-5 space-y-1">
+                <span className="text-[9px] text-zinc-500 uppercase tracking-widest block">Lucro Bruto</span>
+                <span className="text-xl font-serif text-emerald-400 block">R$ {financialMetrics.lucroBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="bg-[#070707] border border-zinc-800 p-5 space-y-1">
+                <span className="text-[9px] text-zinc-500 uppercase tracking-widest block">EBITDA Líquido</span>
+                <span className="text-xl font-serif text-amber-400 block">R$ {financialMetrics.ebitda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+              </div>
+              <div className="bg-[#070707] border border-zinc-800 p-5 space-y-1">
+                <span className="text-[9px] text-zinc-500 uppercase tracking-widest block">Volume de Pedidos</span>
+                <span className="text-xl font-serif text-white block">{isDemoMode ? 4630 : dbOrders.length} pedidos</span>
+              </div>
             </div>
           </div>
         )}
 
-        {/* ABA 2: FINANCIAL OS */}
+        {/* ABA 2: FINANCIAL & TREASURY OS */}
         {activeTab === 'treasury' && (
           <div className="space-y-8 animate-in fade-in duration-300">
-            <div className="flex justify-between items-center border-b border-zinc-800/80 pb-6">
-              <h1 className="text-xl font-serif text-white uppercase tracking-widest">Controladoria & Tesouraria</h1>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-800/80 pb-6">
+              <div>
+                <h1 className="text-xl font-serif text-white uppercase tracking-widest">Controladoria & DRE de Governança</h1>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">DRE Gerencial, Matriz Mês a Mês e Fluxo de Caixa.</p>
+              </div>
               <div className="flex bg-[#070707] border border-zinc-800 p-1 text-[10px] font-bold uppercase tracking-widest">
-                <button onClick={() => setTreasurySubTab('dre')} className={`px-4 py-2 ${treasurySubTab === 'dre' ? 'bg-amber-400 text-black' : 'text-zinc-500'}`}>DRE Destaque</button>
-                <button onClick={() => setTreasurySubTab('matrix')} className={`px-4 py-2 ${treasurySubTab === 'matrix' ? 'bg-amber-400 text-black' : 'text-zinc-500'}`}>Matriz MoM</button>
-                <button onClick={() => setTreasurySubTab('cashflow')} className={`px-4 py-2 ${treasurySubTab === 'cashflow' ? 'bg-amber-400 text-black' : 'text-zinc-500'}`}>Fluxo de Caixa</button>
+                <button onClick={() => setTreasurySubTab('dre')} className={`px-4 py-2 ${treasurySubTab === 'dre' ? 'bg-amber-400 text-black font-bold' : 'text-zinc-500'}`}>DRE Destaque</button>
+                <button onClick={() => setTreasurySubTab('matrix')} className={`px-4 py-2 ${treasurySubTab === 'matrix' ? 'bg-amber-400 text-black font-bold' : 'text-zinc-500'}`}>Matriz MoM</button>
+                <button onClick={() => setTreasurySubTab('cashflow')} className={`px-4 py-2 ${treasurySubTab === 'cashflow' ? 'bg-amber-400 text-black font-bold' : 'text-zinc-500'}`}>Fluxo de Caixa</button>
               </div>
             </div>
 
             {treasurySubTab === 'dre' && (
               <div className="bg-[#070707] border border-zinc-800 p-6 space-y-4 text-xs font-mono">
-                <h2 className="text-xs uppercase font-bold text-zinc-300 border-b border-zinc-800 pb-3">Demonstrativo de Resultado</h2>
+                <h2 className="text-xs uppercase font-bold text-zinc-300 border-b border-zinc-800 pb-3 tracking-widest">Demonstrativo por Período</h2>
                 <div className="space-y-2">
-                  <div className="flex justify-between py-2 text-white font-bold"><span>(+) RECEITA BRUTA</span><span>R$ {financialMetrics.receitaBruta.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
+                  <div className="flex justify-between py-2 border-b border-zinc-800 text-white font-bold"><span>(+) RECEITA BRUTA</span><span>R$ {financialMetrics.receitaBruta.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
                   <div className="flex justify-between py-1 text-zinc-400 pl-4"><span>(-) Impostos & Gateway</span><span className="text-red-400">- R$ {financialMetrics.impostosEGateway.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
+                  <div className="flex justify-between py-2 border-b border-zinc-800 text-zinc-200 font-bold bg-zinc-900/40 px-2"><span>(=) RECEITA LÍQUIDA</span><span>R$ {financialMetrics.receitaLiquida.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
+                  <div className="flex justify-between py-1 text-zinc-400 pl-4"><span>(-) CMV Fabril</span><span className="text-red-400">- R$ {financialMetrics.cmvTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
                   <div className="flex justify-between py-2 border-b border-zinc-800 text-emerald-400 font-bold bg-emerald-950/10 px-2"><span>(=) MARGEM BRUTA</span><span>R$ {financialMetrics.lucroBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
                   <div className="flex justify-between py-1 text-zinc-400 pl-4"><span>(-) OpEx Operacional + Ads</span><span className="text-red-400">- R$ {financialMetrics.opexTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
-                  <div className="flex justify-between py-3 border-t-2 border-amber-500/50 text-amber-400 font-bold bg-amber-950/20 px-3"><span>(=) EBITDA LÍQUIDO</span><span>R$ {financialMetrics.ebitda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
+                  <div className="flex justify-between py-3 border-t-2 border-amber-500/50 text-amber-400 font-serif text-sm font-bold bg-amber-950/20 px-3"><span>(=) EBITDA LÍQUIDO</span><span>R$ {financialMetrics.ebitda.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span></div>
                 </div>
               </div>
             )}
 
             {treasurySubTab === 'matrix' && (
               <div className="bg-[#070707] border border-zinc-800 p-6 space-y-6 overflow-x-auto font-mono text-[11px]">
-                <h2 className="text-xs uppercase font-bold text-amber-400 border-b border-zinc-800 pb-3">Evolução Histórica DRE (Ano {selectedYear})</h2>
+                <h2 className="text-xs uppercase font-bold text-amber-400 tracking-widest border-b border-zinc-800 pb-3">Evolução Histórica DRE (Ano {selectedYear})</h2>
                 <table className="w-full text-left border-collapse">
-                  <thead><tr className="border-b border-zinc-800 text-zinc-400 uppercase text-[9px]"><th className="py-3 px-2">Rubrica</th>{monthlyMatrix.map((m) => (<th key={m.label} className="py-3 px-2 text-right">{m.label}</th>))}</tr></thead>
+                  <thead>
+                    <tr className="border-b border-zinc-800 text-zinc-400 uppercase text-[9px]"><th className="py-3 px-2">Rubrica</th>{monthlyMatrix.map((m) => (<th key={m.label} className="py-3 px-2 text-right">{m.label}</th>))}</tr>
+                  </thead>
                   <tbody className="divide-y divide-zinc-800/50">
-                    <tr className="bg-amber-950/20 font-bold"><td className="py-3 px-2 text-amber-400">EBITDA Líquido</td>{monthlyMatrix.map((m) => (<td key={m.label} className="py-3 px-2 text-right text-amber-400">{m.receita > 0 ? `R$ ${m.ebitda.toLocaleString('pt-BR')}` : '-'}</td>))}</tr>
+                    <tr><td className="py-3 px-2 text-white font-bold">Receita Bruta</td>{monthlyMatrix.map((m) => (<td key={m.label} className="py-3 px-2 text-right text-zinc-200">{m.receita > 0 ? `R$ ${m.receita.toLocaleString('pt-BR')}` : '-'}</td>))}</tr>
+                    <tr><td className="py-3 px-2 text-zinc-400">(-) CMV Fabril</td>{monthlyMatrix.map((m) => (<td key={m.label} className="py-3 px-2 text-right text-red-400/80">{m.cmv > 0 ? `- R$ ${m.cmv.toLocaleString('pt-BR')}` : '-'}</td>))}</tr>
+                    <tr className="bg-amber-950/20 font-bold"><td className="py-3 px-2 text-amber-400">(=) EBITDA Líquido</td>{monthlyMatrix.map((m) => (<td key={m.label} className="py-3 px-2 text-right text-amber-400">{m.receita > 0 ? `R$ ${m.ebitda.toLocaleString('pt-BR')}` : '-'}</td>))}</tr>
                   </tbody>
                 </table>
               </div>
             )}
 
             {treasurySubTab === 'cashflow' && (
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 font-mono text-xs">
-                <div className="lg:col-span-2 bg-[#070707] border border-zinc-800 p-6 space-y-4">
-                  <h2 className="text-xs uppercase font-bold text-zinc-300 border-b border-zinc-800 pb-3">Cash Ledger Real</h2>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2 bg-[#070707] border border-zinc-800 p-6 space-y-4 font-mono text-xs">
+                  <h2 className="text-xs uppercase font-bold text-zinc-300 border-b border-zinc-800 pb-3 tracking-widest">Extrato de Lançamentos (Cash Ledger)</h2>
                   <div className="space-y-2">
                     {filteredExpenses.map((cf: any) => (
                       <div key={cf.id} className="bg-[#040404] border border-zinc-800 p-3 flex justify-between items-center">
@@ -394,46 +524,57 @@ export default function CortexDashboard() {
                         <span className={`font-bold ${cf.type === 'ENTRADA' ? 'text-emerald-400' : 'text-red-400'}`}>{cf.type === 'ENTRADA' ? '+' : '-'} R$ {Number(cf.amount).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                       </div>
                     ))}
-                    {filteredExpenses.length === 0 && <p className="text-zinc-600">Nenhum lançamento físico neste período.</p>}
                   </div>
                 </div>
-                <form onSubmit={handleAddExpense} className="bg-[#070707] border border-zinc-800 p-6 space-y-3 h-fit">
+                <form onSubmit={handleAddExpense} className="bg-[#070707] border border-zinc-800 p-6 space-y-3 text-xs font-mono h-fit">
                   <h2 className="text-xs uppercase font-bold text-zinc-200 border-b border-zinc-800 pb-3">Novo Lançamento</h2>
                   <input type="date" value={expDate} onChange={e=>setExpDate(e.target.value)} className="w-full bg-black border border-zinc-800 p-2 text-white outline-none" />
                   <select value={expType} onChange={e=>setExpType(e.target.value)} className="w-full bg-black border border-zinc-800 p-2 text-white outline-none"><option value="SAIDA">Saída</option><option value="ENTRADA">Entrada</option></select>
                   <select value={expCategory} onChange={e=>setExpCategory(e.target.value)} className="w-full bg-black border border-zinc-800 p-2 text-white outline-none"><option value="Tráfego Pago">Tráfego Pago</option><option value="Insumos / CMV">Insumos / CMV</option><option value="OpEx Fixos & SaaS">OpEx Fixos & SaaS</option></select>
                   <input type="text" value={expDesc} onChange={e=>setExpDesc(e.target.value)} placeholder="Descrição" className="w-full bg-black border border-zinc-800 p-2 text-white outline-none" />
                   <input type="number" step="0.01" value={expAmount} onChange={e=>setExpAmount(e.target.value)} placeholder="Valor (R$)" className="w-full bg-black border border-zinc-800 p-2 text-white outline-none" />
-                  <button type="submit" className="w-full bg-white text-black font-bold py-3 uppercase tracking-widest text-[10px]">Lançar no Banco de Dados</button>
+                  <button type="submit" className="w-full bg-white text-black font-bold py-3 uppercase tracking-widest text-[10px]">Registrar no Caixa</button>
                 </form>
               </div>
             )}
           </div>
         )}
 
-        {/* ABA 3: ARTEFATOS */}
+        {/* ABA 3: ARTEFATOS & CMV FABRIL */}
         {activeTab === 'products' && (
           <div className="space-y-8 animate-in fade-in duration-300">
-            <div><h1 className="text-xl font-serif text-white uppercase tracking-widest">Artefatos & CMV Fabril</h1></div>
+            <div>
+              <h1 className="text-xl font-serif text-white uppercase tracking-widest">Engenharia de Artefatos & CMV por SKU</h1>
+              <p className="text-[10px] text-zinc-500 uppercase tracking-widest mt-1">Desdobramento dos Custos Fabris da LaRomme.</p>
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2 space-y-4 font-mono text-xs">
                 {activeProducts.map((p: any) => (
-                  <div key={p.id} className="bg-[#070707] border border-zinc-800 p-5 flex justify-between items-center">
-                    <div><span className="text-amber-400 font-bold">{p.sku}</span><h3 className="text-white font-serif text-base">{p.name}</h3></div>
-                    <span className="text-lg font-bold text-white">R$ {Number(p.sale_price || p.price || 320.00).toFixed(2)}</span>
+                  <div key={p.id} className="bg-[#070707] border border-zinc-800 p-5 space-y-3">
+                    <div className="flex justify-between items-start border-b border-zinc-800 pb-3">
+                      <div><span className="text-amber-400 font-bold">{p.sku}</span><h3 className="text-white font-serif text-base">{p.name}</h3></div>
+                      <span className="text-lg font-bold text-white">R$ {Number(p.sale_price || p.price || 320.00).toFixed(2)}</span>
+                    </div>
                   </div>
                 ))}
               </div>
+              <form onSubmit={handleAddProduct} className="bg-[#070707] border border-zinc-800 p-6 space-y-3 text-xs font-mono h-fit">
+                <h2 className="text-xs uppercase font-bold text-zinc-200 border-b border-zinc-800 pb-3">Cadastrar Novo SKU</h2>
+                <input type="text" value={prodName} onChange={e=>setProdName(e.target.value)} placeholder="Nome do Artefato" className="w-full bg-black border border-zinc-800 p-2 text-white outline-none" />
+                <input type="text" value={prodSku} onChange={e=>setProdSku(e.target.value)} placeholder="SKU" className="w-full bg-black border border-zinc-800 p-2 text-white outline-none" />
+                <input type="number" step="0.01" value={prodPrice} onChange={e=>setProdPrice(e.target.value)} placeholder="Preço de Venda (R$)" className="w-full bg-black border border-zinc-800 p-2 text-white outline-none" />
+                <button type="submit" className="w-full bg-white text-black font-bold py-3 uppercase tracking-widest text-[10px]">Salvar Produto</button>
+              </form>
             </div>
           </div>
         )}
 
-        {/* ABA 4: FORNECEDORES */}
+        {/* ABA 4: FORNECEDORES WHITELABEL */}
         {activeTab === 'suppliers' && (
           <div className="space-y-8 animate-in fade-in duration-300">
-            <div><h1 className="text-xl font-serif text-white uppercase tracking-widest">Cadeia de Fornecedores</h1></div>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 font-mono text-xs">
-              <div className="lg:col-span-2 space-y-3">
+            <div><h1 className="text-xl font-serif text-white uppercase tracking-widest">Cadeia de Fornecedores Whitelabel</h1></div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-2 space-y-3 text-xs font-mono">
                 {activeSuppliers.map((s: any) => (
                   <div key={s.id} className="bg-[#070707] border border-zinc-800 p-4 flex justify-between items-center">
                     <div><span className="text-amber-400 font-bold block">{s.name}</span><span className="text-zinc-400 text-[10px] block">{s.service_type || s.type}</span></div>
@@ -441,11 +582,19 @@ export default function CortexDashboard() {
                   </div>
                 ))}
               </div>
+              <form onSubmit={handleAddSupplier} className="bg-[#070707] border border-zinc-800 p-6 space-y-3 text-xs font-mono h-fit">
+                <h2 className="text-xs uppercase font-bold text-zinc-200 border-b border-zinc-800 pb-3">Novo Parceiro</h2>
+                <input type="text" value={supName} onChange={e=>setSupName(e.target.value)} placeholder="Nome da Oficina" className="w-full bg-black border border-zinc-800 p-2 text-white outline-none" />
+                <input type="text" value={supType} onChange={e=>setSupType(e.target.value)} placeholder="Serviço" className="w-full bg-black border border-zinc-800 p-2 text-white outline-none" />
+                <input type="number" value={supMoq} onChange={e=>setSupMoq(e.target.value)} placeholder="MOQ" className="w-full bg-black border border-zinc-800 p-2 text-white outline-none" />
+                <input type="number" value={supLeadTime} onChange={e=>setSupLeadTime(e.target.value)} placeholder="Lead Time" className="w-full bg-black border border-zinc-800 p-2 text-white outline-none" />
+                <button type="submit" className="w-full bg-white text-black font-bold py-3 uppercase tracking-widest text-[10px]">Adicionar Parceiro</button>
+              </form>
             </div>
           </div>
         )}
 
-        {/* ABA 5: CRM */}
+        {/* ABA 5: CRM 360 & SENADO VIP */}
         {activeTab === 'crm' && (
           <div className="space-y-8 animate-in fade-in duration-300">
             <div><h1 className="text-xl font-serif text-white uppercase tracking-widest">CRM 360 & Senado VIP</h1></div>
@@ -460,33 +609,39 @@ export default function CortexDashboard() {
           </div>
         )}
 
-        {/* ABA 6: CONTENT */}
+        {/* ABA 6: CONTENT OS */}
         {activeTab === 'content' && (
           <div className="space-y-8 animate-in fade-in duration-300">
-            <div><h1 className="text-xl font-serif text-white uppercase tracking-widest">Content OS</h1></div>
-            <div className="bg-[#070707] border border-zinc-800 p-6 text-xs font-mono"><span className="text-amber-400 font-bold block">Matriz Lote Zero Ativa</span></div>
+            <div><h1 className="text-xl font-serif text-white uppercase tracking-widest">Content OS & Matriz Tática</h1></div>
+            <div className="bg-[#070707] border border-zinc-800 p-6 text-xs font-mono space-y-3">
+              <span className="text-amber-400 font-bold block">Linhas Editoriais Lote Zero:</span>
+              <p className="text-zinc-400">1. Manifesto Roma vs Fortaleza (Arquitetura e Contraste)</p>
+              <p className="text-zinc-400">2. Bastidores da Tecelagem 260GSM & Laser Serial</p>
+            </div>
           </div>
         )}
 
-        {/* ABA 7: LOGÍSTICA */}
+        {/* ABA 7: LOGÍSTICA WHITE GLOVE */}
         {activeTab === 'logistics' && (
           <div className="space-y-8 animate-in fade-in duration-300">
-            <div><h1 className="text-xl font-serif text-white uppercase tracking-widest">Logística White Glove</h1></div>
-            <div className="bg-[#070707] border border-zinc-800 p-6 text-xs font-mono"><span className="text-emerald-400 font-bold block">RMA e Expedição</span></div>
+            <div><h1 className="text-xl font-serif text-white uppercase tracking-widest">Logística White Glove & RMA</h1></div>
+            <div className="bg-[#070707] border border-zinc-800 p-6 text-xs font-mono">
+              <span className="text-emerald-400 font-bold block">Status de Entregas: 100% On-Time</span>
+            </div>
           </div>
         )}
 
-        {/* ABA 8: SIMULADOR WEBHOOK (RENDERIZA APENAS NO MODO DEMO) */}
-        {isDemoMode && activeTab === 'webhook_sim' && (
+        {/* ABA 8: SIMULADOR WEBHOOK MP */}
+        {activeTab === 'webhook_sim' && (
           <div className="space-y-8 animate-in fade-in duration-300">
-            <div><h1 className="text-xl font-serif text-white uppercase tracking-widest text-amber-400">Sandbox: Simulador Webhook MP</h1></div>
+            <div><h1 className="text-xl font-serif text-white uppercase tracking-widest">Simulador Webhook Mercado Pago</h1></div>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 font-mono text-xs">
-              <div className="bg-[#070707] border border-amber-500/30 p-6 space-y-4">
+              <div className="bg-[#070707] border border-zinc-800 p-6 space-y-4">
                 <button onClick={handleCreateTestOrder} disabled={simulating} className="w-full bg-zinc-800 hover:bg-zinc-700 text-white font-bold py-3 uppercase tracking-widest text-[10px]">1. Gerar Pedido Teste Pix (R$ 320,00)</button>
                 <button onClick={handleSimulateWebhookTrigger} disabled={simulating || !currentTestOrderId} className="w-full bg-amber-400 text-black font-bold py-3 uppercase tracking-widest text-[10px]">2. Simular Sinal de Pix Pago (Webhook MP)</button>
               </div>
-              <div className="bg-[#070707] border border-amber-500/30 p-6 text-[10px] text-emerald-400 space-y-2 h-64 overflow-y-auto">
-                <p className="text-amber-500/80">// Logs de Telemetria Sandbox...</p>
+              <div className="bg-[#070707] border border-zinc-800 p-6 text-[10px] text-emerald-400 space-y-2 h-64 overflow-y-auto">
+                <p className="text-zinc-600">// Logs de Telemetria do Webhook...</p>
                 {simLog.map((log, index) => (<p key={index}>{log}</p>))}
               </div>
             </div>
