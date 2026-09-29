@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import { playHapticSound } from '@/lib/sound';
 import { trackEvent } from '@/lib/telemetry';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -19,11 +20,13 @@ export default function Home() {
   const [fadeState, setFadeState] = useState(0);
   const [isVisible, setIsVisible] = useState(true);
 
+  // A última fase (índice 4) será a imagem da logo central
   const phrases = [
     "LaRomme.",
     "A força de Roma.",
     "O movimento de Fortaleza.",
-    "Lote Zero."
+    "Lote Zero.",
+    "LOGO" 
   ];
 
   useEffect(() => {
@@ -79,14 +82,27 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-black/70"></div>
       </div>
 
-      {/* CABEÇALHO RESTAURADO COM ÍCONE DO CAPACETE ROMANO */}
+      {/* CABEÇALHO RESTAURADO COM IMAGENS REAIS */}
       <header className="relative z-10 w-full px-6 pt-14 pb-4 flex justify-between items-center max-w-7xl mx-auto">
         <Link href="/" onClick={playHapticSound} className="flex items-center gap-3 group">
-          {/* SVG ÍCONE DO CAPACETE ROMANO */}
-          <svg className="w-6 h-6 text-white fill-current transition-transform duration-300 group-hover:scale-105" viewBox="0 0 24 24">
-            <path d="M12 2C9.5 2 7 3.5 7 6V9C7 11.21 8.79 13 11 13V15H8C6.34 15 5 16.34 5 18V21H19V18C19 16.34 17.66 15 16 15H13V13C15.21 13 17 11.21 17 9V6C17 3.5 14.5 2 12 2ZM11 4.1C11.32 4.03 11.66 4 12 4C12.34 4 12.68 4.03 13 4.1V11H11V4.1ZM9 6.5C9.8 6.1 10.8 6 12 6C13.2 6 14.2 6.1 15 6.5V9C15 10.1 14.1 11 13 11H11C9.9 11 9 10.1 9 9V6.5Z"/>
-          </svg>
-          <span className="font-serif text-xl tracking-widest text-white">LaRomme.</span>
+          <div className="relative w-8 h-8 transition-transform duration-500 group-hover:scale-105">
+            <Image 
+              src="/logo-capacete.png" 
+              alt="Capacete LaRomme" 
+              fill 
+              className="object-contain"
+              priority
+            />
+          </div>
+          <div className="relative w-28 h-6 opacity-90 transition-opacity duration-500 group-hover:opacity-100 hidden sm:block">
+             <Image 
+              src="/logo-nome.png" 
+              alt="LaRomme" 
+              fill 
+              className="object-contain object-left"
+              priority
+            />
+          </div>
         </Link>
 
         <Link 
@@ -98,15 +114,25 @@ export default function Home() {
         </Link>
       </header>
 
-      {/* TEXTO CENTRAL */}
+      {/* TEXTO / LOGO CENTRAL PULSANTE */}
       <div className="relative z-10 flex-1 flex items-center justify-center px-6">
-        <h1
-          className={`text-3xl md:text-5xl lg:text-6xl font-serif text-white text-center tracking-[0.15em] transition-opacity duration-1000 ${
-            isVisible ? 'opacity-100' : 'opacity-0'
-          }`}
-        >
-          {phrases[fadeState]}
-        </h1>
+        <div className={`transition-opacity duration-1000 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+          {phrases[fadeState] === "LOGO" ? (
+             <div className="relative w-32 h-40 md:w-48 md:h-56 mx-auto animate-in zoom-in-95 duration-1000">
+               <Image 
+                 src="/logo-capacete.png" 
+                 alt="Símbolo LaRomme" 
+                 fill 
+                 className="object-contain drop-shadow-[0_0_30px_rgba(255,255,255,0.15)]"
+                 priority
+               />
+             </div>
+          ) : (
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-serif text-white text-center tracking-[0.15em]">
+              {phrases[fadeState]}
+            </h1>
+          )}
+        </div>
       </div>
 
       {/* RODAPÉ */}
