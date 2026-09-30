@@ -5,21 +5,18 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Cinzel, Archivo, Space_Mono } from 'next/font/google';
 
-// FONTE EMOÇÃO / CÓDIGO ROMANO (MONUMENTAL LAPIDAR)
 const cinzel = Cinzel({ 
   subsets: ['latin'], 
   weight: ['400', '500', '600', '700'],
   variable: '--font-serif'
 });
 
-// FONTE INTERFACE & FUNÇÃO (SANS TÉCNICA CONTEMPORÂNEA)
 const archivo = Archivo({ 
   subsets: ['latin'], 
   weight: ['300', '400', '500', '600', '700'],
   variable: '--font-sans'
 });
 
-// FONTE DADOS & COORDENADAS (PRECISÃO GEOGRÁFICA)
 const spaceMono = Space_Mono({
   subsets: ['latin'],
   weight: ['400', '700'],
@@ -28,12 +25,6 @@ const spaceMono = Space_Mono({
 
 const HELMET_LOGO_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/logo%20branca.png";
 const WORDMARK_LOGO_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/fcfc607a-ba81-4ff7-998e-2df1f0697b81-removebg-preview.png";
-
-const HERO_PHRASES = [
-  "FORÇA EM MOVIMENTO.",
-  "A BRISA DO MAR. A DISCIPLINA DO ESPORTE.",
-  "ENTRE A LEVEZA DA AREIA E A ESTRUTURA DO CONCRETO."
-];
 
 const ORIGO_PRODUCTS = [
   {
@@ -93,7 +84,7 @@ export default function Home() {
   const [showFinalBrand, setShowFinalBrand] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // INJEÇÃO DA FÍSICA DE ROLAGEM SUAVE (LENIS SMOOTH SCROLL)
+  // LENIS SMOOTH SCROLL (CONFIGURAÇÃO LENTA E PESADA)
   useEffect(() => {
     const script = document.createElement('script');
     script.src = "https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/dist/lenis.min.js";
@@ -103,10 +94,11 @@ export default function Home() {
       if (window.Lenis) {
         // @ts-ignore
         const lenis = new window.Lenis({
-          duration: 1.6,
+          duration: 2.8,
           easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
           smoothWheel: true,
-          wheelMultiplier: 0.75,
+          wheelMultiplier: 0.35,
+          touchMultiplier: 0.8,
         });
         function raf(time: number) {
           lenis.raf(time);
@@ -124,29 +116,29 @@ export default function Home() {
     };
   }, []);
 
-  // ANIMATOR COM LOOPING INFINITO NO HERO
+  // ANIMATOR COM LOOPING INFINITO
   useEffect(() => {
     if (showFinalBrand) {
       const resetTimer = setTimeout(() => {
         setShowFinalBrand(false);
         setPhraseIndex(0);
         setFadeState('in');
-      }, 4000);
+      }, 4200);
       return () => clearTimeout(resetTimer);
     }
 
     const fadeOutTimer = setTimeout(() => {
       setFadeState('out');
-    }, 2800);
+    }, 3000);
 
     const nextPhraseTimer = setTimeout(() => {
-      if (phraseIndex < HERO_PHRASES.length - 1) {
+      if (phraseIndex < 2) {
         setPhraseIndex((prev) => prev + 1);
         setFadeState('in');
       } else {
         setShowFinalBrand(true);
       }
-    }, 3600);
+    }, 3800);
 
     return () => {
       clearTimeout(fadeOutTimer);
@@ -157,7 +149,7 @@ export default function Home() {
   return (
     <div className={`min-h-screen w-full bg-black text-white selection:bg-white selection:text-black overscroll-none ${cinzel.variable} ${archivo.variable} ${spaceMono.variable} font-sans`}>
       
-      {/* HEADER GLASSMORPHIC FIXO NO TOPO */}
+      {/* HEADER GLASSMORPHIC */}
       <header className="fixed top-0 left-0 w-full z-50 bg-black/60 backdrop-blur-md border-b border-white/10 px-6 md:px-12 py-4 flex justify-between items-center transition-all duration-300">
         
         <Link href="/" className="flex items-center gap-3 group">
@@ -192,7 +184,7 @@ export default function Home() {
         </div>
       </header>
 
-      {/* MENU MOBILE SLIDE-IN */}
+      {/* MENU MOBILE */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 bg-black/95 backdrop-blur-xl flex flex-col justify-center px-10 space-y-6 text-sm tracking-[0.3em] uppercase font-medium border-b border-white/10 lg:hidden font-sans">
           <Link href="#origo" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-zinc-800 text-white">ORIGO / 01.</Link>
@@ -203,7 +195,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* HERO SECTION: VÍDEO DA PRAIA EM LOOPING P&B + ANIMAÇÃO DE FRASES EM CINZEL */}
+      {/* HERO SECTION */}
       <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
         
         <div className="absolute inset-0 z-0">
@@ -220,16 +212,26 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black" />
         </div>
 
-        <div className="relative z-10 max-w-4xl px-6 text-center">
+        <div className="relative z-10 max-w-5xl px-6 text-center">
           {!showFinalBrand ? (
-            <div className="min-h-[140px] flex items-center justify-center">
-              <p
-                className={`font-serif text-2xl md:text-4xl font-normal tracking-[0.3em] uppercase leading-relaxed text-white transition-opacity duration-1000 ${
-                  fadeState === 'in' ? 'opacity-100' : 'opacity-0'
-                }`}
-              >
-                {HERO_PHRASES[phraseIndex]}
-              </p>
+            <div className="min-h-[160px] flex items-center justify-center">
+              {phraseIndex === 0 && (
+                <p className={`font-serif text-2xl md:text-4xl font-normal tracking-[0.3em] uppercase leading-relaxed text-white transition-opacity duration-1000 ${fadeState === 'in' ? 'opacity-100' : 'opacity-0'}`}>
+                  FORÇA EM MOVIMENTO.
+                </p>
+              )}
+              {phraseIndex === 1 && (
+                <p className={`font-serif text-2xl md:text-4xl font-normal tracking-[0.3em] uppercase leading-relaxed text-white transition-opacity duration-1000 ${fadeState === 'in' ? 'opacity-100' : 'opacity-0'}`}>
+                  <span>A BRISA DO MAR.</span>
+                  <br />
+                  <span className="inline-block mt-2 whitespace-nowrap">A DISCIPLINA DO ESPORTE.</span>
+                </p>
+              )}
+              {phraseIndex === 2 && (
+                <p className={`font-serif text-2xl md:text-4xl font-normal tracking-[0.3em] uppercase leading-relaxed text-white transition-opacity duration-1000 ${fadeState === 'in' ? 'opacity-100' : 'opacity-0'}`}>
+                  ENTRE A LEVEZA DA AREIA E A ESTRUTURA DO CONCRETO.
+                </p>
+              )}
             </div>
           ) : (
             <div className="flex flex-col items-center gap-6 animate-in fade-in duration-1000">
@@ -252,11 +254,6 @@ export default function Home() {
               </div>
             </div>
           )}
-        </div>
-
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2">
-          <span className="text-[9px] font-mono tracking-[0.3em] text-zinc-500 uppercase">ROLAR</span>
-          <div className="w-px h-8 bg-gradient-to-b from-zinc-500 to-transparent animate-pulse" />
         </div>
       </section>
 
@@ -319,7 +316,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* BLOCO 02: A MARCA (MANIFESTO & ORIGEM) */}
+      {/* BLOCO 02: A MARCA */}
       <section id="marca" className="py-28 bg-[#050505] border-y border-zinc-900 px-6 md:px-12">
         <div className="max-w-5xl mx-auto space-y-12">
           <div className="text-center space-y-3">
@@ -345,7 +342,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* BLOCO 03: O MOVIMENTO & EDITORIAL */}
+      {/* BLOCO 03: O MOVIMENTO */}
       <section id="movimento" className="py-28 px-6 md:px-12 max-w-7xl mx-auto space-y-16">
         <div className="text-center space-y-3">
           <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase">LIFESTYLE & AREIA</span>
@@ -377,7 +374,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* RODAPÉ INSTITUCIONAL */}
+      {/* RODAPÉ */}
       <footer id="senado" className="border-t border-zinc-800 bg-[#030303] py-16 px-6 md:px-12 text-xs font-mono tracking-wider text-zinc-400 space-y-12">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 pb-12 border-b border-zinc-900">
           
