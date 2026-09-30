@@ -5,32 +5,27 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Cormorant_Garamond, Montserrat } from 'next/font/google';
 
-// FONTE EMOÇÃO (SERIF EDITORIAL)
 const cormorant = Cormorant_Garamond({ 
   subsets: ['latin'], 
   weight: ['400', '500', '600', '700'],
   variable: '--font-serif'
 });
 
-// FONTE INTERFACE & DADOS (SANS FUNCTIONAL)
 const montserrat = Montserrat({ 
   subsets: ['latin'], 
   weight: ['300', '400', '500', '600', '700'],
   variable: '--font-sans'
 });
 
-// LOGOS OFICIAIS SUPABASE
 const HELMET_LOGO_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/logo%20branca.png";
 const WORDMARK_LOGO_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/fcfc607a-ba81-4ff7-998e-2df1f0697b81-removebg-preview.png";
 
-// SEQUÊNCIA DE FRASES HERO (BRISA, ESPORTE & ESTRUTURA)
 const HERO_PHRASES = [
   "FORÇA EM MOVIMENTO.",
   "A BRISA DO MAR. A DISCIPLINA DO ESPORTE.",
   "ENTRE A LEVEZA DA AREIA E A ESTRUTURA DO CONCRETO."
 ];
 
-// OS 5 ARTEFATOS OFICIAIS DO DROP 01 / ORIGO
 const ORIGO_PRODUCTS = [
   {
     id: "vestigium",
@@ -89,8 +84,47 @@ export default function Home() {
   const [showFinalBrand, setShowFinalBrand] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // INJEÇÃO DA FÍSICA DE ROLAGEM SUAVE (LENIS SMOOTH SCROLL)
   useEffect(() => {
-    if (showFinalBrand) return;
+    const script = document.createElement('script');
+    script.src = "https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/dist/lenis.min.js";
+    script.async = true;
+    script.onload = () => {
+      // @ts-ignore
+      if (window.Lenis) {
+        // @ts-ignore
+        const lenis = new window.Lenis({
+          duration: 1.5,
+          easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+          smoothWheel: true,
+          wheelMultiplier: 0.7,
+        });
+        function raf(time: number) {
+          lenis.raf(time);
+          requestAnimationFrame(raf);
+        }
+        requestAnimationFrame(raf);
+      }
+    };
+    document.head.appendChild(script);
+
+    return () => {
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
+    };
+  }, []);
+
+  // ANIMATOR COM LOOPING INFINITO NO HERO
+  useEffect(() => {
+    if (showFinalBrand) {
+      const resetTimer = setTimeout(() => {
+        setShowFinalBrand(false);
+        setPhraseIndex(0);
+        setFadeState('in');
+      }, 4000);
+      return () => clearTimeout(resetTimer);
+    }
 
     const fadeOutTimer = setTimeout(() => {
       setFadeState('out');
@@ -112,12 +146,11 @@ export default function Home() {
   }, [phraseIndex, showFinalBrand]);
 
   return (
-    <div className={`min-h-screen w-full bg-black text-white selection:bg-white selection:text-black overscroll-none scroll-smooth ${cormorant.variable} ${montserrat.variable} font-sans`}>
+    <div className={`min-h-screen w-full bg-black text-white selection:bg-white selection:text-black overscroll-none ${cormorant.variable} ${montserrat.variable} font-sans`}>
       
       {/* HEADER GLASSMORPHIC FIXO NO TOPO */}
       <header className="fixed top-0 left-0 w-full z-50 bg-black/60 backdrop-blur-md border-b border-white/10 px-6 md:px-12 py-4 flex justify-between items-center transition-all duration-300">
         
-        {/* LOGO + CAPACETE (CANTO ESQUERDO) */}
         <Link href="/" className="flex items-center gap-3 group">
           <div className="relative w-7 h-7 filter brightness-0 invert">
             <Image src={HELMET_LOGO_URL} alt="LaRomme Capacete" fill className="object-contain" priority />
@@ -127,7 +160,6 @@ export default function Home() {
           </div>
         </Link>
 
-        {/* NAVEGAÇÃO DESKTOP (5 TELAS PÚBLICAS) */}
         <nav className="hidden lg:flex items-center gap-8 text-[11px] font-medium tracking-[0.25em] uppercase text-zinc-300">
           <Link href="#origo" className="hover:text-white transition-colors">ORIGO / 01.</Link>
           <Link href="#marca" className="hover:text-white transition-colors">A MARCA.</Link>
@@ -136,7 +168,6 @@ export default function Home() {
           <Link href="#senado" className="hover:text-white transition-colors">SENADO VIP.</Link>
         </nav>
 
-        {/* CARRINHO + HAMBÚRGUER MOBILE */}
         <div className="flex items-center gap-4">
           <Link href="/carrinho" className="text-[10px] md:text-[11px] font-bold tracking-[0.25em] uppercase text-white border border-white/20 px-4 py-2 hover:bg-white hover:text-black transition-all">
             CARRINHO (0).
@@ -163,10 +194,9 @@ export default function Home() {
         </div>
       )}
 
-      {/* HERO SECTION: VÍDEO DA PRAIA EM LOOPING P&B + ANIMAÇÃO DE FRASES */}
+      {/* HERO SECTION: VÍDEO DA PRAIA EM LOOPING P&B + ANIMAÇÃO DE FRASES EM LOOPING INFINITO */}
       <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
         
-        {/* VÍDEO DE FUNDO TRATADO */}
         <div className="absolute inset-0 z-0">
           <video
             autoPlay
@@ -181,7 +211,6 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black" />
         </div>
 
-        {/* FRASES EM FADE IN / FADE OUT */}
         <div className="relative z-10 max-w-4xl px-6 text-center">
           {!showFinalBrand ? (
             <div className="min-h-[140px] flex items-center justify-center">
@@ -194,7 +223,6 @@ export default function Home() {
               </p>
             </div>
           ) : (
-            /* DESFECHO FINAL: CAPACETE + WORDMARK */
             <div className="flex flex-col items-center gap-6 animate-in fade-in duration-1000">
               <div className="relative w-16 h-16 filter brightness-0 invert">
                 <Image src={HELMET_LOGO_URL} alt="LaRomme Capacete" fill className="object-contain" />
@@ -217,7 +245,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* INDICADOR DE SCROLL ARQUITETÔNICO */}
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-2">
           <span className="text-[9px] font-mono tracking-[0.3em] text-zinc-500 uppercase">ROLAR</span>
           <div className="w-px h-8 bg-gradient-to-b from-zinc-500 to-transparent animate-pulse" />
@@ -236,7 +263,6 @@ export default function Home() {
           </p>
         </div>
 
-        {/* GRID DOS 5 ARTEFATOS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {ORIGO_PRODUCTS.map((product) => (
             <div key={product.id} className="group bg-[#080808] border border-zinc-900 p-6 flex flex-col justify-between hover:border-zinc-700 transition-all duration-300">
@@ -262,7 +288,6 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* SELETOR DE CORES & AÇÃO */}
               <div className="pt-6 border-t border-zinc-900/80 mt-6 space-y-4">
                 <div className="flex items-center gap-2">
                   <span className="text-[9px] font-mono text-zinc-500 uppercase">CORES:</span>
@@ -343,18 +368,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* RODAPÉ INSTITUCIONAL (COM COORDENADAS E CANAIS) */}
+      {/* RODAPÉ INSTITUCIONAL */}
       <footer id="senado" className="border-t border-zinc-800 bg-[#030303] py-16 px-6 md:px-12 text-xs font-mono tracking-wider text-zinc-400 space-y-12">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 pb-12 border-b border-zinc-900">
           
-          {/* ORIGEM */}
           <div className="space-y-3">
             <span className="text-white font-bold uppercase block tracking-widest">ORIGEM & TERRITÓRIO</span>
             <p className="text-zinc-500">FORTALEZA - CE • BRASIL</p>
             <p className="text-zinc-500">03°43'16"S &nbsp; 38°32'41"W</p>
           </div>
 
-          {/* CANAIS OFICIAIS */}
           <div className="space-y-3">
             <span className="text-white font-bold uppercase block tracking-widest">CANAIS OFICIAIS</span>
             <p className="text-zinc-400">INSTAGRAM: <a href="https://instagram.com/uselaromme" target="_blank" rel="noreferrer" className="text-white hover:underline">@uselaromme</a></p>
@@ -362,7 +385,6 @@ export default function Home() {
             <p className="text-zinc-400">CONTATO: <a href="mailto:rommanuscompany@gmail.com" className="text-white hover:underline">rommanuscompany@gmail.com</a></p>
           </div>
 
-          {/* NAVEGAÇÃO DE SUPORTE */}
           <div className="space-y-3">
             <span className="text-white font-bold uppercase block tracking-widest">SUPORTE & TERMOS</span>
             <div className="flex flex-col space-y-1.5 text-zinc-400">
@@ -375,7 +397,6 @@ export default function Home() {
 
         </div>
 
-        {/* BASE INSTITUCIONAL */}
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center text-[10px] text-zinc-600 gap-4">
           <span>© 2020–2026 LaRomme. TODOS OS DIREITOS RESERVADOS.</span>
           <span className="uppercase">FORÇA EM MOVIMENTO.</span>
