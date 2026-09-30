@@ -21,6 +21,9 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   const [weight, setWeight] = useState('80');
   const [fitPreference, setFitPreference] = useState<'ANATÔMICO' | 'PADRÃO' | 'AMPLO'>('PADRÃO');
   const [openAccordion, setOpenAccordion] = useState<number | null>(0);
+  
+  // Estado do Magnifier Zoom
+  const [zoomStyle, setZoomStyle] = useState<{ [key: number]: React.CSSProperties }>({});
 
   const currentImages = product.colors[selectedColorIndex]?.images || product.defaultImages;
 
@@ -30,6 +33,23 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     if (w >= 70 && w <= 83) return fitPreference === 'AMPLO' ? 'G' : 'M';
     if (w > 83 && w <= 93) return fitPreference === 'ANATÔMICO' ? 'M' : 'G';
     return 'GG';
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, idx: number) => {
+    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - left) / width) * 100;
+    const y = ((e.clientY - top) / height) * 100;
+    setZoomStyle((prev) => ({
+      ...prev,
+      [idx]: { transformOrigin: `${x}% ${y}%`, transform: 'scale(1.8)' }
+    }));
+  };
+
+  const handleMouseLeave = (idx: number) => {
+    setZoomStyle((prev) => ({
+      ...prev,
+      [idx]: { transformOrigin: 'center center', transform: 'scale(1)' }
+    }));
   };
 
   return (
@@ -42,22 +62,35 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       </FadeIn>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        
+        {/* LADO ESQUERDO: GALERIA COM LENTE DE AUMENTO */}
         <div className="lg:col-span-7 space-y-6">
           {currentImages.map((imgUrl, idx) => (
             <FadeIn key={idx} delay={idx * 100}>
-              <div className="relative aspect-[3/4] w-full bg-zinc-950 border border-zinc-900 overflow-hidden">
-                <Image
-                  src={imgUrl}
-                  alt={`${product.name} - ${idx + 1}`}
-                  fill
-                  className="object-cover"
-                  priority={idx === 0}
-                />
+              <div 
+                className="relative aspect-[3/4] w-full bg-zinc-950 border border-zinc-900 overflow-hidden cursor-crosshair group"
+                onMouseMove={(e) => handleMouseMove(e, idx)}
+                onMouseLeave={() => handleMouseLeave(idx)}
+              >
+                <div className="absolute inset-0 w-full h-full transition-transform duration-200 ease-out" style={zoomStyle[idx] || {}}>
+                  <Image
+                    src={imgUrl}
+                    alt={`${product.name} - ${idx + 1}`}
+                    fill
+                    className="object-cover"
+                    priority={idx === 0}
+                  />
+                </div>
+                {/* Dica visual de zoom */}
+                <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-md px-3 py-1.5 border border-white/10 text-[9px] font-mono tracking-widest text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity">
+                  ZOOM ÓPTICO
+                </div>
               </div>
             </FadeIn>
           ))}
         </div>
 
+        {/* LADO DIREITO FIXO */}
         <div className="lg:col-span-5 space-y-8 lg:sticky lg:top-28 h-fit">
           <FadeIn>
             <div className="space-y-2">
@@ -184,57 +217,35 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
                 <h3 className="font-serif text-lg tracking-wider text-white">SISTEMA DE PROPORÇÃO.</h3>
                 <button onClick={() => setShowProportionModal(false)} className="text-zinc-500 hover:text-white font-mono">✕</button>
               </div>
-
               <p className="text-xs text-zinc-400 leading-relaxed font-light">
                 Insira suas medidas anatômicas para calcularmos o caimento exato na modelagem de Fortaleza.
               </p>
-
               <div className="space-y-4 font-mono text-xs">
                 <div>
                   <label className="block text-zinc-400 mb-2">ALTURA (CM):</label>
-                  <input
-                    type="number"
-                    value={height}
-                    onChange={(e) => setHeight(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white"
-                  />
+                  <input type="number" value={height} onChange={(e) => setHeight(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" />
                 </div>
-
                 <div>
                   <label className="block text-zinc-400 mb-2">PESO (KG):</label>
-                  <input
-                    type="number"
-                    value={weight}
-                    onChange={(e) => setWeight(e.target.value)}
-                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white"
-                  />
+                  <input type="number" value={weight} onChange={(e) => setWeight(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" />
                 </div>
-
                 <div>
                   <label className="block text-zinc-400 mb-2">PREFERÊNCIA DE CAIMENTO:</label>
                   <div className="grid grid-cols-3 gap-2">
                     {(['ANATÔMICO', 'PADRÃO', 'AMPLO'] as const).map((pref) => (
-                      <button
-                        key={pref}
-                        onClick={() => setFitPreference(pref)}
-                        className={`py-2 text-[10px] border ${
-                          fitPreference === pref ? 'bg-white text-black border-white font-bold' : 'border-zinc-800 text-zinc-500'
-                        }`}
-                      >
+                      <button key={pref} onClick={() => setFitPreference(pref)} className={`py-2 text-[10px] border ${fitPreference === pref ? 'bg-white text-black border-white font-bold' : 'border-zinc-800 text-zinc-500'}`}>
                         {pref}
                       </button>
                     ))}
                   </div>
                 </div>
               </div>
-
               <div className="bg-zinc-950 border border-zinc-800 p-6 space-y-2">
                 <span className="text-[10px] font-mono text-zinc-500 uppercase block">RECOMENDAÇÃO CALCULADA</span>
                 <p className="font-serif text-2xl text-white font-bold">TAMANHO {calculateRecommendedSize()}.</p>
                 <p className="text-[11px] text-zinc-400 font-light">Proporção perfeita para caimento alinhado sem excessos.</p>
               </div>
             </div>
-
             <button
               onClick={() => {
                 setSelectedSize(calculateRecommendedSize());
