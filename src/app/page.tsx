@@ -3,18 +3,27 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Cormorant_Garamond, Montserrat } from 'next/font/google';
+import { Cinzel, Archivo, Space_Mono } from 'next/font/google';
 
-const cormorant = Cormorant_Garamond({ 
+// FONTE EMOÇÃO / CÓDIGO ROMANO (MONUMENTAL LAPIDAR)
+const cinzel = Cinzel({ 
   subsets: ['latin'], 
   weight: ['400', '500', '600', '700'],
   variable: '--font-serif'
 });
 
-const montserrat = Montserrat({ 
+// FONTE INTERFACE & FUNÇÃO (SANS TÉCNICA CONTEMPORÂNEA)
+const archivo = Archivo({ 
   subsets: ['latin'], 
   weight: ['300', '400', '500', '600', '700'],
   variable: '--font-sans'
+});
+
+// FONTE DADOS & COORDENADAS (PRECISÃO GEOGRÁFICA)
+const spaceMono = Space_Mono({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-mono'
 });
 
 const HELMET_LOGO_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/logo%20branca.png";
@@ -94,10 +103,10 @@ export default function Home() {
       if (window.Lenis) {
         // @ts-ignore
         const lenis = new window.Lenis({
-          duration: 1.5,
+          duration: 1.6,
           easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
           smoothWheel: true,
-          wheelMultiplier: 0.7,
+          wheelMultiplier: 0.75,
         });
         function raf(time: number) {
           lenis.raf(time);
@@ -146,7 +155,7 @@ export default function Home() {
   }, [phraseIndex, showFinalBrand]);
 
   return (
-    <div className={`min-h-screen w-full bg-black text-white selection:bg-white selection:text-black overscroll-none ${cormorant.variable} ${montserrat.variable} font-sans`}>
+    <div className={`min-h-screen w-full bg-black text-white selection:bg-white selection:text-black overscroll-none ${cinzel.variable} ${archivo.variable} ${spaceMono.variable} font-sans`}>
       
       {/* HEADER GLASSMORPHIC FIXO NO TOPO */}
       <header className="fixed top-0 left-0 w-full z-50 bg-black/60 backdrop-blur-md border-b border-white/10 px-6 md:px-12 py-4 flex justify-between items-center transition-all duration-300">
@@ -160,7 +169,7 @@ export default function Home() {
           </div>
         </Link>
 
-        <nav className="hidden lg:flex items-center gap-8 text-[11px] font-medium tracking-[0.25em] uppercase text-zinc-300">
+        <nav className="hidden lg:flex items-center gap-8 text-[11px] font-medium tracking-[0.25em] uppercase text-zinc-300 font-sans">
           <Link href="#origo" className="hover:text-white transition-colors">ORIGO / 01.</Link>
           <Link href="#marca" className="hover:text-white transition-colors">A MARCA.</Link>
           <Link href="#movimento" className="hover:text-white transition-colors">O MOVIMENTO.</Link>
@@ -169,7 +178,7 @@ export default function Home() {
         </nav>
 
         <div className="flex items-center gap-4">
-          <Link href="/carrinho" className="text-[10px] md:text-[11px] font-bold tracking-[0.25em] uppercase text-white border border-white/20 px-4 py-2 hover:bg-white hover:text-black transition-all">
+          <Link href="/carrinho" className="text-[10px] md:text-[11px] font-bold tracking-[0.25em] uppercase text-white border border-white/20 px-4 py-2 hover:bg-white hover:text-black transition-all font-sans">
             CARRINHO (0).
           </Link>
           <button 
@@ -185,7 +194,7 @@ export default function Home() {
 
       {/* MENU MOBILE SLIDE-IN */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-black/95 backdrop-blur-xl flex flex-col justify-center px-10 space-y-6 text-sm tracking-[0.3em] uppercase font-medium border-b border-white/10 lg:hidden">
+        <div className="fixed inset-0 z-40 bg-black/95 backdrop-blur-xl flex flex-col justify-center px-10 space-y-6 text-sm tracking-[0.3em] uppercase font-medium border-b border-white/10 lg:hidden font-sans">
           <Link href="#origo" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-zinc-800 text-white">ORIGO / 01.</Link>
           <Link href="#marca" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-zinc-800 text-zinc-300">A MARCA.</Link>
           <Link href="#movimento" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-zinc-800 text-zinc-300">O MOVIMENTO.</Link>
@@ -194,7 +203,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* HERO SECTION: VÍDEO DA PRAIA EM LOOPING P&B + ANIMAÇÃO DE FRASES EM LOOPING INFINITO */}
+      {/* HERO SECTION: VÍDEO DA PRAIA EM LOOPING P&B + ANIMAÇÃO DE FRASES EM CINZEL */}
       <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
         
         <div className="absolute inset-0 z-0">
@@ -215,7 +224,7 @@ export default function Home() {
           {!showFinalBrand ? (
             <div className="min-h-[140px] flex items-center justify-center">
               <p
-                className={`font-serif text-2xl md:text-4xl font-light tracking-[0.25em] uppercase leading-relaxed text-white transition-opacity duration-1000 ${
+                className={`font-serif text-2xl md:text-4xl font-normal tracking-[0.3em] uppercase leading-relaxed text-white transition-opacity duration-1000 ${
                   fadeState === 'in' ? 'opacity-100' : 'opacity-0'
                 }`}
               >
@@ -236,7 +245,7 @@ export default function Home() {
               <div className="pt-6">
                 <a
                   href="#origo"
-                  className="inline-block bg-white text-black font-bold text-[10px] md:text-[11px] tracking-[0.3em] uppercase px-8 py-3.5 hover:bg-zinc-200 transition-all shadow-xl"
+                  className="inline-block bg-white text-black font-bold text-[10px] md:text-[11px] tracking-[0.3em] uppercase px-8 py-3.5 hover:bg-zinc-200 transition-all shadow-xl font-sans"
                 >
                   EXPLORAR ORIGO.
                 </a>
@@ -258,7 +267,7 @@ export default function Home() {
             <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase block mb-2">CAPÍTULO 01</span>
             <h2 className="font-serif text-3xl md:text-5xl tracking-[0.2em] text-white uppercase">SISTEMA ORIGO / 01.</h2>
           </div>
-          <p className="text-xs text-zinc-400 max-w-md leading-relaxed tracking-wider font-light">
+          <p className="text-xs text-zinc-400 max-w-md leading-relaxed tracking-wider font-light font-sans">
             Cinco peças desenvolvidas para transitar sem fricção entre a alta intensidade da areia e a arquitetura da cidade.
           </p>
         </div>
@@ -284,11 +293,11 @@ export default function Home() {
                     <h3 className="font-serif text-xl tracking-wider text-white font-bold">{product.name}</h3>
                     <span className="text-xs font-mono text-zinc-300 font-bold">{product.price}</span>
                   </div>
-                  <p className="text-[11px] text-zinc-500 tracking-wider mt-2 line-clamp-2">{product.description}</p>
+                  <p className="text-[11px] text-zinc-500 tracking-wider mt-2 line-clamp-2 font-sans">{product.description}</p>
                 </div>
               </div>
 
-              <div className="pt-6 border-t border-zinc-900/80 mt-6 space-y-4">
+              <div className="pt-6 border-t border-zinc-900/80 mt-6 space-y-4 font-sans">
                 <div className="flex items-center gap-2">
                   <span className="text-[9px] font-mono text-zinc-500 uppercase">CORES:</span>
                   <div className="flex gap-1.5">
@@ -319,15 +328,15 @@ export default function Home() {
             <p className="text-xs font-mono tracking-[0.2em] text-zinc-400">A ESTÉTICA DA ORDEM.</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-8 text-sm leading-relaxed tracking-wider font-light text-zinc-300 font-serif">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-8 text-sm leading-relaxed tracking-wider font-light text-zinc-300 font-sans">
             <div className="space-y-4 border-l border-zinc-800 pl-6">
-              <h3 className="text-white text-base tracking-widest font-sans font-bold uppercase">FORTALEZA — O TERRITÓRIO</h3>
+              <h3 className="text-white text-base tracking-widest font-serif font-bold uppercase">FORTALEZA — O TERRITÓRIO</h3>
               <p>
                 Nascemos onde a terra encontra o mar. Fortaleza é a nossa origem — o calor da quadra, o vento constante, a luz que recorta a paisagem e o movimento que nunca cessa. A praia não é um refúgio de descanso; é uma arena de vida, disciplina e energia.
               </p>
             </div>
             <div className="space-y-4 border-l border-zinc-800 pl-6">
-              <h3 className="text-white text-base tracking-widest font-sans font-bold uppercase">ROMA — O CÓDIGO</h3>
+              <h3 className="text-white text-base tracking-widest font-serif font-bold uppercase">ROMA — O CÓDIGO</h3>
               <p>
                 Roma é o nosso código cultural. Não através de mitos ou fantasias, mas pela linguagem da arquitetura, da proporção e da permanência. Buscamos a força silenciosa do concreto e da pedra: a ordem que resiste ao tempo e a elegância que não precisa de explicação.
               </p>
@@ -346,21 +355,21 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-mono text-xs">
           <div className="bg-[#080808] border border-zinc-900 p-8 space-y-4">
             <span className="text-zinc-500 block">01 // AREIA & QUADRA</span>
-            <h4 className="text-white font-bold text-sm tracking-wider uppercase">DESEMPENHO SEM RESTRIÇÃO.</h4>
+            <h4 className="text-white font-bold text-sm tracking-wider uppercase font-serif">DESEMPENHO SEM RESTRIÇÃO.</h4>
             <p className="text-zinc-400 text-[11px] leading-relaxed font-sans">
               Modelagens desenvolvidas com cavas e proporções anatômicas para acompanhar a intensidade do esporte praiano.
             </p>
           </div>
           <div className="bg-[#080808] border border-zinc-900 p-8 space-y-4">
             <span className="text-zinc-500 block">02 // CIDADE & ESTRUTURA</span>
-            <h4 className="text-white font-bold text-sm tracking-wider uppercase">TRANSIÇÃO FLUIDA.</h4>
+            <h4 className="text-white font-bold text-sm tracking-wider uppercase font-serif">TRANSIÇÃO FLUIDA.</h4>
             <p className="text-zinc-400 text-[11px] leading-relaxed font-sans">
               Peças encorpadas com corte Boxy que transitam da praia para encontros urbanos sem perder a elegância.
             </p>
           </div>
           <div className="bg-[#080808] border border-zinc-900 p-8 space-y-4">
             <span className="text-zinc-500 block">03 // PERMANÊNCIA</span>
-            <h4 className="text-white font-bold text-sm tracking-wider uppercase">MATERIALIDADE NOBRE.</h4>
+            <h4 className="text-white font-bold text-sm tracking-wider uppercase font-serif">MATERIALIDADE NOBRE.</h4>
             <p className="text-zinc-400 text-[11px] leading-relaxed font-sans">
               Seleção rigorosa de matérias-primas e acabamentos que preservam a estrutura da roupa ao longo do tempo.
             </p>
@@ -373,20 +382,20 @@ export default function Home() {
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 pb-12 border-b border-zinc-900">
           
           <div className="space-y-3">
-            <span className="text-white font-bold uppercase block tracking-widest">ORIGEM & TERRITÓRIO</span>
+            <span className="text-white font-bold uppercase block tracking-widest font-sans">ORIGEM & TERRITÓRIO</span>
             <p className="text-zinc-500">FORTALEZA - CE • BRASIL</p>
             <p className="text-zinc-500">03°43'16"S &nbsp; 38°32'41"W</p>
           </div>
 
           <div className="space-y-3">
-            <span className="text-white font-bold uppercase block tracking-widest">CANAIS OFICIAIS</span>
+            <span className="text-white font-bold uppercase block tracking-widest font-sans">CANAIS OFICIAIS</span>
             <p className="text-zinc-400">INSTAGRAM: <a href="https://instagram.com/uselaromme" target="_blank" rel="noreferrer" className="text-white hover:underline">@uselaromme</a></p>
             <p className="text-zinc-400">TIKTOK: <a href="https://tiktok.com/@laromme" target="_blank" rel="noreferrer" className="text-white hover:underline">@laromme</a></p>
             <p className="text-zinc-400">CONTATO: <a href="mailto:rommanuscompany@gmail.com" className="text-white hover:underline">rommanuscompany@gmail.com</a></p>
           </div>
 
           <div className="space-y-3">
-            <span className="text-white font-bold uppercase block tracking-widest">SUPORTE & TERMOS</span>
+            <span className="text-white font-bold uppercase block tracking-widest font-sans">SUPORTE & TERMOS</span>
             <div className="flex flex-col space-y-1.5 text-zinc-400">
               <Link href="/tamanho" className="hover:text-white">GUIA DE MEDIDAS.</Link>
               <Link href="/termos" className="hover:text-white">TERMOS DE USO.</Link>
@@ -399,7 +408,7 @@ export default function Home() {
 
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center text-[10px] text-zinc-600 gap-4">
           <span>© 2020–2026 LaRomme. TODOS OS DIREITOS RESERVADOS.</span>
-          <span className="uppercase">FORÇA EM MOVIMENTO.</span>
+          <span className="uppercase font-serif text-zinc-400 text-xs">FORÇA EM MOVIMENTO.</span>
         </div>
       </footer>
 
