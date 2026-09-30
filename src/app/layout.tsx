@@ -1,10 +1,31 @@
 ﻿import type { Metadata } from 'next';
+import { Cinzel, Archivo, Space_Mono } from 'next/font/google';
+import SmoothScroll from '@/components/SmoothScroll';
+import Header from '@/components/Header';
+import Footer from '@/components/Footer';
 import './globals.css';
-import { CartProvider } from '@/context/CartContext';
+
+const cinzel = Cinzel({ 
+  subsets: ['latin'], 
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-serif'
+});
+
+const archivo = Archivo({ 
+  subsets: ['latin'], 
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-sans'
+});
+
+const spaceMono = Space_Mono({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  variable: '--font-mono'
+});
 
 export const metadata: Metadata = {
-  title: 'LaRomme • Brutalist Luxury',
-  description: 'A interseção exata entre a força de Roma e a energia de Fortaleza.',
+  title: 'LaRomme. | Arquitetura de Vestuário',
+  description: 'Entre a leveza da areia e a estrutura do concreto. Fortaleza, Brasil.',
 };
 
 export default function RootLayout({
@@ -13,16 +34,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" className={`${cinzel.variable} ${archivo.variable} ${spaceMono.variable} bg-black text-white antialiased selection:bg-white selection:text-black overscroll-none`}>
       <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+        <meta name="theme-color" content="#000000" />
       </head>
-      <body className="bg-black text-white antialiased overflow-x-hidden font-sans">
-        <CartProvider>
-          {children}
-        </CartProvider>
+      <body className="bg-black text-white min-h-screen flex flex-col font-sans">
+        <SmoothScroll>
+          <Header />
+          <main className="flex-1">
+            {children}
+          </main>
+          <Footer />
+        </SmoothScroll>
       </body>
     </html>
   );

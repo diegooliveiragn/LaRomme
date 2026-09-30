@@ -3,120 +3,17 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Cinzel, Archivo, Space_Mono } from 'next/font/google';
-
-const cinzel = Cinzel({ 
-  subsets: ['latin'], 
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-serif'
-});
-
-const archivo = Archivo({ 
-  subsets: ['latin'], 
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-sans'
-});
-
-const spaceMono = Space_Mono({
-  subsets: ['latin'],
-  weight: ['400', '700'],
-  variable: '--font-mono'
-});
+import { PRODUCTS } from '@/data/products';
+import FadeIn from '@/components/FadeIn';
 
 const HELMET_LOGO_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/logo%20branca.png";
 const WORDMARK_LOGO_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/fcfc607a-ba81-4ff7-998e-2df1f0697b81-removebg-preview.png";
-
-const ORIGO_PRODUCTS = [
-  {
-    id: "vestigium",
-    name: "VESTIGIUM.",
-    category: "STRUCTURE / ALGODÃO BOXY",
-    price: "R$ 320,00",
-    colors: [{ name: "OFF-WHITE", hex: "#F5F5F0" }],
-    image: "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=1000",
-    description: "Algodão de alta gramatura com modelagem Boxy e caimento pesado."
-  },
-  {
-    id: "forza",
-    name: "FORZA.",
-    category: "PERFORMANCE / CAMISETA TÉCNICA",
-    price: "R$ 290,00",
-    colors: [{ name: "CINZA", hex: "#808080" }],
-    image: "https://images.unsplash.com/photo-1581655353564-df123a1eb820?auto=format&fit=crop&q=80&w=1000",
-    description: "Malha de alta respirabilidade e troca térmica rápida para uso sob o sol."
-  },
-  {
-    id: "libertas",
-    name: "LIBERTAS.",
-    category: "FREEDOM / REGATA PERFORMANCE",
-    price: "R$ 250,00",
-    colors: [
-      { name: "PRETO", hex: "#0A0A0A" },
-      { name: "OFF-WHITE", hex: "#F5F5F0" },
-      { name: "CINZA", hex: "#808080" }
-    ],
-    image: "https://images.unsplash.com/photo-1503342217505-b0a15ec3261c?auto=format&fit=crop&q=80&w=1000",
-    description: "Cavas amplas desenhadas para mobilidade total nos esportes de areia."
-  },
-  {
-    id: "signum-noctis",
-    name: "SIGNUM / NOCTIS.",
-    category: "IDENTITY / BONÉ SÍMBOLO",
-    price: "R$ 190,00",
-    colors: [{ name: "PRETO", hex: "#0A0A0A" }],
-    image: "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&q=80&w=1000",
-    description: "Boné de estrutura firme com aplicação frontal do Capacete em branco."
-  },
-  {
-    id: "signum-albus",
-    name: "SIGNUM / ALBUS.",
-    category: "IDENTITY / BONÉ WORDMARK",
-    price: "R$ 190,00",
-    colors: [{ name: "OFF-WHITE", hex: "#F5F5F0" }],
-    image: "https://images.unsplash.com/photo-1575428652377-a2d80e2277fc?auto=format&fit=crop&q=80&w=1000",
-    description: "Boné Off-White com aplicação frontal da marca LaRomme."
-  }
-];
 
 export default function Home() {
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [fadeState, setFadeState] = useState<'in' | 'out'>('in');
   const [showFinalBrand, setShowFinalBrand] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // LENIS SMOOTH SCROLL (CONFIGURAÇÃO LENTA E PESADA)
-  useEffect(() => {
-    const script = document.createElement('script');
-    script.src = "https://cdn.jsdelivr.net/gh/studio-freight/lenis@1.0.29/dist/lenis.min.js";
-    script.async = true;
-    script.onload = () => {
-      // @ts-ignore
-      if (window.Lenis) {
-        // @ts-ignore
-        const lenis = new window.Lenis({
-          duration: 2.8,
-          easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-          smoothWheel: true,
-          wheelMultiplier: 0.35,
-          touchMultiplier: 0.8,
-        });
-        function raf(time: number) {
-          lenis.raf(time);
-          requestAnimationFrame(raf);
-        }
-        requestAnimationFrame(raf);
-      }
-    };
-    document.head.appendChild(script);
-
-    return () => {
-      if (document.head.contains(script)) {
-        document.head.removeChild(script);
-      }
-    };
-  }, []);
-
-  // ANIMATOR COM LOOPING INFINITO
   useEffect(() => {
     if (showFinalBrand) {
       const resetTimer = setTimeout(() => {
@@ -147,57 +44,10 @@ export default function Home() {
   }, [phraseIndex, showFinalBrand]);
 
   return (
-    <div className={`min-h-screen w-full bg-black text-white selection:bg-white selection:text-black overscroll-none ${cinzel.variable} ${archivo.variable} ${spaceMono.variable} font-sans`}>
+    <div className="w-full bg-black text-white">
       
-      {/* HEADER GLASSMORPHIC */}
-      <header className="fixed top-0 left-0 w-full z-50 bg-black/60 backdrop-blur-md border-b border-white/10 px-6 md:px-12 py-4 flex justify-between items-center transition-all duration-300">
-        
-        <Link href="/" className="flex items-center gap-3 group">
-          <div className="relative w-7 h-7 filter brightness-0 invert">
-            <Image src={HELMET_LOGO_URL} alt="LaRomme Capacete" fill className="object-contain" priority />
-          </div>
-          <div className="relative w-28 h-6 filter brightness-0 invert">
-            <Image src={WORDMARK_LOGO_URL} alt="LaRomme" fill className="object-contain" priority />
-          </div>
-        </Link>
-
-        <nav className="hidden lg:flex items-center gap-8 text-[11px] font-medium tracking-[0.25em] uppercase text-zinc-300 font-sans">
-          <Link href="#origo" className="hover:text-white transition-colors">ORIGO / 01.</Link>
-          <Link href="#marca" className="hover:text-white transition-colors">A MARCA.</Link>
-          <Link href="#movimento" className="hover:text-white transition-colors">O MOVIMENTO.</Link>
-          <Link href="#editorial" className="hover:text-white transition-colors">EDITORIAL.</Link>
-          <Link href="#senado" className="hover:text-white transition-colors">SENADO VIP.</Link>
-        </nav>
-
-        <div className="flex items-center gap-4">
-          <Link href="/carrinho" className="text-[10px] md:text-[11px] font-bold tracking-[0.25em] uppercase text-white border border-white/20 px-4 py-2 hover:bg-white hover:text-black transition-all font-sans">
-            CARRINHO (0).
-          </Link>
-          <button 
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden text-white p-2 focus:outline-none"
-            aria-label="Abrir Menu"
-          >
-            <div className="w-5 h-0.5 bg-white mb-1"></div>
-            <div className="w-5 h-0.5 bg-white"></div>
-          </button>
-        </div>
-      </header>
-
-      {/* MENU MOBILE */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-40 bg-black/95 backdrop-blur-xl flex flex-col justify-center px-10 space-y-6 text-sm tracking-[0.3em] uppercase font-medium border-b border-white/10 lg:hidden font-sans">
-          <Link href="#origo" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-zinc-800 text-white">ORIGO / 01.</Link>
-          <Link href="#marca" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-zinc-800 text-zinc-300">A MARCA.</Link>
-          <Link href="#movimento" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-zinc-800 text-zinc-300">O MOVIMENTO.</Link>
-          <Link href="#editorial" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-zinc-800 text-zinc-300">EDITORIAL.</Link>
-          <Link href="#senado" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-zinc-800 text-zinc-300">SENADO VIP.</Link>
-        </div>
-      )}
-
       {/* HERO SECTION */}
       <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
-        
         <div className="absolute inset-0 z-0">
           <video
             autoPlay
@@ -257,61 +107,65 @@ export default function Home() {
         </div>
       </section>
 
-      {/* BLOCO 01: VITRINE COMERCIAL DO DROP 01 / ORIGO */}
+      {/* BLOCO 01: VITRINE COMERCIAL DO DROP 01 / ORIGO COM AS FOTOS REAIS */}
       <section id="origo" className="py-28 px-6 md:px-12 max-w-7xl mx-auto space-y-16">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-zinc-800 pb-8 gap-4">
-          <div>
-            <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase block mb-2">CAPÍTULO 01</span>
-            <h2 className="font-serif text-3xl md:text-5xl tracking-[0.2em] text-white uppercase">SISTEMA ORIGO / 01.</h2>
+        <FadeIn>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-zinc-800 pb-8 gap-4">
+            <div>
+              <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase block mb-2">CAPÍTULO 01</span>
+              <h2 className="font-serif text-3xl md:text-5xl tracking-[0.2em] text-white uppercase">SISTEMA ORIGO / 01.</h2>
+            </div>
+            <p className="text-xs text-zinc-400 max-w-md leading-relaxed tracking-wider font-light font-sans">
+              Cinco peças desenvolvidas para transitar sem fricção entre a alta intensidade da areia e a arquitetura da cidade.
+            </p>
           </div>
-          <p className="text-xs text-zinc-400 max-w-md leading-relaxed tracking-wider font-light font-sans">
-            Cinco peças desenvolvidas para transitar sem fricção entre a alta intensidade da areia e a arquitetura da cidade.
-          </p>
-        </div>
+        </FadeIn>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {ORIGO_PRODUCTS.map((product) => (
-            <div key={product.id} className="group bg-[#080808] border border-zinc-900 p-6 flex flex-col justify-between hover:border-zinc-700 transition-all duration-300">
-              <div className="space-y-4">
-                <div className="relative aspect-[3/4] w-full bg-zinc-950 overflow-hidden">
-                  <Image 
-                    src={product.image} 
-                    alt={product.name} 
-                    fill 
-                    className="object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 opacity-90"
-                  />
-                  <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-md px-2.5 py-1 border border-white/10 text-[9px] font-mono tracking-widest text-zinc-300">
-                    {product.category}
+          {PRODUCTS.map((product, idx) => (
+            <FadeIn key={product.id} delay={idx * 150}>
+              <div className="group bg-[#080808] border border-zinc-900 p-6 flex flex-col justify-between hover:border-zinc-700 transition-all duration-500 h-full">
+                <div className="space-y-4">
+                  <div className="relative aspect-[3/4] w-full bg-zinc-950 overflow-hidden">
+                    <Image 
+                      src={product.defaultImages[0]} 
+                      alt={product.name} 
+                      fill 
+                      className="object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 opacity-90"
+                    />
+                    <div className="absolute top-3 left-3 bg-black/80 backdrop-blur-md px-2.5 py-1 border border-white/10 text-[9px] font-mono tracking-widest text-zinc-300">
+                      {product.category}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex justify-between items-baseline">
+                      <h3 className="font-serif text-xl tracking-wider text-white font-bold">{product.name}</h3>
+                      <span className="text-xs font-mono text-zinc-300 font-bold">{product.price}</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-500 tracking-wider mt-2 line-clamp-2 font-sans">{product.description}</p>
                   </div>
                 </div>
 
-                <div>
-                  <div className="flex justify-between items-baseline">
-                    <h3 className="font-serif text-xl tracking-wider text-white font-bold">{product.name}</h3>
-                    <span className="text-xs font-mono text-zinc-300 font-bold">{product.price}</span>
+                <div className="pt-6 border-t border-zinc-900/80 mt-6 space-y-4 font-sans">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[9px] font-mono text-zinc-500 uppercase">CORES:</span>
+                    <div className="flex gap-1.5">
+                      {product.colors.map((c, i) => (
+                        <span key={i} className="w-3 h-3 rounded-full border border-zinc-700" style={{ backgroundColor: c.hex }} title={c.name} />
+                      ))}
+                    </div>
                   </div>
-                  <p className="text-[11px] text-zinc-500 tracking-wider mt-2 line-clamp-2 font-sans">{product.description}</p>
+
+                  <Link
+                    href={`/produto/${product.id}`}
+                    className="block w-full text-center bg-zinc-900 hover:bg-white text-zinc-200 hover:text-black font-bold text-[10px] tracking-[0.25em] uppercase py-3 border border-zinc-800 transition-all duration-300"
+                  >
+                    VER ARTEFATO.
+                  </Link>
                 </div>
               </div>
-
-              <div className="pt-6 border-t border-zinc-900/80 mt-6 space-y-4 font-sans">
-                <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-mono text-zinc-500 uppercase">CORES:</span>
-                  <div className="flex gap-1.5">
-                    {product.colors.map((c, i) => (
-                      <span key={i} className="w-3 h-3 rounded-full border border-zinc-700" style={{ backgroundColor: c.hex }} title={c.name} />
-                    ))}
-                  </div>
-                </div>
-
-                <Link
-                  href={`/produto/${product.id}`}
-                  className="block w-full text-center bg-zinc-900 hover:bg-white text-zinc-200 hover:text-black font-bold text-[10px] tracking-[0.25em] uppercase py-3 border border-zinc-800 transition-all duration-300"
-                >
-                  VER ARTEFATO.
-                </Link>
-              </div>
-            </div>
+            </FadeIn>
           ))}
         </div>
       </section>
@@ -319,95 +173,74 @@ export default function Home() {
       {/* BLOCO 02: A MARCA */}
       <section id="marca" className="py-28 bg-[#050505] border-y border-zinc-900 px-6 md:px-12">
         <div className="max-w-5xl mx-auto space-y-12">
-          <div className="text-center space-y-3">
-            <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase">O MANIFESTO</span>
-            <h2 className="font-serif text-3xl md:text-5xl tracking-[0.25em] text-white uppercase">A MARCA.</h2>
-            <p className="text-xs font-mono tracking-[0.2em] text-zinc-400">A ESTÉTICA DA ORDEM.</p>
-          </div>
+          <FadeIn>
+            <div className="text-center space-y-3">
+              <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase">O MANIFESTO</span>
+              <h2 className="font-serif text-3xl md:text-5xl tracking-[0.25em] text-white uppercase">A MARCA.</h2>
+              <p className="text-xs font-mono tracking-[0.2em] text-zinc-400">A ESTÉTICA DA ORDEM.</p>
+            </div>
+          </FadeIn>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-8 text-sm leading-relaxed tracking-wider font-light text-zinc-300 font-sans">
-            <div className="space-y-4 border-l border-zinc-800 pl-6">
-              <h3 className="text-white text-base tracking-widest font-serif font-bold uppercase">FORTALEZA — O TERRITÓRIO</h3>
-              <p>
-                Nascemos onde a terra encontra o mar. Fortaleza é a nossa origem — o calor da quadra, o vento constante, a luz que recorta a paisagem e o movimento que nunca cessa. A praia não é um refúgio de descanso; é uma arena de vida, disciplina e energia.
-              </p>
-            </div>
-            <div className="space-y-4 border-l border-zinc-800 pl-6">
-              <h3 className="text-white text-base tracking-widest font-serif font-bold uppercase">ROMA — O CÓDIGO</h3>
-              <p>
-                Roma é o nosso código cultural. Não através de mitos ou fantasias, mas pela linguagem da arquitetura, da proporção e da permanência. Buscamos a força silenciosa do concreto e da pedra: a ordem que resiste ao tempo e a elegância que não precisa de explicação.
-              </p>
-            </div>
+            <FadeIn delay={150}>
+              <div className="space-y-4 border-l border-zinc-800 pl-6">
+                <h3 className="text-white text-base tracking-widest font-serif font-bold uppercase">FORTALEZA — O TERRITÓRIO</h3>
+                <p>
+                  Nascemos onde a terra encontra o mar. Fortaleza é a nossa origem — o calor da quadra, o vento constante, a luz que recorta a paisagem e o movimento que nunca cessa. A praia não é um refúgio de descanso; é uma arena de vida, disciplina e energia.
+                </p>
+              </div>
+            </FadeIn>
+            <FadeIn delay={300}>
+              <div className="space-y-4 border-l border-zinc-800 pl-6">
+                <h3 className="text-white text-base tracking-widest font-serif font-bold uppercase">ROMA — O CÓDIGO</h3>
+                <p>
+                  Roma é o nosso código cultural. Não através de mitos ou fantasias, mas pela linguagem da arquitetura, da proporção e da permanência. Buscamos a força silenciosa do concreto e da pedra: a ordem que resiste ao tempo e a elegância que não precisa de explicação.
+                </p>
+              </div>
+            </FadeIn>
           </div>
         </div>
       </section>
 
-      {/* BLOCO 03: O MOVIMENTO */}
+      {/* BLOCO 03: O MOVIMENTO & EDITORIAL */}
       <section id="movimento" className="py-28 px-6 md:px-12 max-w-7xl mx-auto space-y-16">
-        <div className="text-center space-y-3">
-          <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase">LIFESTYLE & AREIA</span>
-          <h2 className="font-serif text-3xl md:text-5xl tracking-[0.25em] text-white uppercase">O MOVIMENTO.</h2>
-        </div>
+        <FadeIn>
+          <div className="text-center space-y-3">
+            <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase">LIFESTYLE & AREIA</span>
+            <h2 className="font-serif text-3xl md:text-5xl tracking-[0.25em] text-white uppercase">O MOVIMENTO.</h2>
+          </div>
+        </FadeIn>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 font-mono text-xs">
-          <div className="bg-[#080808] border border-zinc-900 p-8 space-y-4">
-            <span className="text-zinc-500 block">01 // AREIA & QUADRA</span>
-            <h4 className="text-white font-bold text-sm tracking-wider uppercase font-serif">DESEMPENHO SEM RESTRIÇÃO.</h4>
-            <p className="text-zinc-400 text-[11px] leading-relaxed font-sans">
-              Modelagens desenvolvidas com cavas e proporções anatômicas para acompanhar a intensidade do esporte praiano.
-            </p>
-          </div>
-          <div className="bg-[#080808] border border-zinc-900 p-8 space-y-4">
-            <span className="text-zinc-500 block">02 // CIDADE & ESTRUTURA</span>
-            <h4 className="text-white font-bold text-sm tracking-wider uppercase font-serif">TRANSIÇÃO FLUIDA.</h4>
-            <p className="text-zinc-400 text-[11px] leading-relaxed font-sans">
-              Peças encorpadas com corte Boxy que transitam da praia para encontros urbanos sem perder a elegância.
-            </p>
-          </div>
-          <div className="bg-[#080808] border border-zinc-900 p-8 space-y-4">
-            <span className="text-zinc-500 block">03 // PERMANÊNCIA</span>
-            <h4 className="text-white font-bold text-sm tracking-wider uppercase font-serif">MATERIALIDADE NOBRE.</h4>
-            <p className="text-zinc-400 text-[11px] leading-relaxed font-sans">
-              Seleção rigorosa de matérias-primas e acabamentos que preservam a estrutura da roupa ao longo do tempo.
-            </p>
-          </div>
+          <FadeIn delay={100}>
+            <div className="bg-[#080808] border border-zinc-900 p-8 space-y-4 h-full">
+              <span className="text-zinc-500 block">01 // AREIA & QUADRA</span>
+              <h4 className="text-white font-bold text-sm tracking-wider uppercase font-serif">DESEMPENHO SEM RESTRIÇÃO.</h4>
+              <p className="text-zinc-400 text-[11px] leading-relaxed font-sans">
+                Modelagens desenvolvidas com cavas e proporções anatômicas para acompanhar a intensidade do esporte praiano.
+              </p>
+            </div>
+          </FadeIn>
+          <FadeIn delay={250}>
+            <div className="bg-[#080808] border border-zinc-900 p-8 space-y-4 h-full">
+              <span className="text-zinc-500 block">02 // CIDADE & ESTRUTURA</span>
+              <h4 className="text-white font-bold text-sm tracking-wider uppercase font-serif">TRANSIÇÃO FLUIDA.</h4>
+              <p className="text-zinc-400 text-[11px] leading-relaxed font-sans">
+                Peças encorpadas com corte Boxy que transitam da praia para encontros urbanos sem perder a elegância.
+              </p>
+            </div>
+          </FadeIn>
+          <FadeIn delay={400}>
+            <div className="bg-[#080808] border border-zinc-900 p-8 space-y-4 h-full">
+              <span className="text-zinc-500 block">03 // PERMANÊNCIA</span>
+              <h4 className="text-white font-bold text-sm tracking-wider uppercase font-serif">MATERIALIDADE NOBRE.</h4>
+              <p className="text-zinc-400 text-[11px] leading-relaxed font-sans">
+                Seleção rigorosa de matérias-primas e acabamentos que preservam a estrutura da roupa ao longo do tempo.
+              </p>
+            </div>
+          </FadeIn>
         </div>
       </section>
-
-      {/* RODAPÉ */}
-      <footer id="senado" className="border-t border-zinc-800 bg-[#030303] py-16 px-6 md:px-12 text-xs font-mono tracking-wider text-zinc-400 space-y-12">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 pb-12 border-b border-zinc-900">
-          
-          <div className="space-y-3">
-            <span className="text-white font-bold uppercase block tracking-widest font-sans">ORIGEM & TERRITÓRIO</span>
-            <p className="text-zinc-500">FORTALEZA - CE • BRASIL</p>
-            <p className="text-zinc-500">03°43'16"S &nbsp; 38°32'41"W</p>
-          </div>
-
-          <div className="space-y-3">
-            <span className="text-white font-bold uppercase block tracking-widest font-sans">CANAIS OFICIAIS</span>
-            <p className="text-zinc-400">INSTAGRAM: <a href="https://instagram.com/uselaromme" target="_blank" rel="noreferrer" className="text-white hover:underline">@uselaromme</a></p>
-            <p className="text-zinc-400">TIKTOK: <a href="https://tiktok.com/@laromme" target="_blank" rel="noreferrer" className="text-white hover:underline">@laromme</a></p>
-            <p className="text-zinc-400">CONTATO: <a href="mailto:rommanuscompany@gmail.com" className="text-white hover:underline">rommanuscompany@gmail.com</a></p>
-          </div>
-
-          <div className="space-y-3">
-            <span className="text-white font-bold uppercase block tracking-widest font-sans">SUPORTE & TERMOS</span>
-            <div className="flex flex-col space-y-1.5 text-zinc-400">
-              <Link href="/tamanho" className="hover:text-white">GUIA DE MEDIDAS.</Link>
-              <Link href="/termos" className="hover:text-white">TERMOS DE USO.</Link>
-              <Link href="/politica-de-privacidade" className="hover:text-white">PRIVACIDADE.</Link>
-              <Link href="/faq" className="hover:text-white">PERGUNTAS FREQUENTES.</Link>
-            </div>
-          </div>
-
-        </div>
-
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center text-[10px] text-zinc-600 gap-4">
-          <span>© 2020–2026 LaRomme. TODOS OS DIREITOS RESERVADOS.</span>
-          <span className="uppercase font-serif text-zinc-400 text-xs">FORÇA EM MOVIMENTO.</span>
-        </div>
-      </footer>
 
     </div>
   );

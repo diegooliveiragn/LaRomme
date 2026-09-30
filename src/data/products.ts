@@ -1,160 +1,170 @@
-import { Product } from '@/types/product';
+﻿export interface ColorOption {
+  name: string;
+  hex: string;
+  images: string[];
+}
 
-export const products: Product[] = [
+export interface Product {
+  id: string;
+  name: string;
+  category: string;
+  tag: string;
+  price: string;
+  description: string;
+  fabric: string;
+  fit: string;
+  care: string;
+  colors: ColorOption[];
+  defaultImages: string[];
+}
+
+export const PRODUCTS: Product[] = [
   {
-    id: 'vestigium-01',
-    name: 'VESTIGIUM',
-    subtitle: 'Camiseta de Algodão',
-    slug: 'vestigium-camisa-algodao',
-    price: 289.00,
-    category: 'lifestyle',
-    collection: 'origo',
-    concept: 'O que permanece. Arte, cultura e atitude.',
-    shortDescription: 'Construção em algodão de toque encorpado com modelagem Boxy / Oversized. Arte autoral conectando a herança clássica às coordenadas de Fortaleza.',
-    fullStory: 'A camisa VESTIGIUM representa o vestígio do que permanece incólume ao tempo. Projetada para unir a estrutura arquitetônica ao corte contemporâneo boxy, oferecendo caimento estruturado e ombros deslocados.',
-    fitDetails: 'Modelagem Boxy / Oversized com caimento estruturado e ombros deslocados.',
-    available: true,
-    variants: [],
-    materials: [
-      'Algodão com caimento encorpado e toque macio',
-      'Estrutura com pré-encolhimento de fábrica',
-      'Estampa autoral de alta definição'
+    id: "vestigium",
+    name: "VESTIGIUM.",
+    category: "STRUCTURE / ALGODÃO BOXY",
+    tag: "ALGODÃO ENCORPADO",
+    price: "R$ 320,00",
+    description: "Algodão encorpado de alta gramatura com modelagem Boxy arquitetônica e caimento pesado de ombros.",
+    fabric: "100% Algodão encorpado de alta gramatura com estrutura rígida e preservação de formato.",
+    fit: "Modelagem Boxy contemporânea, ombros deslocados (drop shoulder) e gola estruturada em ribana espessa.",
+    care: "Lavar à mão ou em ciclo delicado com água fria. Não utilizar secadora. Secar à sombra.",
+    colors: [
+      {
+        name: "OFF-WHITE",
+        hex: "#F5F5F0",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Boxy%20Frente.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Boxy%20Costas.png"
+        ]
+      }
     ],
-    features: [
-      'Algodão encorpado',
-      'Modelagem boxy / oversized',
-      'Gola estruturada',
-      'Estampa autoral',
-      'Etiqueta externa frontal',
-      'Acabamento premium'
-    ],
-    careInstructions: [
-      'Lavar à mão ou em ciclo delicado na máquina com água fria',
-      'Não utilizar alvejante',
-      'Secar à sombra',
-      'Passar do avesso em temperatura média'
-    ],
-    availableColors: [
-      { name: 'Off White', hex: '#F2F1ED', slug: 'offwhite' },
-      { name: 'Preto', hex: '#111111', slug: 'preto' }
-    ],
-    availableSizes: ['P', 'M', 'G', 'GG'],
-    images: [],
-    featured: true,
+    defaultImages: [
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Boxy%20Frente.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Boxy%20Costas.png"
+    ]
   },
   {
-    id: 'forza-01',
-    name: 'FORZA',
-    subtitle: 'Camiseta Sport',
-    slug: 'forza-camisa-performance',
-    price: 249.00,
-    category: 'performance',
-    collection: 'origo',
-    concept: 'Movimento, conforto e identidade.',
-    shortDescription: 'Desenvolvida para mobilidade corporal e atividade contínua. Tecido leve com foco em respirabilidade e detalhes refletivos.',
-    fullStory: 'A linha FORZA foi concebida sob o clima de Fortaleza. Utiliza tecidos leves com caimento anatômico relaxado, garantindo liberdade de movimento no esporte e presença na rua.',
-    fitDetails: 'Modelagem Relaxed Performance de caimento anatômico e foco em mobilidade corporal.',
-    available: true,
-    variants: [],
-    materials: [
-      'Tecido leve e respirável',
-      'Fiação com foco em evaporação e conforto térmico',
-      'Aplicação de detalhes refletivos'
+    id: "forza",
+    name: "FORZA.",
+    category: "PERFORMANCE / CAMISETA TÉCNICA",
+    tag: "TROCA TÉRMICA",
+    price: "R$ 290,00",
+    description: "Malha de alta performance respirável com secagem rápida, desenvolvida para transições sob o sol e movimento urbano.",
+    fabric: "Tecido técnico leve de poliéster com poliamida, toque frio e tecnologia de dispersão de suor.",
+    fit: "Corte atlético anatômico, sem compressão, permitindo liberdade total de braços e torso.",
+    care: "Lavar com sabão neutro em água fria. Evitar amaciante para preservar a respirabilidade do tecido.",
+    colors: [
+      {
+        name: "CINZA",
+        hex: "#808080",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Forza%20Frente.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Forza%20Costas.png"
+        ]
+      }
     ],
-    features: [
-      'Tecido leve e altamente respirável',
-      'Modelagem relaxed performance',
-      'Caimento anatômico',
-      'Detalhes refletivos de visibilidade',
-      'Etiqueta externa exclusiva'
-    ],
-    careInstructions: [
-      'Lavar na máquina em ciclo esportivo/delicado',
-      'Não usar amaciante nem alvejante',
-      'Secagem ao ar livre',
-      'Não passar a ferro sobre estampas e detalhes refletivos'
-    ],
-    availableColors: [
-      { name: 'Preto', hex: '#111111', slug: 'preto' },
-      { name: 'Off White', hex: '#F2F1ED', slug: 'offwhite' },
-      { name: 'Bordô', hex: '#8B1E1E', slug: 'bordo' }
-    ],
-    availableSizes: ['P', 'M', 'G', 'GG'],
-    images: [],
-    featured: true,
+    defaultImages: [
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Forza%20Frente.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Forza%20Costas.png"
+    ]
   },
   {
-    id: 'libertas-01',
-    name: 'LIBERTAS',
-    subtitle: 'Regata Performance',
-    slug: 'libertas-regata-performance',
-    price: 199.00,
-    category: 'performance',
-    collection: 'origo',
-    concept: 'Movimento sem restrição.',
-    shortDescription: 'Cava profunda projetada para amplitude total de movimento. A união entre a atmosfera litorânea e a prática esportiva.',
-    fullStory: 'LIBERTAS representa a eliminação de barreiras corporais. Desenvolvida com cavas amplas sem fricção, proporciona ventilação contínua e leveza em treinos intensos.',
-    fitDetails: 'Modelagem Loose Fit com cava profunda para mobilidade irrestrita.',
-    available: true,
-    variants: [],
-    materials: [
-      'Tecido técnico ultraleve',
-      'Estrutura com foco em fluxo de ar e leveza'
+    id: "libertas",
+    name: "LIBERTAS.",
+    category: "FREEDOM / REGATA PERFORMANCE",
+    tag: "AMPLITUDE DE MOVIMENTO",
+    price: "R$ 250,00",
+    description: "Cavas amplas e corte aerado projetados para mobilidade nos esportes de areia e no cotidiano tropical.",
+    fabric: "Malha técnica ultraleve de alta respirabilidade e toque suave na pele.",
+    fit: "Cavas profundas nas laterais e costas, impedindo fricção durante a movimentação dos braços.",
+    care: "Lavar à mão ou ciclo suave. Secagem ultra-rápida à sombra.",
+    colors: [
+      {
+        name: "BORDÔ",
+        hex: "#581820",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Regata%20Bordo%20-%20Frente.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Regata%20Bordo%20-%20Costas.png"
+        ]
+      },
+      {
+        name: "BRANCA",
+        hex: "#FFFFFF",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Regata%20Branca%20-%20Frente.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Regata%20Branca%20-%20Costas.png"
+        ]
+      },
+      {
+        name: "PRETA",
+        hex: "#0A0A0A",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Regata%20frente.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Regata%20Costas.png"
+        ]
+      }
     ],
-    features: [
-      'Cava anatômica profunda sem fricção',
-      'Ventilação contínua e leveza',
-      'Detalhes refletivos',
-      'Costuras reforçadas'
-    ],
-    careInstructions: [
-      'Lavar com água fria',
-      'Secar à sombra'
-    ],
-    availableColors: [
-      { name: 'Bordô', hex: '#8B1E1E', slug: 'bordo' },
-      { name: 'Preto', hex: '#111111', slug: 'preto' },
-      { name: 'Off White', hex: '#F2F1ED', slug: 'offwhite' }
-    ],
-    availableSizes: ['P', 'M', 'G', 'GG'],
-    images: [],
-    featured: true,
+    defaultImages: [
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Regata%20frente.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Regata%20Costas.png"
+    ]
   },
   {
-    id: 'signum-01',
-    name: 'SIGNUM',
-    subtitle: 'Acessório / Cap',
-    slug: 'signum-bone',
-    price: 159.00,
-    category: 'lifestyle',
-    collection: 'origo',
-    concept: 'O código visual.',
-    shortDescription: 'Boné estruturado de abas curvas com bordado em relevo e fecho ajustável personalizado em metal.',
-    fullStory: 'O boné SIGNUM é a assinatura tátil do ecossistema. Moldado em tecido encorpado com bordados de precisão e fivela metálica customizada, sintetiza o código LaRomme.',
-    fitDetails: 'Tamanho único ajustável com fecho em fivela metálica.',
-    available: true,
-    variants: [],
-    materials: [
-      'Tecido encorpado de sarja',
-      'Bordado frontal e lateral de alta definição'
+    id: "signum-noctis",
+    name: "SIGNUM / NOCTIS.",
+    category: "IDENTITY / BONÉ SÍMBOLO",
+    tag: "ESTRUTURA RÍGIDA",
+    price: "R$ 190,00",
+    description: "Boné preto de copa firme com aplicação frontal do Capacete em bordado e fecho ajustável de alta precisão.",
+    fabric: "Sarja nobre de algodão estruturado com resistência à radiação solar.",
+    fit: "Perfil de copa média com curva anatômica de aba para sombra cirúrgica.",
+    care: "Limpar com pano úmido e sabão neutro. Não imergir completamente em água.",
+    colors: [
+      {
+        name: "PRETO",
+        hex: "#0A0A0A",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Preto%20-%20Frente.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Lateral%20-%20Preto.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Preto%20-%20Costas.png"
+        ]
+      }
     ],
-    features: [
-      'Fecho traseiro metálico personalizado',
-      'Fita interna personalizada com código de origem',
-      'Bordado em alto relevo'
+    defaultImages: [
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Preto%20-%20Frente.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Lateral%20-%20Preto.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Preto%20-%20Costas.png"
+    ]
+  },
+  {
+    id: "signum-albus",
+    name: "SIGNUM / ALBUS.",
+    category: "IDENTITY / BONÉ WORDMARK",
+    tag: "LUZ & PERTENCIMENTO",
+    price: "R$ 190,00",
+    description: "Boné Off-White que reflete a radiação solar, com a assinatura LaRomme. bordada no painel frontal.",
+    fabric: "Sarja nobre de algodão em tonalidade Off-White nobre.",
+    fit: "Copa estruturada com aba anatômica ajustável.",
+    care: "Limpar localmente com pano limpo e úmido.",
+    colors: [
+      {
+        name: "OFF-WHITE",
+        hex: "#F5F5F0",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Frente%20-%20Branco.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Lateral%20-%20Branco.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Costas%20-%20Branco.png"
+        ]
+      }
     ],
-    careInstructions: [
-      'Limpar com pano úmido',
-      'Não lavar na máquina'
-    ],
-    availableColors: [
-      { name: 'Preto', hex: '#111111', slug: 'preto' },
-      { name: 'Off White', hex: '#F2F1ED', slug: 'offwhite' }
-    ],
-    availableSizes: ['UNICO'],
-    images: [],
-    featured: false,
+    defaultImages: [
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Frente%20-%20Branco.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Lateral%20-%20Branco.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Costas%20-%20Branco.png"
+    ]
   }
 ];
 
-export const PRODUCTS_ORIGO = products;
+// COMPATIBILIDADE COM O SITEMAP
+export const PRODUCTS_ORIGO = PRODUCTS;
