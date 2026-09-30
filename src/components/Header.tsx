@@ -23,11 +23,11 @@ export default function Header() {
         </Link>
 
         <nav className="hidden lg:flex items-center gap-8 text-[11px] font-medium tracking-[0.25em] uppercase text-zinc-300 font-sans">
-          <Link href="/#origo" className="hover:text-white transition-colors">ORIGO / 01.</Link>
-          <Link href="/#marca" className="hover:text-white transition-colors">A MARCA.</Link>
-          <Link href="/#movimento" className="hover:text-white transition-colors">O MOVIMENTO.</Link>
-          <Link href="/#editorial" className="hover:text-white transition-colors">EDITORIAL.</Link>
-          <Link href="/#senado" className="hover:text-white transition-colors">SENADO VIP.</Link>
+          <Link href="/" className="hover:text-white transition-colors">ORIGO / 01.</Link>
+          <Link href="/a-marca" className="hover:text-white transition-colors">A MARCA.</Link>
+          <Link href="/o-movimento" className="hover:text-white transition-colors">O MOVIMENTO.</Link>
+          <Link href="/editorial" className="hover:text-white transition-colors">EDITORIAL.</Link>
+          <Link href="/senado-vip" className="hover:text-white transition-colors">SENADO VIP.</Link>
         </nav>
 
         <div className="flex items-center gap-4">
@@ -47,11 +47,11 @@ export default function Header() {
 
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 bg-black/95 backdrop-blur-xl flex flex-col justify-center px-10 space-y-6 text-sm tracking-[0.3em] uppercase font-medium border-b border-white/10 lg:hidden font-sans">
-          <Link href="/#origo" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-zinc-800 text-white">ORIGO / 01.</Link>
-          <Link href="/#marca" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-zinc-800 text-zinc-300">A MARCA.</Link>
-          <Link href="/#movimento" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-zinc-800 text-zinc-300">O MOVIMENTO.</Link>
-          <Link href="/#editorial" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-zinc-800 text-zinc-300">EDITORIAL.</Link>
-          <Link href="/#senado" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-zinc-800 text-zinc-300">SENADO VIP.</Link>
+          <Link href="/" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-zinc-800 text-white">ORIGO / 01.</Link>
+          <Link href="/a-marca" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-zinc-800 text-zinc-300">A MARCA.</Link>
+          <Link href="/o-movimento" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-zinc-800 text-zinc-300">O MOVIMENTO.</Link>
+          <Link href="/editorial" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-zinc-800 text-zinc-300">EDITORIAL.</Link>
+          <Link href="/senado-vip" onClick={() => setMobileMenuOpen(false)} className="py-2 border-b border-zinc-800 text-zinc-300">SENADO VIP.</Link>
         </div>
       )}
     </>
