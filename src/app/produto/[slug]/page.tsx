@@ -15,9 +15,15 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     notFound();
   }
 
+  // Pega os outros produtos para o carrossel inferior
+  const otherProducts = PRODUCTS.filter((p) => p.id !== product.id);
+
   const { addToCart } = useCart();
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
-  const [selectedSize, setSelectedSize] = useState<string>('M');
+  
+  // Se for Tamanho Único, o estado inicial já é 'TU'
+  const [selectedSize, setSelectedSize] = useState<string>(product.isOneSize ? 'TU' : 'M');
+  
   const [showProportionModal, setShowProportionModal] = useState(false);
   const [addedToast, setAddedToast] = useState(false);
   
@@ -31,7 +37,9 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   const currentImages = product.colors[selectedColorIndex]?.images || product.defaultImages;
 
   const handleAddToCart = () => {
-    addToCart(product, selectedSize, selectedColorIndex);
+    // Garante que se for tamanho único, manda "TU"
+    const sizeToCart = product.isOneSize ? 'TU' : selectedSize;
+    addToCart(product, sizeToCart, selectedColorIndex);
     setAddedToast(true);
     setTimeout(() => {
       setAddedToast(false);
@@ -64,7 +72,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   };
 
   return (
-    <div className="pt-28 pb-20 px-6 md:px-12 max-w-7xl mx-auto space-y-16 relative">
+    <div className="pt-28 pb-20 px-6 md:px-12 max-w-7xl mx-auto space-y-16 relative font-sans">
       <FadeIn>
         <div className="flex justify-between items-center text-xs font-mono text-zinc-500 border-b border-zinc-900 pb-4">
           <Link href="/#origo" className="hover:text-white transition-colors">← VOLTAR PARA COLEÇÃO.</Link>
@@ -137,31 +145,42 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
 
           <FadeIn delay={200}>
             <div className="space-y-3 border-t border-zinc-900 pt-6">
-              <div className="flex justify-between items-center text-xs font-mono">
-                <span className="text-zinc-400">TAMANHO:</span>
-                <button
-                  onClick={() => setShowProportionModal(true)}
-                  className="text-zinc-300 underline underline-offset-4 hover:text-white"
-                >
-                  SISTEMA DE PROPORÇÃO.
-                </button>
-              </div>
-
-              <div className="grid grid-cols-4 gap-2">
-                {['P', 'M', 'G', 'GG'].map((size) => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`py-3 text-xs font-mono border transition-all ${
-                      selectedSize === size
-                        ? 'bg-white text-black border-white font-bold'
-                        : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-600'
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
+              
+              {product.isOneSize ? (
+                // LAYOUT PARA TAMANHO ÚNICO (BONÉS)
+                <div className="flex justify-between items-center text-xs font-mono">
+                  <span className="text-zinc-400">TAMANHO:</span>
+                  <span className="text-white font-bold tracking-widest border border-white px-4 py-2">ÚNICO (AJUSTÁVEL)</span>
+                </div>
+              ) : (
+                // LAYOUT PARA ROUPAS (P, M, G, GG)
+                <>
+                  <div className="flex justify-between items-center text-xs font-mono">
+                    <span className="text-zinc-400">TAMANHO:</span>
+                    <button
+                      onClick={() => setShowProportionModal(true)}
+                      className="text-zinc-300 underline underline-offset-4 hover:text-white"
+                    >
+                      SISTEMA DE PROPORÇÃO.
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {['P', 'M', 'G', 'GG'].map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => setSelectedSize(size)}
+                        className={`py-3 text-xs font-mono border transition-all ${
+                          selectedSize === size
+                            ? 'bg-white text-black border-white font-bold'
+                            : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-600'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </FadeIn>
 
@@ -220,7 +239,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       </div>
 
       {/* MODAL DE SISTEMA DE PROPORÇÃO */}
-      {showProportionModal && (
+      {!product.isOneSize && showProportionModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex justify-end animate-in fade-in duration-300">
           <div className="w-full max-w-md bg-[#080808] border-l border-zinc-800 p-8 flex flex-col justify-between space-y-6">
             <div className="space-y-6 font-sans">
@@ -269,6 +288,42 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           </div>
         </div>
       )}
+
+      {/* CARROSSEL CROSS-SELL NA BASE DA PDP */}
+      <FadeIn delay={400}>
+        <div className="pt-24 border-t border-zinc-900 mt-20 space-y-12">
+          <div className="flex items-center justify-between">
+            <h2 className="font-serif text-xl md:text-3xl tracking-[0.2em] text-white uppercase font-bold">
+              CONTINUE EXPLORANDO.
+            </h2>
+          </div>
+          
+          <div className="flex overflow-x-auto gap-6 pb-8 snap-x snap-mandatory hide-scrollbar">
+            {otherProducts.map((p) => (
+              <Link 
+                href={`/produto/${p.id}`} 
+                key={p.id}
+                className="group flex-none w-64 md:w-80 snap-start bg-[#080808] border border-zinc-900 p-5 hover:border-zinc-700 transition-all duration-300"
+              >
+                <div className="relative aspect-[3/4] w-full bg-zinc-950 overflow-hidden mb-4">
+                  <Image 
+                    src={p.defaultImages[0]} 
+                    alt={p.name} 
+                    fill 
+                    className="object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 opacity-90"
+                  />
+                </div>
+                <div className="flex justify-between items-baseline mb-2">
+                  <h3 className="font-serif text-base tracking-wider text-white font-bold">{p.name}</h3>
+                  <span className="text-[10px] font-mono text-zinc-400 whitespace-nowrap">{p.price}</span>
+                </div>
+                <span className="text-[9px] font-mono tracking-widest text-zinc-600 block truncate">{p.category}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </FadeIn>
+
     </div>
   );
 }

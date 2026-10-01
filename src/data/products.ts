@@ -16,6 +16,7 @@ export interface Product {
   care: string;
   colors: ColorOption[];
   defaultImages: string[];
+  isOneSize?: boolean;
 }
 
 export const PRODUCTS: Product[] = [
@@ -42,6 +43,62 @@ export const PRODUCTS: Product[] = [
     defaultImages: [
       "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Boxy%20Frente.png",
       "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Boxy%20Costas.png"
+    ]
+  },
+  {
+    id: "signum",
+    name: "SIGNUM.",
+    category: "LIFESTYLE / DAD HAT",
+    tag: "FIVELA DE METAL",
+    price: "R$ 159,90",
+    description: "Boné de sarja rígida com o símbolo Capacete em bordado alto relevo. Fecho traseiro com fita de tecido e fivela de metal escovado.",
+    fabric: "Sarja premium 100% algodão, resistente ao desbotamento solar.",
+    fit: "Desestruturado frontalmente para encaixe perfeito na cabeça (Dad Hat clássico).",
+    care: "Limpar apenas localmente. Não colocar na máquina de lavar.",
+    isOneSize: true,
+    colors: [
+      {
+        name: "PRETO",
+        hex: "#0A0A0A",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Preto%20-%20Frente.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Lateral%20-%20Preto.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Preto%20-%20Costas.png"
+        ]
+      }
+    ],
+    defaultImages: [
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Preto%20-%20Frente.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Lateral%20-%20Preto.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Preto%20-%20Costas.png"
+    ]
+  },
+  {
+    id: "titulus",
+    name: "TITULUS.",
+    category: "LIFESTYLE / DAD HAT",
+    tag: "BORDADO & METAL",
+    price: "R$ 159,90",
+    description: "Boné Off-White iluminado. Assinatura LaRomme. centralizada. Ajuste por fita do mesmo tecido e fivela de metal antioxidante.",
+    fabric: "Sarja premium de gramatura alta, tom Off-White exclusivo.",
+    fit: "Curva da aba cirúrgica para bloqueio solar mantendo o campo de visão.",
+    care: "Limpeza com pano úmido e sabão de coco. Secagem à sombra.",
+    isOneSize: true,
+    colors: [
+      {
+        name: "OFF-WHITE",
+        hex: "#F5F5F0",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Frente%20-%20Branco.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Lateral%20-%20Branco.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Costas%20-%20Branco.png"
+        ]
+      }
+    ],
+    defaultImages: [
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Frente%20-%20Branco.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Lateral%20-%20Branco.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Costas%20-%20Branco.png"
     ]
   },
   {
@@ -111,60 +168,6 @@ export const PRODUCTS: Product[] = [
     ]
   },
   {
-    id: "signum",
-    name: "SIGNUM.",
-    category: "LIFESTYLE / DAD HAT",
-    tag: "FIVELA DE METAL",
-    price: "R$ 159,90",
-    description: "Boné de sarja rígida com o símbolo Capacete em bordado alto relevo. Fecho traseiro com fita de tecido e fivela de metal escovado.",
-    fabric: "Sarja premium 100% algodão, resistente ao desbotamento solar.",
-    fit: "Desestruturado frontalmente para encaixe perfeito na cabeça (Dad Hat clássico).",
-    care: "Limpar apenas localmente. Não colocar na máquina de lavar.",
-    colors: [
-      {
-        name: "PRETO",
-        hex: "#0A0A0A",
-        images: [
-          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Preto%20-%20Frente.png",
-          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Lateral%20-%20Preto.png",
-          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Preto%20-%20Costas.png"
-        ]
-      }
-    ],
-    defaultImages: [
-      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Preto%20-%20Frente.png",
-      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Lateral%20-%20Preto.png",
-      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Preto%20-%20Costas.png"
-    ]
-  },
-  {
-    id: "titulus",
-    name: "TITULUS.",
-    category: "LIFESTYLE / DAD HAT",
-    tag: "BORDADO & METAL",
-    price: "R$ 159,90",
-    description: "Boné Off-White iluminado. Assinatura LaRomme. centralizada. Ajuste por fita do mesmo tecido e fivela de metal antioxidante.",
-    fabric: "Sarja premium de gramatura alta, tom Off-White exclusivo.",
-    fit: "Curva da aba cirúrgica para bloqueio solar mantendo o campo de visão.",
-    care: "Limpeza com pano úmido e sabão de coco. Secagem à sombra.",
-    colors: [
-      {
-        name: "OFF-WHITE",
-        hex: "#F5F5F0",
-        images: [
-          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Frente%20-%20Branco.png",
-          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Lateral%20-%20Branco.png",
-          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Costas%20-%20Branco.png"
-        ]
-      }
-    ],
-    defaultImages: [
-      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Frente%20-%20Branco.png",
-      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Lateral%20-%20Branco.png",
-      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Costas%20-%20Branco.png"
-    ]
-  },
-  {
     id: "umbra",
     name: "UMBRA.",
     category: "PERFORMANCE / 5-PANEL",
@@ -174,6 +177,7 @@ export const PRODUCTS: Product[] = [
     fabric: "Poliamida ultraleve. Não retém calor e seca em minutos.",
     fit: "Copa rasa e modelagem flexível que se molda completamente ao topo da cabeça.",
     care: "Permite lavagem leve pós-treino. Secagem instantânea.",
+    isOneSize: true,
     colors: [
       {
         name: "BORDÔ",

@@ -1,17 +1,13 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #09090b;
-  --foreground: #ffffff;
+@layer utilities {
+  .hide-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari and Opera */
+  }
 }
-
-body {
-  background-color: var(--background);
-  color: var(--foreground);
-  -webkit-font-smoothing: antialiased;
-}
-
-/* Força os inputs e tabelas a terem alto contraste na base de operações */
-td { color: #e4e4e7 !important; font-weight: 500; font-family: monospace; }
