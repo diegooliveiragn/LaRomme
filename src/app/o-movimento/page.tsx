@@ -14,7 +14,7 @@ export default function OMovimentoPage() {
         </div>
       </FadeIn>
 
-      {/* BLOCO VÍDEO / CINEMÁTICO */}
+      {/* BLOCO VÍDEO CULTURA E GEOMETRIA */}
       <FadeIn delay={100}>
         <div className="relative aspect-video w-full bg-zinc-950 border border-zinc-900 overflow-hidden">
           <video
@@ -24,11 +24,12 @@ export default function OMovimentoPage() {
             playsInline
             className="w-full h-full object-cover filter grayscale contrast-125 opacity-40"
           >
+            <source src="/cultura-geometria.mp4" type="video/mp4" />
             <source src="/praia.mp4" type="video/mp4" />
             <source src="/video.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-            <p className="font-serif text-lg md:text-2xl tracking-[0.3em] text-white uppercase text-center px-6">
+            <p className="font-serif text-lg md:text-2xl tracking-[0.3em] text-white uppercase text-center px-6 font-bold">
               A AREIA É A ARENA. A CIDADE É A ESTRUTURA.
             </p>
           </div>
@@ -73,7 +74,7 @@ export default function OMovimentoPage() {
         <div className="border-t border-zinc-900 pt-16 text-center space-y-8">
           <div className="space-y-2">
             <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase block">CANAL OFICIAL</span>
-            <h3 className="font-serif text-xl md:text-3xl tracking-[0.2em] text-white uppercase font-bold">ACOMPE O MOVIMENTO.</h3>
+            <h3 className="font-serif text-xl md:text-3xl tracking-[0.2em] text-white uppercase font-bold">ACOMPANHE O MOVIMENTO.</h3>
           </div>
 
           <div className="flex flex-col sm:flex-row justify-center items-center gap-6 font-mono text-xs">

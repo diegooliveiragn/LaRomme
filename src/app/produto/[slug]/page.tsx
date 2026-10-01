@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PRODUCTS, Product } from '@/data/products';
+import { useCart } from '@/context/CartContext';
 import FadeIn from '@/components/FadeIn';
 
 export default function ProductPage({ params }: { params: { slug: string } }) {
@@ -14,18 +15,28 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     notFound();
   }
 
+  const { addToCart } = useCart();
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string>('M');
   const [showProportionModal, setShowProportionModal] = useState(false);
+  const [addedToast, setAddedToast] = useState(false);
+  
   const [height, setHeight] = useState('180');
   const [weight, setWeight] = useState('80');
   const [fitPreference, setFitPreference] = useState<'ANATÔMICO' | 'PADRÃO' | 'AMPLO'>('PADRÃO');
   const [openAccordion, setOpenAccordion] = useState<number | null>(0);
   
-  // Estado do Magnifier Zoom
   const [zoomStyle, setZoomStyle] = useState<{ [key: number]: React.CSSProperties }>({});
 
   const currentImages = product.colors[selectedColorIndex]?.images || product.defaultImages;
+
+  const handleAddToCart = () => {
+    addToCart(product, selectedSize, selectedColorIndex);
+    setAddedToast(true);
+    setTimeout(() => {
+      setAddedToast(false);
+    }, 3000);
+  };
 
   const calculateRecommendedSize = () => {
     const w = parseFloat(weight) || 80;
@@ -53,7 +64,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   };
 
   return (
-    <div className="pt-28 pb-20 px-6 md:px-12 max-w-7xl mx-auto space-y-16">
+    <div className="pt-28 pb-20 px-6 md:px-12 max-w-7xl mx-auto space-y-16 relative">
       <FadeIn>
         <div className="flex justify-between items-center text-xs font-mono text-zinc-500 border-b border-zinc-900 pb-4">
           <Link href="/#origo" className="hover:text-white transition-colors">← VOLTAR PARA COLEÇÃO.</Link>
@@ -62,8 +73,6 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       </FadeIn>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        
-        {/* LADO ESQUERDO: GALERIA COM LENTE DE AUMENTO */}
         <div className="lg:col-span-7 space-y-6">
           {currentImages.map((imgUrl, idx) => (
             <FadeIn key={idx} delay={idx * 100}>
@@ -81,7 +90,6 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
                     priority={idx === 0}
                   />
                 </div>
-                {/* Dica visual de zoom */}
                 <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-md px-3 py-1.5 border border-white/10 text-[9px] font-mono tracking-widest text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity">
                   ZOOM ÓPTICO
                 </div>
@@ -90,7 +98,6 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           ))}
         </div>
 
-        {/* LADO DIREITO FIXO */}
         <div className="lg:col-span-5 space-y-8 lg:sticky lg:top-28 h-fit">
           <FadeIn>
             <div className="space-y-2">
@@ -159,8 +166,11 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           </FadeIn>
 
           <FadeIn delay={250}>
-            <button className="w-full bg-white text-black font-bold text-xs tracking-[0.3em] uppercase py-4 hover:bg-zinc-200 transition-all shadow-2xl">
-              ADICIONAR AO CARRINHO.
+            <button 
+              onClick={handleAddToCart}
+              className="w-full bg-white text-black font-bold text-xs tracking-[0.3em] uppercase py-4 hover:bg-zinc-200 transition-all shadow-2xl active:scale-[0.99]"
+            >
+              {addedToast ? '✓ ARTEFATO ADICIONADO!' : 'ADICIONAR AO CARRINHO.'}
             </button>
           </FadeIn>
 
@@ -209,6 +219,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         </div>
       </div>
 
+      {/* MODAL DE SISTEMA DE PROPORÇÃO */}
       {showProportionModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex justify-end animate-in fade-in duration-300">
           <div className="w-full max-w-md bg-[#080808] border-l border-zinc-800 p-8 flex flex-col justify-between space-y-6">

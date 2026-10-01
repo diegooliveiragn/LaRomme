@@ -1,111 +1,105 @@
-'use client';
+﻿'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { Product } from '@/data/products';
 
 export interface CartItem {
-  id: string;
-  slug: string;
+  cartItemId: string;
+  productId: string;
   name: string;
-  price: number;
+  category: string;
+  priceString: string;
+  priceNumeric: number;
   size: string;
+  colorName: string;
+  colorHex: string;
+  image: string;
   quantity: number;
-  image?: string;
-  images?: any[];
 }
 
 interface CartContextType {
   items: CartItem[];
-  isOpen: boolean;
-  openCart: () => void;
-  closeCart: () => void;
-  toggleCart: () => void;
-  addToCart: (product: any, size: string, quantity?: number) => void;
-  removeFromCart: (id: string, size: string) => void;
-  updateQuantity: (id: string, size: string, delta: number) => void;
+  addToCart: (product: Product, size: string, colorIndex: number) => void;
+  removeFromCart: (cartItemId: string) => void;
+  updateQuantity: (cartItemId: string, delta: number) => void;
   clearCart: () => void;
   totalItems: number;
   subtotal: number;
+  isLoaded: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Carregar do localStorage ao iniciar
   useEffect(() => {
     try {
-      const savedCart = localStorage.getItem('@laromme:cart');
-      if (savedCart) {
-        setItems(JSON.parse(savedCart));
+      const saved = localStorage.getItem('laromme_cart');
+      if (saved) {
+        setItems(JSON.parse(saved));
       }
     } catch (e) {
-      console.error('Erro ao carregar carrinho local:', e);
+      console.error('Erro ao carregar o carrinho:', e);
     } finally {
       setIsLoaded(true);
     }
   }, []);
 
-  // Salvar no localStorage sempre que houver alteração
   useEffect(() => {
     if (isLoaded) {
-      try {
-        localStorage.setItem('@laromme:cart', JSON.stringify(items));
-      } catch (e) {
-        console.error('Erro ao salvar carrinho local:', e);
-      }
+      localStorage.setItem('laromme_cart', JSON.stringify(items));
     }
   }, [items, isLoaded]);
 
-  const openCart = () => setIsOpen(true);
-  const closeCart = () => setIsOpen(false);
-  const toggleCart = () => setIsOpen((prev) => !prev);
+  const parsePrice = (priceStr: string) => {
+    const clean = priceStr.replace('R$', '').replace('.', '').replace(',', '.').trim();
+    return parseFloat(clean) || 0;
+  };
 
-  const addToCart = (product: any, size: string, quantity = 1) => {
-    const productId = product.id || product.slug;
-    const imgSrc = typeof product.images?.[0] === 'string' 
-      ? product.images[0] 
-      : (product.images?.[0]?.src || product.image || '/images/material.jpg');
+  const addToCart = (product: Product, size: string, colorIndex: number) => {
+    const color = product.colors[colorIndex] || { name: 'PADRÃO', hex: '#000000', images: product.defaultImages };
+    const image = color.images[0] || product.defaultImages[0];
+    const cartItemId = `${product.id}-${color.name}-${size}`;
+    const priceNumeric = parsePrice(product.price);
 
-    setItems((prevItems) => {
-      const existingIndex = prevItems.findIndex(
-        (item) => item.id === productId && item.size === size
-      );
-
+    setItems((prev) => {
+      const existingIndex = prev.findIndex((item) => item.cartItemId === cartItemId);
       if (existingIndex > -1) {
-        const updated = [...prevItems];
-        updated[existingIndex].quantity += quantity;
+        const updated = [...prev];
+        updated[existingIndex].quantity += 1;
         return updated;
+      } else {
+        return [
+          ...prev,
+          {
+            cartItemId,
+            productId: product.id,
+            name: product.name,
+            category: product.category,
+            priceString: product.price,
+            priceNumeric,
+            size,
+            colorName: color.name,
+            colorHex: color.hex,
+            image,
+            quantity: 1,
+          },
+        ];
       }
-
-      return [
-        ...prevItems,
-        {
-          id: productId,
-          slug: product.slug || productId,
-          name: product.name,
-          price: Number(product.price) || 0,
-          size,
-          quantity,
-          image: imgSrc,
-        },
-      ];
     });
-
-    setIsOpen(true);
   };
 
-  const removeFromCart = (id: string, size: string) => {
-    setItems((prev) => prev.filter((item) => !(item.id === id && item.size === size)));
+  const removeFromCart = (cartItemId: string) => {
+    setItems((prev) => prev.filter((item) => item.cartItemId !== cartItemId));
   };
 
-  const updateQuantity = (id: string, size: string, delta: number) => {
+  const updateQuantity = (cartItemId: string, delta: number) => {
     setItems((prev) =>
       prev
         .map((item) => {
-          if (item.id === id && item.size === size) {
+          if (item.cartItemId === cartItemId) {
             const newQty = item.quantity + delta;
             return newQty > 0 ? { ...item, quantity: newQty } : null;
           }
@@ -118,22 +112,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const clearCart = () => setItems([]);
 
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
-  const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const subtotal = items.reduce((acc, item) => acc + item.priceNumeric * item.quantity, 0);
 
   return (
     <CartContext.Provider
       value={{
         items,
-        isOpen,
-        openCart,
-        closeCart,
-        toggleCart,
         addToCart,
         removeFromCart,
         updateQuantity,
         clearCart,
         totalItems,
         subtotal,
+        isLoaded,
       }}
     >
       {children}
@@ -144,7 +135,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 export function useCart() {
   const context = useContext(CartContext);
   if (!context) {
-    throw new Error('useCart deve ser usado dentro de um CartProvider');
+    throw new Error('useCart precisa ser utilizado dentro de um CartProvider');
   }
   return context;
 }

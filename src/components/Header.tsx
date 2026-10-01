@@ -3,12 +3,16 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useCart } from '@/context/CartContext';
 
 const HELMET_LOGO_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/logo%20branca.png";
 const WORDMARK_LOGO_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/fcfc607a-ba81-4ff7-998e-2df1f0697b81-removebg-preview.png";
 
 export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { totalItems, isLoaded } = useCart();
+
+  const count = isLoaded ? totalItems : 0;
 
   return (
     <>
@@ -32,7 +36,7 @@ export default function Header() {
 
         <div className="flex items-center gap-4">
           <Link href="/carrinho" className="text-[10px] md:text-[11px] font-bold tracking-[0.25em] uppercase text-white border border-white/20 px-4 py-2 hover:bg-white hover:text-black transition-all font-sans">
-            CARRINHO (0).
+            CARRINHO ({count}).
           </Link>
           <button 
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

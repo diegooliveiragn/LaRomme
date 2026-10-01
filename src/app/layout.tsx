@@ -3,6 +3,7 @@ import { Cinzel, Archivo, Space_Mono } from 'next/font/google';
 import SmoothScroll from '@/components/SmoothScroll';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { CartProvider } from '@/context/CartContext';
 import './globals.css';
 
 const cinzel = Cinzel({ 
@@ -39,13 +40,15 @@ export default function RootLayout({
         <meta name="theme-color" content="#000000" />
       </head>
       <body className="bg-black text-white min-h-screen flex flex-col font-sans">
-        <SmoothScroll>
-          <Header />
-          <main className="flex-1">
-            {children}
-          </main>
-          <Footer />
-        </SmoothScroll>
+        <CartProvider>
+          <SmoothScroll>
+            <Header />
+            <main className="flex-1">
+              {children}
+            </main>
+            <Footer />
+          </SmoothScroll>
+        </CartProvider>
       </body>
     </html>
   );
