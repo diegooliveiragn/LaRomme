@@ -20,12 +20,15 @@ export default function EditorialPage() {
         {/* VESTIGIUM */}
         <FadeIn delay={100}>
           <div className="bg-[#080808] border border-zinc-900 p-8 md:p-10 space-y-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-baseline border-b border-zinc-800 pb-4 gap-2">
-              <h2 className="font-serif text-2xl text-white font-bold tracking-wider">VESTIGIUM. — R$ 229,90</h2>
-              <span className="text-xs font-mono text-zinc-400">LIFESTYLE / ALGODÃO BOXY</span>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-zinc-800 pb-4 gap-2">
+              <div>
+                <h2 className="font-serif text-xl md:text-2xl text-white font-bold tracking-wider mb-1">VESTIGIUM.</h2>
+                <span className="text-[10px] md:text-xs font-mono text-zinc-400">LIFESTYLE / ALGODÃO BOXY</span>
+              </div>
+              <span className="font-serif text-lg text-white font-bold whitespace-nowrap md:ml-4">R$ 229,90</span>
             </div>
             <p className="text-xs md:text-sm text-zinc-300 leading-relaxed font-light">
-              100% Algodão encorpado de alta gramatura com caimento pesado e reto no torso. Possui ombros deslocados (*drop shoulder*), gola estruturada em ribana espessa e etiqueta externa emborraçada no acabamento.
+              100% Algodão encorpado de alta gramatura com caimento pesado e reto no torso. Possui ombros deslocados (*drop shoulder*), gola estruturada em ribana espessa e etiqueta externa emborrachada no acabamento.
             </p>
           </div>
         </FadeIn>
@@ -33,9 +36,12 @@ export default function EditorialPage() {
         {/* SIGNUM */}
         <FadeIn delay={130}>
           <div className="bg-[#080808] border border-zinc-900 p-8 md:p-10 space-y-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-baseline border-b border-zinc-800 pb-4 gap-2">
-              <h2 className="font-serif text-2xl text-white font-bold tracking-wider">SIGNUM. — R$ 159,90</h2>
-              <span className="text-xs font-mono text-zinc-400">LIFESTYLE / DAD HAT PRETO</span>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-zinc-800 pb-4 gap-2">
+              <div>
+                <h2 className="font-serif text-xl md:text-2xl text-white font-bold tracking-wider mb-1">SIGNUM.</h2>
+                <span className="text-[10px] md:text-xs font-mono text-zinc-400">LIFESTYLE / DAD HAT PRETO</span>
+              </div>
+              <span className="font-serif text-lg text-white font-bold whitespace-nowrap md:ml-4">R$ 159,90</span>
             </div>
             <p className="text-xs md:text-sm text-zinc-300 leading-relaxed font-light">
               Boné clássico em sarja rígida preta de alta resistência. Bordado frontal em alto relevo com a aplicação do Capacete e fecho traseiro por fita do próprio tecido com fivela de metal escovado.
@@ -46,9 +52,12 @@ export default function EditorialPage() {
         {/* TITULUS */}
         <FadeIn delay={160}>
           <div className="bg-[#080808] border border-zinc-900 p-8 md:p-10 space-y-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-baseline border-b border-zinc-800 pb-4 gap-2">
-              <h2 className="font-serif text-2xl text-white font-bold tracking-wider">TITULUS. — R$ 159,90</h2>
-              <span className="text-xs font-mono text-zinc-400">LIFESTYLE / DAD HAT OFF-WHITE</span>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-zinc-800 pb-4 gap-2">
+              <div>
+                <h2 className="font-serif text-xl md:text-2xl text-white font-bold tracking-wider mb-1">TITULUS.</h2>
+                <span className="text-[10px] md:text-xs font-mono text-zinc-400">LIFESTYLE / DAD HAT OFF-WHITE</span>
+              </div>
+              <span className="font-serif text-lg text-white font-bold whitespace-nowrap md:ml-4">R$ 159,90</span>
             </div>
             <p className="text-xs md:text-sm text-zinc-300 leading-relaxed font-light">
               Inscrição monumental em sarja Off-White. Apresenta a assinatura LaRomme. bordada no painel frontal e fivela metálica antioxidante na fita de regulagem.
@@ -59,9 +68,12 @@ export default function EditorialPage() {
         {/* FORZA */}
         <FadeIn delay={190}>
           <div className="bg-[#080808] border border-zinc-900 p-8 md:p-10 space-y-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-baseline border-b border-zinc-800 pb-4 gap-2">
-              <h2 className="font-serif text-2xl text-white font-bold tracking-wider">FORZA. — R$ 189,90</h2>
-              <span className="text-xs font-mono text-zinc-400">PERFORMANCE / T-SHIRT CINZA</span>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-zinc-800 pb-4 gap-2">
+              <div>
+                <h2 className="font-serif text-xl md:text-2xl text-white font-bold tracking-wider mb-1">FORZA.</h2>
+                <span className="text-[10px] md:text-xs font-mono text-zinc-400">PERFORMANCE / T-SHIRT CINZA</span>
+              </div>
+              <span className="font-serif text-lg text-white font-bold whitespace-nowrap md:ml-4">R$ 189,90</span>
             </div>
             <p className="text-xs md:text-sm text-zinc-300 leading-relaxed font-light">
               Malha de poliamida e elastano com toque gelado e secagem ultrarrápida. Desenvolvida com detalhes em transfer refletivo para visibilidade em corridas e treinos noturnos.
@@ -72,9 +84,12 @@ export default function EditorialPage() {
         {/* LIBERTAS */}
         <FadeIn delay={220}>
           <div className="bg-[#080808] border border-zinc-900 p-8 md:p-10 space-y-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-baseline border-b border-zinc-800 pb-4 gap-2">
-              <h2 className="font-serif text-2xl text-white font-bold tracking-wider">LIBERTAS. — R$ 149,90</h2>
-              <span className="text-xs font-mono text-zinc-400">PERFORMANCE / REGATA (BORDÔ, BRANCA, PRETA)</span>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-zinc-800 pb-4 gap-2">
+              <div>
+                <h2 className="font-serif text-xl md:text-2xl text-white font-bold tracking-wider mb-1">LIBERTAS.</h2>
+                <span className="text-[10px] md:text-xs font-mono text-zinc-400">PERFORMANCE / REGATA (BORDÔ, BRANCA, PRETA)</span>
+              </div>
+              <span className="font-serif text-lg text-white font-bold whitespace-nowrap md:ml-4">R$ 149,90</span>
             </div>
             <p className="text-xs md:text-sm text-zinc-300 leading-relaxed font-light">
               Regata de alta mobilidade com cavas profundas que eliminam o atrito na rotação de braços nos esportes praianos. Malha técnica maleável com detalhes refletivos e secagem rápida.
@@ -85,9 +100,12 @@ export default function EditorialPage() {
         {/* UMBRA */}
         <FadeIn delay={250}>
           <div className="bg-[#080808] border border-zinc-900 p-8 md:p-10 space-y-4">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-baseline border-b border-zinc-800 pb-4 gap-2">
-              <h2 className="font-serif text-2xl text-white font-bold tracking-wider">UMBRA. — R$ 169,90</h2>
-              <span className="text-xs font-mono text-zinc-400">PERFORMANCE / BONÉ 5-PANEL (BORDÔ, PRETO)</span>
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-zinc-800 pb-4 gap-2">
+              <div>
+                <h2 className="font-serif text-xl md:text-2xl text-white font-bold tracking-wider mb-1">UMBRA.</h2>
+                <span className="text-[10px] md:text-xs font-mono text-zinc-400">PERFORMANCE / BONÉ 5-PANEL (BORDÔ, PRETO)</span>
+              </div>
+              <span className="font-serif text-lg text-white font-bold whitespace-nowrap md:ml-4">R$ 169,90</span>
             </div>
             <p className="text-xs md:text-sm text-zinc-300 leading-relaxed font-light">
               Boné 5-Panel ultraleve e respirável. Desenvolvido em tecido sintético flexível com fecho tático de engate rápido e modelagem rasa para uso de alta intensidade sob o sol.

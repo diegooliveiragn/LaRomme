@@ -24,13 +24,13 @@ export default function OMovimentoPage() {
             playsInline
             className="w-full h-full object-cover filter grayscale contrast-125 opacity-40"
           >
-            <source src="/cultura-geometria.mp4" type="video/mp4" />
-            <source src="/praia.mp4" type="video/mp4" />
-            <source src="/video.mp4" type="video/mp4" />
+            <source src="https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/cultura%20e%20geometria.mp4" type="video/mp4" />
           </video>
           <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-            <p className="font-serif text-lg md:text-2xl tracking-[0.3em] text-white uppercase text-center px-6 font-bold">
-              A AREIA É A ARENA. A CIDADE É A ESTRUTURA.
+            <p className="font-serif text-sm md:text-2xl tracking-[0.2em] md:tracking-[0.3em] text-white uppercase text-center px-6 font-bold leading-loose md:leading-normal">
+              <span className="block mb-2 md:inline md:mb-0">A AREIA É A ARENA.</span> 
+              <span className="hidden md:inline"> </span>
+              <span className="block md:inline">A CIDADE É A ESTRUTURA.</span>
             </p>
           </div>
         </div>

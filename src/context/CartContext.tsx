@@ -38,10 +38,31 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     try {
       const saved = localStorage.getItem('laromme_cart');
       if (saved) {
-        setItems(JSON.parse(saved));
+        const parsedItems = JSON.parse(saved);
+        
+        // Sanitização: Filtrar itens corrompidos do array salvo e garantir que propriedades importantes existem
+        const validItems = parsedItems.filter((item: any) => 
+          item && 
+          item.cartItemId && 
+          item.name && 
+          typeof item.priceNumeric === 'number' &&
+          !isNaN(item.priceNumeric) &&
+          item.image && 
+          typeof item.quantity === 'number'
+        );
+
+        // Se encontrou itens com formato invalido no banco do storage do browser, vai atualizar limpando os ruins
+        if (validItems.length !== parsedItems.length) {
+          console.warn("Removidos itens corrompidos ou legados do localStorage do Carrinho.");
+          localStorage.setItem('laromme_cart', JSON.stringify(validItems));
+        }
+
+        setItems(validItems);
       }
     } catch (e) {
-      console.error('Erro ao carregar o carrinho:', e);
+      console.error('Erro ao carregar o carrinho do LocalStorage:', e);
+      localStorage.removeItem('laromme_cart'); // Limpar dados corrompidos inteiros
+      setItems([]);
     } finally {
       setIsLoaded(true);
     }
@@ -54,14 +75,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   }, [items, isLoaded]);
 
   const parsePrice = (priceStr: string) => {
+    if (!priceStr) return 0;
+    // Pega valor exemplo: "R$ 159,90" e transforma em numérico: 159.9
     const clean = priceStr.replace('R$', '').replace('.', '').replace(',', '.').trim();
-    return parseFloat(clean) || 0;
+    const parsed = parseFloat(clean);
+    return isNaN(parsed) ? 0 : parsed;
   };
 
   const addToCart = (product: Product, size: string, colorIndex: number) => {
-    const color = product.colors[colorIndex] || { name: 'PADRÃO', hex: '#000000', images: product.defaultImages };
-    const image = color.images[0] || product.defaultImages[0];
-    const cartItemId = `${product.id}-${color.name}-${size}`;
+    const color = product.colors && product.colors[colorIndex] 
+      ? product.colors[colorIndex] 
+      : { name: 'PADRÃO', hex: '#000000', images: product.defaultImages || [] };
+      
+    const image = (color.images && color.images.length > 0) ? color.images[0] : (product.defaultImages && product.defaultImages[0] ? product.defaultImages[0] : '');
+    const colorName = color.name || 'PADRÃO';
+    const cartItemId = `${product.id}-${colorName}-${size}`;
     const priceNumeric = parsePrice(product.price);
 
     setItems((prev) => {
@@ -81,8 +109,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             priceString: product.price,
             priceNumeric,
             size,
-            colorName: color.name,
-            colorHex: color.hex,
+            colorName,
+            colorHex: color.hex || '#000000',
             image,
             quantity: 1,
           },
@@ -112,7 +140,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const clearCart = () => setItems([]);
 
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
-  const subtotal = items.reduce((acc, item) => acc + item.priceNumeric * item.quantity, 0);
+  const subtotal = items.reduce((acc, item) => acc + (item.priceNumeric * item.quantity), 0);
 
   return (
     <CartContext.Provider
