@@ -1,0 +1,286 @@
+﻿'use client';
+
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { useCart } from '@/context/CartContext';
+import FadeIn from '@/components/FadeIn';
+
+export default function CheckoutPage() {
+  const { items, subtotal, totalItems, isLoaded } = useCart();
+
+  // Estados do Comprador
+  const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [phone, setPhone] = useState('');
+
+  // Estados de Endereço
+  const [cep, setCep] = useState('');
+  const [street, setStreet] = useState('');
+  const [number, setNumber] = useState('');
+  const [neighborhood, setNeighborhood] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [loadingCep, setLoadingCep] = useState(false);
+
+  // Método de Pagamento
+  const [paymentMethod, setPaymentMethod] = useState<'pix' | 'card' | 'apple_pay'>('pix');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [orderCreated, setOrderCreated] = useState<any>(null);
+
+  // Consulta automática de CEP (ViaCEP)
+  const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '');
+    setCep(value);
+
+    if (value.length === 8) {
+      setLoadingCep(true);
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${value}/json/`);
+        const data = await res.json();
+        if (!data.erro) {
+          setStreet(data.logradouro || '');
+          setNeighborhood(data.bairro || '');
+          setCity(data.localidade || '');
+          setState(data.uf || '');
+        }
+      } catch (err) {
+        console.error('Erro ao consultar CEP:', err);
+      } finally {
+        setLoadingCep(false);
+      }
+    }
+  };
+
+  const formattedSubtotal = subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  const handleProcessPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsProcessing(true);
+
+    try {
+      const payload = {
+        items,
+        payer: { email, fullName, cpf, phone },
+        address: { cep, street, number, neighborhood, city, state },
+        paymentMethod,
+        subtotal,
+      };
+
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setOrderCreated(result);
+      } else {
+        alert(result.error || 'Ocorreu um erro ao processar o pagamento.');
+      }
+    } catch (err) {
+      console.error('Erro ao processar pagamento:', err);
+      alert('Falha na comunicação com o servidor.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  if (!isLoaded) {
+    return (
+      <div className="pt-36 pb-24 text-center min-h-[70vh] flex items-center justify-center font-mono text-xs text-zinc-500">
+        CARREGANDO CHECKOUT...
+      </div>
+    );
+  }
+
+  if (items.length === 0 && !orderCreated) {
+    return (
+      <div className="pt-36 pb-24 px-6 max-w-2xl mx-auto text-center space-y-6 font-sans">
+        <h1 className="font-serif text-2xl text-white font-bold tracking-wider uppercase">NENHUM ARTEFATO SELECIONADO.</h1>
+        <p className="text-xs text-zinc-400 font-mono">Sua sacola está vazia. Adicione produtos antes de prosseguir para o checkout.</p>
+        <Link href="/#origo" className="inline-block bg-white text-black font-bold text-xs tracking-widest px-8 py-4 uppercase">
+          EXPLORAR COLEÇÃO
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="pt-32 pb-24 px-6 md:px-12 max-w-7xl mx-auto space-y-12 font-sans">
+      <FadeIn>
+        <div className="border-b border-zinc-900 pb-6">
+          <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase block mb-1">FINALIZAÇÃO DE PEDIDO</span>
+          <h1 className="font-serif text-2xl md:text-4xl tracking-[0.2em] text-white uppercase font-bold">CHECKOUT TRANSPARENTE.</h1>
+        </div>
+      </FadeIn>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        {/* COLUNA ESQUERDA: FORMULÁRIO */}
+        <div className="lg:col-span-7 space-y-8">
+          <form onSubmit={handleProcessPayment} className="space-y-8">
+            
+            {/* 01. DADOS PESSOAIS */}
+            <div className="bg-[#080808] border border-zinc-900 p-6 space-y-4">
+              <h2 className="font-serif text-base text-white font-bold tracking-wider uppercase border-b border-zinc-800 pb-3">
+                01. IDENTIFICAÇÃO.
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
+                <div>
+                  <label className="block text-zinc-400 mb-1">NOME COMPLETO:</label>
+                  <input required type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="Seu nome" />
+                </div>
+                <div>
+                  <label className="block text-zinc-400 mb-1">E-MAIL:</label>
+                  <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="email@dominio.com" />
+                </div>
+                <div>
+                  <label className="block text-zinc-400 mb-1">CPF / CNPJ:</label>
+                  <input required type="text" value={cpf} onChange={(e) => setCpf(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="000.000.000-00" />
+                </div>
+                <div>
+                  <label className="block text-zinc-400 mb-1">TELEFONE / WHATSAPP:</label>
+                  <input required type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="(00) 00000-0000" />
+                </div>
+              </div>
+            </div>
+
+            {/* 02. ENDEREÇO DE ENTREGA */}
+            <div className="bg-[#080808] border border-zinc-900 p-6 space-y-4">
+              <h2 className="font-serif text-base text-white font-bold tracking-wider uppercase border-b border-zinc-800 pb-3">
+                02. ENDEREÇO DE ENTREGA.
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+                <div>
+                  <label className="block text-zinc-400 mb-1">CEP {loadingCep && '(BUSCANDO...)'}:</label>
+                  <input required type="text" maxLength={8} value={cep} onChange={handleCepChange} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="60000000" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-zinc-400 mb-1">LOGRADOURO / RUA:</label>
+                  <input required type="text" value={street} onChange={(e) => setStreet(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="Rua / Avenida" />
+                </div>
+                <div>
+                  <label className="block text-zinc-400 mb-1">NÚMERO:</label>
+                  <input required type="text" value={number} onChange={(e) => setNumber(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="123" />
+                </div>
+                <div>
+                  <label className="block text-zinc-400 mb-1">BAIRRO:</label>
+                  <input required type="text" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="Bairro" />
+                </div>
+                <div>
+                  <label className="block text-zinc-400 mb-1">CIDADE / UF:</label>
+                  <input required type="text" value={`${city}${state ? ` / ${state}` : ''}`} onChange={(e) => setCity(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="Fortaleza / CE" />
+                </div>
+              </div>
+            </div>
+
+            {/* 03. MÉTODO DE PAGAMENTO */}
+            <div className="bg-[#080808] border border-zinc-900 p-6 space-y-4">
+              <h2 className="font-serif text-base text-white font-bold tracking-wider uppercase border-b border-zinc-800 pb-3">
+                03. PAGAMENTO.
+              </h2>
+              <div className="grid grid-cols-3 gap-3 font-mono text-xs">
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('pix')}
+                  className={`py-3 px-2 border text-center font-bold uppercase transition-all ${
+                    paymentMethod === 'pix' ? 'bg-white text-black border-white' : 'border-zinc-800 text-zinc-400'
+                  }`}
+                >
+                  PIX
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('card')}
+                  className={`py-3 px-2 border text-center font-bold uppercase transition-all ${
+                    paymentMethod === 'card' ? 'bg-white text-black border-white' : 'border-zinc-800 text-zinc-400'
+                  }`}
+                >
+                  CARTÃO
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentMethod('apple_pay')}
+                  className={`py-3 px-2 border text-center font-bold uppercase transition-all ${
+                    paymentMethod === 'apple_pay' ? 'bg-white text-black border-white' : 'border-zinc-800 text-zinc-400'
+                  }`}
+                >
+                  APPLE PAY
+                </button>
+              </div>
+
+              {paymentMethod === 'pix' && (
+                <div className="p-4 bg-zinc-950 border border-zinc-800 font-mono text-xs text-zinc-400 space-y-2">
+                  <p className="text-white font-bold">✓ APROVAÇÃO IMEDIATA</p>
+                  <p>O código Pix Copia e Cola e o QR Code serão gerados logo após clicar no botão abaixo.</p>
+                </div>
+              )}
+
+              {paymentMethod === 'card' && (
+                <div className="p-4 bg-zinc-950 border border-zinc-800 font-mono text-xs text-zinc-400 space-y-2">
+                  <p className="text-white font-bold">✓ CARTÃO DE CRÉDITO</p>
+                  <p>Tokenização segura e processamento direto via Mercado Pago SDK.</p>
+                </div>
+              )}
+
+              {paymentMethod === 'apple_pay' && (
+                <div className="p-4 bg-zinc-950 border border-zinc-800 font-mono text-xs text-zinc-400 space-y-2">
+                  <p className="text-white font-bold"> APPLE PAY (RESERVA)</p>
+                  <p>Disponível para utilizadores num dispositivo Apple compatível após a associação do domínio no painel do Mercado Pago.</p>
+                </div>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              disabled={isProcessing}
+              className="w-full bg-white text-black font-bold text-xs tracking-[0.25em] uppercase py-4 hover:bg-zinc-200 transition-all shadow-xl font-sans"
+            >
+              {isProcessing ? 'PROCESSANDO PEDIDO...' : `CONCLUIR PEDIDO (${formattedSubtotal})`}
+            </button>
+          </form>
+        </div>
+
+        {/* COLUNA DIREITA: RESUMO */}
+        <div className="lg:col-span-5 space-y-6">
+          <div className="bg-[#080808] border border-zinc-900 p-6 space-y-6">
+            <h2 className="font-serif text-lg text-white font-bold tracking-wider uppercase border-b border-zinc-800 pb-3">
+              RESUMO DA SACOLA ({totalItems}).
+            </h2>
+            <div className="space-y-4">
+              {items.map((item) => (
+                <div key={item.cartItemId} className="flex gap-4 items-center border-b border-zinc-900 pb-3">
+                  <div className="relative w-14 h-16 bg-zinc-950 border border-zinc-900 flex-shrink-0">
+                    <Image src={item.image} alt={item.name} fill className="object-cover" />
+                  </div>
+                  <div className="flex-1 font-mono text-xs space-y-1">
+                    <h3 className="text-white font-bold font-serif">{item.name}</h3>
+                    <p className="text-zinc-500 text-[10px]">TAM: {item.size} • COR: {item.colorName}</p>
+                    <p className="text-zinc-300 font-bold">{item.priceString} x {item.quantity}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t border-zinc-800 pt-4 space-y-2 font-mono text-xs">
+              <div className="flex justify-between text-zinc-400">
+                <span>SUBTOTAL:</span>
+                <span className="text-white font-bold">{formattedSubtotal}</span>
+              </div>
+              <div className="flex justify-between text-zinc-400">
+                <span>FRETE:</span>
+                <span className="text-zinc-400">GRÁTIS</span>
+              </div>
+              <div className="flex justify-between text-sm text-white font-bold pt-2 border-t border-zinc-900">
+                <span>TOTAL:</span>
+                <span>{formattedSubtotal}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
