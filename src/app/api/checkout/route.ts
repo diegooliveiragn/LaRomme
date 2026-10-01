@@ -16,6 +16,24 @@ export async function POST(req: Request) {
 
     const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
 
+    // 1. CHECAGEM DE ESTOQUE ANTES DO PAGAMENTO
+    for (const item of items) {
+      const { data: stockItem } = await supabase
+        .from('product_stock')
+        .select('quantity')
+        .eq('product_slug', item.productId || 'origo')
+        .eq('size', item.size)
+        .eq('color', item.colorName)
+        .single();
+
+      if (stockItem && stockItem.quantity < item.quantity) {
+        return NextResponse.json({
+          success: false,
+          error: `A quantidade solicitada para o item "${item.name} (${item.size}/${item.colorName})" não está mais disponível no estoque.`
+        }, { status: 400 });
+      }
+    }
+
     const cleanCpf = payer.cpf ? payer.cpf.replace(/\D/g, '') : '';
     const cleanPhone = payer.phone ? payer.phone.replace(/\D/g, '') : '';
     const cleanCep = address.cep ? address.cep.replace(/\D/g, '') : '';
@@ -43,7 +61,7 @@ export async function POST(req: Request) {
       paymentPayload.issuer_id = cardData.issuer_id;
       if (cardData.payer && cardData.payer.email) paymentPayload.payer.email = cardData.payer.email;
     } else {
-        return NextResponse.json({ success: false, error: 'Método inválido.' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Método inválido.' }, { status: 400 });
     }
 
     const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
@@ -59,6 +77,7 @@ export async function POST(req: Request) {
     const mpData = await mpResponse.json();
     if (!mpResponse.ok) return NextResponse.json({ success: false, error: mpData.message || 'Pagamento recusado.' }, { status: 400 });
 
+    // 2. REGISTRA O PEDIDO
     const { data: orderData, error: orderError } = await supabase
       .from('orders')
       .insert({
@@ -83,15 +102,39 @@ export async function POST(req: Request) {
     if (orderError || !orderData) return NextResponse.json({ success: false, error: 'Erro ao salvar pedido.' }, { status: 500 });
 
     const orderItemsPayload = items.map((item: any) => ({
-        order_id: orderData.id,
-        product_name: item.name,
-        product_size: item.size,
-        product_color: item.colorName,
-        product_image: item.image,
-        quantity: item.quantity,
-        unit_price: item.priceNumeric
+      order_id: orderData.id,
+      product_name: item.name,
+      product_size: item.size,
+      product_color: item.colorName,
+      product_image: item.image,
+      quantity: item.quantity,
+      unit_price: item.priceNumeric
     }));
     await supabase.from('order_items').insert(orderItemsPayload);
+
+    // 3. DECREMENTA O ESTOQUE E REMOVE DAS CAPTURAS DE CARRINHO ABANDONADO
+    for (const item of items) {
+      const { data: currentStock } = await supabase
+        .from('product_stock')
+        .select('quantity')
+        .eq('product_slug', item.productId || 'origo')
+        .eq('size', item.size)
+        .eq('color', item.colorName)
+        .single();
+
+      if (currentStock) {
+        const newQty = Math.max(0, currentStock.quantity - item.quantity);
+        await supabase
+          .from('product_stock')
+          .update({ quantity: newQty, updated_at: new Date().toISOString() })
+          .eq('product_slug', item.productId || 'origo')
+          .eq('size', item.size)
+          .eq('color', item.colorName);
+      }
+    }
+
+    // Marca o carrinho abandonado como recuperado caso tenha sido registrado
+    await supabase.from('abandoned_carts').delete().eq('customer_email', payer.email);
 
     let qrCode = null, qrCodeBase64 = null, ticketUrl = null;
     if (paymentMethod === 'pix' && mpData.point_of_interaction?.transaction_data) {
@@ -110,22 +153,18 @@ export async function POST(req: Request) {
         </div>
         <p style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Olá, ${payer.fullName.split(' ')[0]}.</p>
         <p style="font-size: 14px; line-height: 1.6;">O seu pedido <strong>#${orderData.short_id}</strong> foi registrado no nosso ecossistema.</p>
-        
         ${isApproved ? `
           <div style="background-color: #000; color: #fff; padding: 15px; text-align: center; margin: 30px 0; font-weight: bold; letter-spacing: 2px;">
             PAGAMENTO APROVADO
           </div>
-          <p style="font-size: 14px; line-height: 1.6;">Os nossos artesãos já iniciaram o processo de separação e embalagem.</p>
         ` : `
           <div style="border: 1px solid #000; padding: 20px; text-align: center; margin: 30px 0;">
             <p style="margin-top: 0; font-weight: bold; letter-spacing: 2px;">AGUARDANDO PAGAMENTO PIX</p>
-            <p style="font-size: 12px; color: #666; margin-bottom: 15px;">Copie o código abaixo e pague no app do seu banco:</p>
             <div style="background-color: #f4f4f4; padding: 10px; word-break: break-all; font-size: 11px;">
               ${qrCode || 'Código Pix indisponível.'}
             </div>
           </div>
         `}
-
         <div style="margin: 40px 0; text-align: center;">
           <a href="${orderLink}" style="display: inline-block; background-color: #000; color: #fff; padding: 15px 30px; text-decoration: none; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;">
             Acompanhar Encomenda
@@ -134,16 +173,15 @@ export async function POST(req: Request) {
       </div>
     `;
 
-    // INICIALIZAÇÃO SEGURA DO RESEND AQUI DENTRO (Evita erro de compilação)
     const resendApiKey = process.env.RESEND_API_KEY;
     if (resendApiKey) {
-        const resend = new Resend(resendApiKey);
-        resend.emails.send({
-          from: 'LaRomme <pedidos@laromme.com.br>',
-          to: payer.email,
-          subject: isApproved ? `Pagamento Aprovado - Pedido #${orderData.short_id}` : `Aguardando Pagamento - Pedido #${orderData.short_id}`,
-          html: emailHtml,
-        }).catch(err => console.error('Erro Resend:', err));
+      const resend = new Resend(resendApiKey);
+      resend.emails.send({
+        from: 'LaRomme <pedidos@laromme.com.br>',
+        to: payer.email,
+        subject: isApproved ? `Pagamento Aprovado - Pedido #${orderData.short_id}` : `Aguardando Pagamento - Pedido #${orderData.short_id}`,
+        html: emailHtml,
+      }).catch(err => console.error('Erro Resend:', err));
     }
 
     return NextResponse.json({

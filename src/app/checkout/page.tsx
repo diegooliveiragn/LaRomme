@@ -26,7 +26,6 @@ export default function CheckoutPage() {
   const [state, setState] = useState('');
   const [loadingCep, setLoadingCep] = useState(false);
 
-  // FRETE REAL (MELHOR ENVIO)
   const [shippingOptions, setShippingOptions] = useState<any[]>([]);
   const [selectedShipping, setSelectedShipping] = useState<any>(null);
   const [loadingShipping, setLoadingShipping] = useState(false);
@@ -42,6 +41,21 @@ export default function CheckoutPage() {
       setMpInitialized(true);
     }
   }, [mpInitialized]);
+
+  // Captura automática de leads ao preencher o e-mail
+  const handleEmailBlur = async () => {
+    if (email && email.includes('@') && items.length > 0) {
+      try {
+        await fetch('/api/abandoned-cart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, fullName, phone, items }),
+        });
+      } catch (err) {
+        console.error('Erro silencioso ao capturar lead:', err);
+      }
+    }
+  };
 
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let v = e.target.value.replace(/\D/g, '');
@@ -70,7 +84,6 @@ export default function CheckoutPage() {
     setPhone(v.substring(0, 15));
   };
 
-  // CONSULTA CEP E CALCULA FRETE AUTOMATICAMENTE
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     let cleanValue = e.target.value.replace(/\D/g, '');
     let formattedCep = cleanValue;
@@ -90,8 +103,6 @@ export default function CheckoutPage() {
           setNeighborhood(data.bairro || '');
           setCity(data.localidade || '');
           setState(data.uf || '');
-
-          // Dispara a consulta ao Melhor Envio
           fetchShippingOptions(cleanValue);
         }
       } catch (err) {
@@ -117,7 +128,6 @@ export default function CheckoutPage() {
 
       if (data.success && data.options.length > 0) {
         setShippingOptions(data.options);
-        // Seleciona automaticamente a primeira opção (mais vantajosa)
         setSelectedShipping(data.options[0]);
       }
     } catch (err) {
@@ -204,20 +214,9 @@ export default function CheckoutPage() {
 
   const customizationCard: any = {
     visual: {
-      style: {
-        theme: 'dark',
-        customVariables: {
-          textPrimaryColor: '#ffffff',
-          baseColor: '#000000',
-        },
-      },
+      style: { theme: 'dark', customVariables: { textPrimaryColor: '#ffffff', baseColor: '#000000' } },
     },
-    paymentMethods: {
-      maxInstallments: 3,
-      types: {
-        creditCard: 'all',
-      },
-    },
+    paymentMethods: { maxInstallments: 3, types: { creditCard: 'all' } },
   };
 
   if (!isLoaded) return <div className="pt-36 pb-24 text-center min-h-[70vh] flex items-center justify-center font-mono text-xs text-zinc-500">CARREGANDO CHECKOUT...</div>;
@@ -257,7 +256,7 @@ export default function CheckoutPage() {
               <h2 className="font-serif text-base text-white font-bold tracking-wider uppercase border-b border-zinc-800 pb-3">01. IDENTIFICAÇÃO.</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
                 <div><label className="block text-zinc-400 mb-1">NOME COMPLETO:</label><input required type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} disabled={isProcessing} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white disabled:opacity-50" placeholder="Seu nome" /></div>
-                <div><label className="block text-zinc-400 mb-1">E-MAIL:</label><input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isProcessing} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white disabled:opacity-50" placeholder="email@dominio.com" /></div>
+                <div><label className="block text-zinc-400 mb-1">E-MAIL:</label><input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} onBlur={handleEmailBlur} disabled={isProcessing} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white disabled:opacity-50" placeholder="email@dominio.com" /></div>
                 <div><label className="block text-zinc-400 mb-1">CPF / CNPJ:</label><input required type="text" value={cpf} onChange={handleCpfChange} disabled={isProcessing} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white disabled:opacity-50" placeholder="000.000.000-00" /></div>
                 <div><label className="block text-zinc-400 mb-1">TELEFONE / WHATSAPP:</label><input required type="tel" value={phone} onChange={handlePhoneChange} disabled={isProcessing} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white disabled:opacity-50" placeholder="(00) 00000-0000" /></div>
               </div>
@@ -274,10 +273,9 @@ export default function CheckoutPage() {
                 <div><label className="block text-zinc-400 mb-1">CIDADE / UF:</label><input required type="text" value={`${city}${state ? ` / ${state}` : ''}`} onChange={(e) => setCity(e.target.value)} disabled={isProcessing} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white disabled:opacity-50" placeholder="Fortaleza / CE" /></div>
               </div>
 
-              {/* SELETOR DE FRETE MELHOR ENVIO */}
               {loadingShipping && (
                 <div className="p-4 bg-zinc-950 border border-zinc-800 font-mono text-xs text-zinc-500 text-center animate-pulse">
-                  CALCULANDO OPÇÕES DE FRETE JUNTO ÀS TRANSPORTADORAS...
+                  CALCULANDO OPÇÕES DE FRETE...
                 </div>
               )}
 
@@ -286,28 +284,15 @@ export default function CheckoutPage() {
                   <label className="block text-white font-bold uppercase tracking-wider">OPÇÕES DE ENVIO DISPONÍVEIS:</label>
                   <div className="space-y-2">
                     {shippingOptions.map((opt) => (
-                      <label
-                        key={opt.id}
-                        className={`flex items-center justify-between p-3 border cursor-pointer transition-all ${
-                          selectedShipping?.id === opt.id ? 'bg-zinc-900 border-white text-white' : 'border-zinc-800 text-zinc-400 hover:border-zinc-700'
-                        }`}
-                      >
+                      <label key={opt.id} className={`flex items-center justify-between p-3 border cursor-pointer transition-all ${selectedShipping?.id === opt.id ? 'bg-zinc-900 border-white text-white' : 'border-zinc-800 text-zinc-400 hover:border-zinc-700'}`}>
                         <div className="flex items-center gap-3">
-                          <input
-                            type="radio"
-                            name="shippingOption"
-                            checked={selectedShipping?.id === opt.id}
-                            onChange={() => setSelectedShipping(opt)}
-                            className="accent-white"
-                          />
+                          <input type="radio" name="shippingOption" checked={selectedShipping?.id === opt.id} onChange={() => setSelectedShipping(opt)} className="accent-white" />
                           <div>
                             <span className="font-bold text-white block">{opt.company} — {opt.name}</span>
                             <span className="text-[10px] text-zinc-500">Prazo estimado: {opt.deliveryTime} dias úteis</span>
                           </div>
                         </div>
-                        <div className="font-bold text-white">
-                          {opt.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                        </div>
+                        <div className="font-bold text-white">{opt.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</div>
                       </label>
                     ))}
                   </div>
@@ -344,12 +329,8 @@ export default function CheckoutPage() {
                     <Payment
                       initialization={initializationCard}
                       customization={customizationCard}
-                      onSubmit={async (formData) => {
-                        await handleProcessPayment(formData);
-                      }}
-                      onError={(error) => {
-                        console.error('Erro no Brick do Mercado Pago:', error);
-                      }}
+                      onSubmit={async (formData) => { await handleProcessPayment(formData); }}
+                      onError={(error) => { console.error('Erro no Brick:', error); }}
                     />
                   </div>
                 </div>
@@ -358,7 +339,7 @@ export default function CheckoutPage() {
           </form>
         </div>
 
-        {/* COLUNA DIREITA: RESUMO */}
+        {/* RESUMO DA SACOLA */}
         <div className={`lg:col-span-5 space-y-6 transition-opacity ${isProcessing ? 'opacity-30' : 'opacity-100'}`}>
           <div className="bg-[#080808] border border-zinc-900 p-6 space-y-6">
             <h2 className="font-serif text-lg text-white font-bold tracking-wider uppercase border-b border-zinc-800 pb-3">RESUMO DA SACOLA ({totalItems}).</h2>
