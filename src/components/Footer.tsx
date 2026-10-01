@@ -20,9 +20,9 @@ export default function Footer() {
         <div className="space-y-3">
           <span className="text-white font-bold uppercase block tracking-widest font-sans">SUPORTE & TERMOS</span>
           <div className="flex flex-col space-y-1.5 text-zinc-400 font-sans">
-            <Link href="/#editorial" className="hover:text-white">GUIA DE MEDIDAS.</Link>
-            <Link href="/termos" className="hover:text-white">TERMOS DE USO.</Link>
-            <Link href="/politica-de-privacidade" className="hover:text-white">PRIVACIDADE.</Link>
+            <Link href="/faq" className="hover:text-white">FAQ / DÚVIDAS FREQUENTES.</Link>
+            <Link href="/politicas" className="hover:text-white">TROCAS & PRIVACIDADE.</Link>
+            <Link href="/termos" className="hover:text-white">TERMOS DE SERVIÇO.</Link>
           </div>
         </div>
       </div>
