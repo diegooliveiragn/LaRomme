@@ -5,39 +5,28 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { items, payer, address, paymentMethod, subtotal } = body;
 
-    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN;
     if (!accessToken) {
-      return NextResponse.json({ success: false, error: 'Credenciais de pagamento não configuradas.' }, { status: 500 });
+      return NextResponse.json({ success: false, error: 'Credenciais do Mercado Pago não encontradas no servidor.' }, { status: 500 });
     }
 
-    const cleanCpf = payer.cpf.replace(/\D/g, '');
-    const cleanPhone = payer.phone.replace(/\D/g, '');
-    const areaCode = cleanPhone.substring(0, 2) || '85';
-    const phoneNumber = cleanPhone.substring(2) || '999999999';
+    const cleanCpf = payer.cpf ? payer.cpf.replace(/\D/g, '') : '';
+    const cleanPhone = payer.phone ? payer.phone.replace(/\D/g, '') : '';
 
-    // Formata os itens para a API do Mercado Pago
-    const mpItems = items.map((item: any) => ({
-      id: item.productId,
-      title: `${item.name} (${item.size} / ${item.colorName})`,
-      quantity: item.quantity,
-      unit_price: item.priceNumeric,
-      currency_id: 'BRL',
-    }));
-
-    let paymentPayload: any = {
+    const paymentPayload: any = {
       transaction_amount: subtotal,
       description: `Pedido LaRomme - Drop 01: ORIGO`,
       payment_method_id: paymentMethod === 'pix' ? 'pix' : 'master',
       payer: {
         email: payer.email,
-        first_name: payer.fullName.split(' ')[0],
-        last_name: payer.fullName.split(' ').slice(1).join(' ') || 'LaRomme',
+        first_name: payer.fullName ? payer.fullName.split(' ')[0] : 'Cliente',
+        last_name: payer.fullName ? payer.fullName.split(' ').slice(1).join(' ') || 'LaRomme' : 'LaRomme',
         identification: {
           type: cleanCpf.length > 11 ? 'CNPJ' : 'CPF',
           number: cleanCpf,
         },
         address: {
-          zip_code: address.cep.replace(/\D/g, ''),
+          zip_code: address.cep ? address.cep.replace(/\D/g, '') : '',
           street_name: address.street,
           street_number: address.number,
           neighborhood: address.neighborhood,
@@ -47,10 +36,6 @@ export async function POST(req: Request) {
       },
       notification_url: 'https://www.laromme.com.br/api/webhooks/mercadopago',
     };
-
-    if (paymentMethod === 'pix') {
-      paymentPayload.payment_method_id = 'pix';
-    }
 
     const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
@@ -72,7 +57,6 @@ export async function POST(req: Request) {
       }, { status: 400 });
     }
 
-    // Estruturação da resposta com dados do Pix se aplicável
     let qrCode = null;
     let qrCodeBase64 = null;
     let ticketUrl = null;
