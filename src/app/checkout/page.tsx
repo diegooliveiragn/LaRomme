@@ -26,6 +26,11 @@ export default function CheckoutPage() {
   const [state, setState] = useState('');
   const [loadingCep, setLoadingCep] = useState(false);
 
+  // FRETE REAL (MELHOR ENVIO)
+  const [shippingOptions, setShippingOptions] = useState<any[]>([]);
+  const [selectedShipping, setSelectedShipping] = useState<any>(null);
+  const [loadingShipping, setLoadingShipping] = useState(false);
+
   const [paymentMethod, setPaymentMethod] = useState<'pix' | 'card' | 'apple_pay'>('pix');
   const [isProcessing, setIsProcessing] = useState(false);
   const [mpInitialized, setMpInitialized] = useState(false);
@@ -65,6 +70,7 @@ export default function CheckoutPage() {
     setPhone(v.substring(0, 15));
   };
 
+  // CONSULTA CEP E CALCULA FRETE AUTOMATICAMENTE
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     let cleanValue = e.target.value.replace(/\D/g, '');
     let formattedCep = cleanValue;
@@ -84,6 +90,9 @@ export default function CheckoutPage() {
           setNeighborhood(data.bairro || '');
           setCity(data.localidade || '');
           setState(data.uf || '');
+
+          // Dispara a consulta ao Melhor Envio
+          fetchShippingOptions(cleanValue);
         }
       } catch (err) {
         console.error('Erro ao consultar CEP:', err);
@@ -93,9 +102,46 @@ export default function CheckoutPage() {
     }
   };
 
+  const fetchShippingOptions = async (destinationCep: string) => {
+    setLoadingShipping(true);
+    setShippingOptions([]);
+    setSelectedShipping(null);
+
+    try {
+      const response = await fetch('/api/frete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ destinationCep, items }),
+      });
+      const data = await response.json();
+
+      if (data.success && data.options.length > 0) {
+        setShippingOptions(data.options);
+        // Seleciona automaticamente a primeira opção (mais vantajosa)
+        setSelectedShipping(data.options[0]);
+      }
+    } catch (err) {
+      console.error('Erro ao buscar frete:', err);
+    } finally {
+      setLoadingShipping(false);
+    }
+  };
+
+  const shippingCost = selectedShipping ? selectedShipping.price : 0;
+  const finalTotal = subtotal + shippingCost;
+
   const formattedSubtotal = subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const formattedShipping = selectedShipping 
+    ? shippingCost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+    : 'A CALCULAR';
+  const formattedFinalTotal = finalTotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   const handleProcessPayment = async (formData: any = null) => {
+    if (shippingOptions.length > 0 && !selectedShipping) {
+      alert('Por favor, selecione uma opção de frete para continuar.');
+      return;
+    }
+
     setIsProcessing(true);
 
     try {
@@ -105,6 +151,8 @@ export default function CheckoutPage() {
         address: { cep, street, number, neighborhood, city, state },
         paymentMethod,
         subtotal,
+        shippingCost,
+        shippingService: selectedShipping ? `${selectedShipping.company} - ${selectedShipping.name}` : 'Frete Padrão',
       };
 
       if (paymentMethod === 'card' && formData) {
@@ -150,11 +198,10 @@ export default function CheckoutPage() {
   };
 
   const initializationCard = {
-    amount: subtotal,
+    amount: finalTotal,
     payer: { email: email || 'cliente@laromme.com.br' }
   };
 
-  // TIPAGEM AJUSTADA
   const customizationCard: any = {
     visual: {
       style: {
@@ -216,7 +263,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* 02. ENDEREÇO */}
+            {/* 02. ENDEREÇO & FRETE */}
             <div className="bg-[#080808] border border-zinc-900 p-6 space-y-4">
               <h2 className="font-serif text-base text-white font-bold tracking-wider uppercase border-b border-zinc-800 pb-3">02. ENDEREÇO DE ENTREGA.</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
@@ -226,6 +273,46 @@ export default function CheckoutPage() {
                 <div><label className="block text-zinc-400 mb-1">BAIRRO:</label><input required type="text" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} disabled={isProcessing} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white disabled:opacity-50" placeholder="Bairro" /></div>
                 <div><label className="block text-zinc-400 mb-1">CIDADE / UF:</label><input required type="text" value={`${city}${state ? ` / ${state}` : ''}`} onChange={(e) => setCity(e.target.value)} disabled={isProcessing} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white disabled:opacity-50" placeholder="Fortaleza / CE" /></div>
               </div>
+
+              {/* SELETOR DE FRETE MELHOR ENVIO */}
+              {loadingShipping && (
+                <div className="p-4 bg-zinc-950 border border-zinc-800 font-mono text-xs text-zinc-500 text-center animate-pulse">
+                  CALCULANDO OPÇÕES DE FRETE JUNTO ÀS TRANSPORTADORAS...
+                </div>
+              )}
+
+              {shippingOptions.length > 0 && !loadingShipping && (
+                <div className="pt-4 border-t border-zinc-800 space-y-3 font-mono text-xs">
+                  <label className="block text-white font-bold uppercase tracking-wider">OPÇÕES DE ENVIO DISPONÍVEIS:</label>
+                  <div className="space-y-2">
+                    {shippingOptions.map((opt) => (
+                      <label
+                        key={opt.id}
+                        className={`flex items-center justify-between p-3 border cursor-pointer transition-all ${
+                          selectedShipping?.id === opt.id ? 'bg-zinc-900 border-white text-white' : 'border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <input
+                            type="radio"
+                            name="shippingOption"
+                            checked={selectedShipping?.id === opt.id}
+                            onChange={() => setSelectedShipping(opt)}
+                            className="accent-white"
+                          />
+                          <div>
+                            <span className="font-bold text-white block">{opt.company} — {opt.name}</span>
+                            <span className="text-[10px] text-zinc-500">Prazo estimado: {opt.deliveryTime} dias úteis</span>
+                          </div>
+                        </div>
+                        <div className="font-bold text-white">
+                          {opt.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 03. PAGAMENTO */}
@@ -246,7 +333,7 @@ export default function CheckoutPage() {
                     <p>O código Pix Copia e Cola será gerado na próxima tela, atrelado ao seu número de pedido oficial.</p>
                   </div>
                   <button type="submit" disabled={isProcessing} className={`w-full font-bold text-xs tracking-[0.25em] uppercase py-4 transition-all shadow-xl font-sans ${isProcessing ? 'bg-zinc-800 text-zinc-500 cursor-wait' : 'bg-white text-black hover:bg-zinc-200'}`}>
-                    {isProcessing ? 'A REGISTRAR PEDIDO...' : `GERAR PEDIDO DE ${formattedSubtotal}`}
+                    {isProcessing ? 'A REGISTRAR PEDIDO...' : `GERAR PEDIDO DE ${formattedFinalTotal}`}
                   </button>
                 </div>
               )}
@@ -292,8 +379,8 @@ export default function CheckoutPage() {
 
             <div className="border-t border-zinc-800 pt-4 space-y-2 font-mono text-xs">
               <div className="flex justify-between text-zinc-400"><span>SUBTOTAL:</span><span className="text-white font-bold">{formattedSubtotal}</span></div>
-              <div className="flex justify-between text-zinc-400"><span>FRETE:</span><span className="text-zinc-400">GRÁTIS</span></div>
-              <div className="flex justify-between text-sm text-white font-bold pt-2 border-t border-zinc-900"><span>TOTAL:</span><span>{formattedSubtotal}</span></div>
+              <div className="flex justify-between text-zinc-400"><span>FRETE:</span><span className="text-white font-bold">{formattedShipping}</span></div>
+              <div className="flex justify-between text-sm text-white font-bold pt-2 border-t border-zinc-900"><span>TOTAL:</span><span>{formattedFinalTotal}</span></div>
             </div>
           </div>
         </div>

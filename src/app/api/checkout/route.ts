@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { items, payer, address, paymentMethod, subtotal, cardData } = body;
+    const { items, payer, address, paymentMethod, subtotal, shippingCost = 0, shippingService = 'Frete Padrão', cardData } = body;
 
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN;
     if (!accessToken) {
@@ -24,10 +24,11 @@ export async function POST(req: Request) {
     const cleanPhone = payer.phone ? payer.phone.replace(/\D/g, '') : '';
     const cleanCep = address.cep ? address.cep.replace(/\D/g, '') : '';
 
-    // 1. MONTAGEM DA COBRANÇA
+    const totalAmount = parseFloat((subtotal + shippingCost).toFixed(2));
+
     let paymentPayload: any = {
-      transaction_amount: subtotal,
-      description: `Pedido LaRomme`,
+      transaction_amount: totalAmount,
+      description: `Pedido LaRomme (${shippingService})`,
       payer: {
         email: payer.email,
         first_name: payer.fullName ? payer.fullName.split(' ')[0] : 'Cliente',
@@ -48,18 +49,14 @@ export async function POST(req: Request) {
       notification_url: 'https://www.laromme.com.br/api/webhooks/mercadopago',
     };
 
-    // SE FOR PIX
     if (paymentMethod === 'pix') {
       paymentPayload.payment_method_id = 'pix';
-    } 
-    // SE FOR CARTÃO DE CRÉDITO (O Brick envia os dados no cardData.formData)
-    else if (paymentMethod === 'card' && cardData) {
+    } else if (paymentMethod === 'card' && cardData) {
       paymentPayload.token = cardData.token;
       paymentPayload.installments = cardData.installments;
       paymentPayload.payment_method_id = cardData.payment_method_id;
       paymentPayload.issuer_id = cardData.issuer_id;
       
-      // O MP exige o email do pagador dentro de payer.email no nível raiz
       if (cardData.payer && cardData.payer.email) {
           paymentPayload.payer.email = cardData.payer.email;
       }
@@ -67,7 +64,6 @@ export async function POST(req: Request) {
         return NextResponse.json({ success: false, error: 'Método de pagamento inválido ou dados ausentes.' }, { status: 400 });
     }
 
-    // 2. DISPARA A COBRANÇA PARA O MERCADO PAGO
     const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
       headers: {
@@ -84,11 +80,10 @@ export async function POST(req: Request) {
       console.error('Mercado Pago falhou:', mpData);
       return NextResponse.json({ 
         success: false, 
-        error: mpData.message || 'O cartão foi recusado pelo banco emissor.' 
+        error: mpData.message || 'O pagamento foi recusado pela instituição financeira.' 
       }, { status: 400 });
     }
 
-    // 3. SE SUCESSO OU PENDENTE, SALVA O PEDIDO NO SUPABASE
     const { data: orderData, error: orderError } = await supabase
       .from('orders')
       .insert({
@@ -104,7 +99,7 @@ export async function POST(req: Request) {
         shipping_state: address.state,
         payment_method: paymentMethod,
         mp_payment_id: mpData.id.toString(),
-        subtotal: subtotal,
+        subtotal: totalAmount,
         status: mpData.status || 'pending'
       })
       .select('id, short_id')
@@ -115,7 +110,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Ocorreu um erro interno ao registrar a encomenda.' }, { status: 500 });
     }
 
-    // 4. INSERE OS ITENS
     const orderItemsPayload = items.map((item: any) => ({
         order_id: orderData.id,
         product_name: item.name,
@@ -127,7 +121,6 @@ export async function POST(req: Request) {
     }));
     await supabase.from('order_items').insert(orderItemsPayload);
 
-    // 5. COLETA OS DADOS DO PIX SE APLICÁVEL
     let qrCode = null;
     let qrCodeBase64 = null;
     let ticketUrl = null;
