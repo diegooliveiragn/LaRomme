@@ -1,4 +1,5 @@
 ﻿import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
 export async function POST(req: Request) {
   try {
@@ -7,26 +8,40 @@ export async function POST(req: Request) {
 
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN;
     if (!accessToken) {
-      return NextResponse.json({ success: false, error: 'Credenciais do Mercado Pago não encontradas no servidor.' }, { status: 500 });
+      return NextResponse.json({ success: false, error: 'Credenciais do Mercado Pago não configuradas.' }, { status: 500 });
     }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+    
+    if (!supabaseUrl || !supabaseKey) {
+       console.error("Supabase keys missing in environment");
+       return NextResponse.json({ success: false, error: 'Banco de dados inacessível.' }, { status: 500 });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+        auth: { persistSession: false }
+    });
 
     const cleanCpf = payer.cpf ? payer.cpf.replace(/\D/g, '') : '';
     const cleanPhone = payer.phone ? payer.phone.replace(/\D/g, '') : '';
+    const cleanCep = address.cep ? address.cep.replace(/\D/g, '') : '';
 
+    // 1. CHAMA O MERCADO PAGO PRIMEIRO PARA GERAR O PIX/COBRANÇA
     const paymentPayload: any = {
       transaction_amount: subtotal,
-      description: `Pedido LaRomme - Drop 01: ORIGO`,
+      description: `Pedido LaRomme`,
       payment_method_id: paymentMethod === 'pix' ? 'pix' : 'master',
       payer: {
         email: payer.email,
         first_name: payer.fullName ? payer.fullName.split(' ')[0] : 'Cliente',
-        last_name: payer.fullName ? payer.fullName.split(' ').slice(1).join(' ') || 'LaRomme' : 'LaRomme',
+        last_name: payer.fullName && payer.fullName.includes(' ') ? payer.fullName.split(' ').slice(1).join(' ') : 'LaRomme',
         identification: {
           type: cleanCpf.length > 11 ? 'CNPJ' : 'CPF',
           number: cleanCpf,
         },
         address: {
-          zip_code: address.cep ? address.cep.replace(/\D/g, '') : '',
+          zip_code: cleanCep,
           street_name: address.street,
           street_number: address.number,
           neighborhood: address.neighborhood,
@@ -42,7 +57,7 @@ export async function POST(req: Request) {
       headers: {
         'Authorization': `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
-        'X-Idempotency-Key': `laromme-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+        'X-Idempotency-Key': `laromme-pay-${Date.now()}-${Math.random().toString(36).substring(7)}`,
       },
       body: JSON.stringify(paymentPayload),
     });
@@ -50,11 +65,55 @@ export async function POST(req: Request) {
     const mpData = await mpResponse.json();
 
     if (!mpResponse.ok) {
-      console.error('Erro na API do Mercado Pago:', mpData);
+      console.error('Mercado Pago falhou:', mpData);
       return NextResponse.json({ 
         success: false, 
-        error: mpData.message || 'Erro ao processar transação junto ao Mercado Pago.' 
+        error: mpData.message || 'Erro ao processar transação financeira.' 
       }, { status: 400 });
+    }
+
+    // 2. INSERE O PEDIDO NO SUPABASE (Tabela: orders)
+    const { data: orderData, error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        customer_name: payer.fullName,
+        customer_email: payer.email,
+        customer_cpf: cleanCpf,
+        customer_phone: cleanPhone,
+        shipping_cep: cleanCep,
+        shipping_street: address.street,
+        shipping_number: address.number,
+        shipping_neighborhood: address.neighborhood,
+        shipping_city: address.city,
+        shipping_state: address.state,
+        payment_method: paymentMethod,
+        mp_payment_id: mpData.id.toString(),
+        subtotal: subtotal,
+        status: mpData.status || 'pending'
+      })
+      .select('id, short_id')
+      .single();
+
+    if (orderError || !orderData) {
+      console.error('Erro ao salvar pedido no Supabase:', orderError);
+      return NextResponse.json({ success: false, error: 'Ocorreu um erro interno ao registrar a encomenda.' }, { status: 500 });
+    }
+
+    // 3. INSERE OS ITENS DO PEDIDO (Tabela: order_items)
+    const orderItemsPayload = items.map((item: any) => ({
+        order_id: orderData.id,
+        product_name: item.name,
+        product_size: item.size,
+        product_color: item.colorName,
+        product_image: item.image,
+        quantity: item.quantity,
+        unit_price: item.priceNumeric
+    }));
+
+    const { error: itemsError } = await supabase.from('order_items').insert(orderItemsPayload);
+    
+    if (itemsError) {
+        console.error('Erro ao salvar os itens no Supabase:', itemsError);
     }
 
     let qrCode = null;
@@ -67,9 +126,11 @@ export async function POST(req: Request) {
       ticketUrl = mpData.point_of_interaction.transaction_data.ticket_url;
     }
 
+    // 4. RETORNA O SUCESSO, O ID DA PÁGINA DE RASTREIO E OS DADOS DO PIX
     return NextResponse.json({
       success: true,
-      orderId: mpData.id,
+      orderUuid: orderData.id,
+      orderShortId: orderData.short_id,
       status: mpData.status,
       paymentMethod,
       pixDetails: paymentMethod === 'pix' ? {
@@ -80,7 +141,7 @@ export async function POST(req: Request) {
     });
 
   } catch (error: any) {
-    console.error('Erro interno na API de checkout:', error);
-    return NextResponse.json({ success: false, error: 'Erro interno do servidor.' }, { status: 500 });
+    console.error('Exceção capturada na API:', error);
+    return NextResponse.json({ success: false, error: 'Erro de comunicação interna.' }, { status: 500 });
   }
 }

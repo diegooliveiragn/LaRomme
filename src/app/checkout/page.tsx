@@ -3,11 +3,13 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import FadeIn from '@/components/FadeIn';
 
 export default function CheckoutPage() {
   const { items, subtotal, totalItems, clearCart, isLoaded } = useCart();
+  const router = useRouter();
 
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
@@ -24,10 +26,8 @@ export default function CheckoutPage() {
 
   const [paymentMethod, setPaymentMethod] = useState<'pix' | 'card' | 'apple_pay'>('pix');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [pixResult, setPixResult] = useState<any>(null);
-  const [copiedPix, setCopiedPix] = useState(false);
 
-  // MÁSCARA DINÂMICA: CPF e CNPJ
+  // MÁSCARAS DINÂMICAS
   const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let v = e.target.value.replace(/\D/g, '');
     if (v.length <= 11) {
@@ -43,7 +43,6 @@ export default function CheckoutPage() {
     setCpf(v.substring(0, 18));
   };
 
-  // MÁSCARA DINÂMICA: Telefone (10 ou 11 dígitos)
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let v = e.target.value.replace(/\D/g, '');
     if (v.length <= 10) {
@@ -56,7 +55,6 @@ export default function CheckoutPage() {
     setPhone(v.substring(0, 15));
   };
 
-  // MÁSCARA E BUSCA VIA CEP
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     let cleanValue = e.target.value.replace(/\D/g, '');
     let formattedCep = cleanValue;
@@ -87,6 +85,7 @@ export default function CheckoutPage() {
 
   const formattedSubtotal = subtotal.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+  // COMUNICAÇÃO DE DADOS
   const handleProcessPayment = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
@@ -107,29 +106,32 @@ export default function CheckoutPage() {
       });
 
       const result = await response.json();
+      
       if (result.success) {
-        if (paymentMethod === 'pix' && result.pixDetails) {
-          setPixResult(result.pixDetails);
-          clearCart();
-        } else {
-          alert('Pedido registrado com sucesso!');
-          clearCart();
+        // TRANSIÇÃO DE ESTADO: O Carrinho Morre, Nasce o Pedido!
+        clearCart();
+        
+        // Guardamos temporariamente no LocalStorage os dados do Pix 
+        // para a página do pedido ler imediatamente sem precisar bater na API de novo
+        if (result.paymentMethod === 'pix' && result.pixDetails) {
+            localStorage.setItem(`laromme_pix_${result.orderUuid}`, JSON.stringify({
+                qrCode: result.pixDetails.qrCode,
+                qrCodeBase64: result.pixDetails.qrCodeBase64,
+                orderShortId: result.orderShortId
+            }));
         }
+
+        // Redireciona o utilizador para a URL blindada do pedido.
+        router.push(`/pedido/${result.orderUuid}`);
       } else {
         alert(result.error || 'Ocorreu um erro ao processar o pagamento.');
+        setIsProcessing(false);
       }
     } catch (err) {
       console.error('Erro ao processar pagamento:', err);
-      alert('Falha na comunicação com o servidor.');
-    } finally {
+      alert('Falha na comunicação. Verifique a sua internet e tente novamente.');
       setIsProcessing(false);
     }
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedPix(true);
-    setTimeout(() => setCopiedPix(false), 3000);
   };
 
   if (!isLoaded) {
@@ -140,47 +142,8 @@ export default function CheckoutPage() {
     );
   }
 
-  // TELA TEMPORÁRIA DO QR CODE (Será substituída na Fase 3 pelo roteamento de Pedido)
-  if (pixResult) {
-    return (
-      <div className="pt-36 pb-24 px-6 max-w-xl mx-auto text-center space-y-8 font-sans">
-        <FadeIn>
-          <div className="bg-[#080808] border border-zinc-900 p-8 space-y-6">
-            <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase block">PAGAMENTO PENDENTE</span>
-            <h1 className="font-serif text-2xl text-white font-bold tracking-wider uppercase">PAGUE COM PIX.</h1>
-            <p className="text-xs text-zinc-400 font-mono">Abra o aplicativo do seu banco e escaneie o código abaixo:</p>
-
-            {pixResult.qrCodeBase64 && (
-              <div className="flex justify-center py-4">
-                <img 
-                  src={`data:image/jpeg;base64,${pixResult.qrCodeBase64}`} 
-                  alt="QR Code Pix" 
-                  className="w-56 h-56 border-4 border-white rounded-lg"
-                />
-              </div>
-            )}
-
-            {pixResult.qrCode && (
-              <div className="space-y-3 font-mono text-xs">
-                <button
-                  onClick={() => copyToClipboard(pixResult.qrCode)}
-                  className="w-full bg-white text-black font-bold py-4 tracking-widest uppercase hover:bg-zinc-200 transition-all"
-                >
-                  {copiedPix ? '✓ CÓDIGO COPIADO!' : 'COPIAR CÓDIGO PIX'}
-                </button>
-              </div>
-            )}
-
-            <div className="pt-4 border-t border-zinc-900 font-mono text-[10px] text-zinc-500">
-              Assim que o banco confirmar a transferência, você receberá a confirmação por e-mail.
-            </div>
-          </div>
-        </FadeIn>
-      </div>
-    );
-  }
-
-  if (items.length === 0) {
+  // Se o carrinho estiver vazio e não estiver a processar
+  if (items.length === 0 && !isProcessing) {
     return (
       <div className="pt-36 pb-24 px-6 max-w-2xl mx-auto text-center space-y-6 font-sans">
         <h1 className="font-serif text-2xl text-white font-bold tracking-wider uppercase">NENHUM ARTEFATO SELECIONADO.</h1>
@@ -195,9 +158,14 @@ export default function CheckoutPage() {
   return (
     <div className="pt-32 pb-24 px-6 md:px-12 max-w-7xl mx-auto space-y-12 font-sans">
       <FadeIn>
-        <div className="border-b border-zinc-900 pb-6">
-          <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase block mb-1">FINALIZAÇÃO DE PEDIDO</span>
-          <h1 className="font-serif text-2xl md:text-4xl tracking-[0.2em] text-white uppercase font-bold">CHECKOUT TRANSPARENTE.</h1>
+        <div className="border-b border-zinc-900 pb-6 flex justify-between items-end">
+          <div>
+            <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase block mb-1">FINALIZAÇÃO DE PEDIDO</span>
+            <h1 className="font-serif text-2xl md:text-4xl tracking-[0.2em] text-white uppercase font-bold">CHECKOUT TRANSPARENTE.</h1>
+          </div>
+          <div className="hidden md:flex text-zinc-500 font-mono text-[10px] items-center gap-2">
+            <span>🔒 PAGAMENTO SEGURO</span>
+          </div>
         </div>
       </FadeIn>
 
@@ -213,19 +181,19 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 font-mono text-xs">
                 <div>
                   <label className="block text-zinc-400 mb-1">NOME COMPLETO:</label>
-                  <input required type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="Seu nome" />
+                  <input required type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} disabled={isProcessing} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white disabled:opacity-50" placeholder="Seu nome" />
                 </div>
                 <div>
                   <label className="block text-zinc-400 mb-1">E-MAIL:</label>
-                  <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="email@dominio.com" />
+                  <input required type="email" value={email} onChange={(e) => setEmail(e.target.value)} disabled={isProcessing} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white disabled:opacity-50" placeholder="email@dominio.com" />
                 </div>
                 <div>
                   <label className="block text-zinc-400 mb-1">CPF / CNPJ:</label>
-                  <input required type="text" value={cpf} onChange={handleCpfChange} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="000.000.000-00" />
+                  <input required type="text" value={cpf} onChange={handleCpfChange} disabled={isProcessing} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white disabled:opacity-50" placeholder="000.000.000-00" />
                 </div>
                 <div>
                   <label className="block text-zinc-400 mb-1">TELEFONE / WHATSAPP:</label>
-                  <input required type="tel" value={phone} onChange={handlePhoneChange} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="(00) 00000-0000" />
+                  <input required type="tel" value={phone} onChange={handlePhoneChange} disabled={isProcessing} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white disabled:opacity-50" placeholder="(00) 00000-0000" />
                 </div>
               </div>
             </div>
@@ -238,23 +206,23 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
                 <div>
                   <label className="block text-zinc-400 mb-1">CEP {loadingCep && '(BUSCANDO...)'}:</label>
-                  <input required type="text" value={cep} onChange={handleCepChange} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="00000-000" />
+                  <input required type="text" value={cep} onChange={handleCepChange} disabled={isProcessing} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white disabled:opacity-50" placeholder="00000-000" />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-zinc-400 mb-1">LOGRADOURO / RUA:</label>
-                  <input required type="text" value={street} onChange={(e) => setStreet(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="Rua / Avenida" />
+                  <input required type="text" value={street} onChange={(e) => setStreet(e.target.value)} disabled={isProcessing} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white disabled:opacity-50" placeholder="Rua / Avenida" />
                 </div>
                 <div>
                   <label className="block text-zinc-400 mb-1">NÚMERO:</label>
-                  <input required type="text" value={number} onChange={(e) => setNumber(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="123" />
+                  <input required type="text" value={number} onChange={(e) => setNumber(e.target.value)} disabled={isProcessing} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white disabled:opacity-50" placeholder="123" />
                 </div>
                 <div>
                   <label className="block text-zinc-400 mb-1">BAIRRO:</label>
-                  <input required type="text" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="Bairro" />
+                  <input required type="text" value={neighborhood} onChange={(e) => setNeighborhood(e.target.value)} disabled={isProcessing} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white disabled:opacity-50" placeholder="Bairro" />
                 </div>
                 <div>
                   <label className="block text-zinc-400 mb-1">CIDADE / UF:</label>
-                  <input required type="text" value={`${city}${state ? ` / ${state}` : ''}`} onChange={(e) => setCity(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="Fortaleza / CE" />
+                  <input required type="text" value={`${city}${state ? ` / ${state}` : ''}`} onChange={(e) => setCity(e.target.value)} disabled={isProcessing} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white disabled:opacity-50" placeholder="Fortaleza / CE" />
                 </div>
               </div>
             </div>
@@ -270,7 +238,8 @@ export default function CheckoutPage() {
                   onClick={() => setPaymentMethod('pix')}
                   className={`py-3 px-2 border text-center font-bold uppercase transition-all ${
                     paymentMethod === 'pix' ? 'bg-white text-black border-white' : 'border-zinc-800 text-zinc-400'
-                  }`}
+                  } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={isProcessing}
                 >
                   PIX
                 </button>
@@ -279,7 +248,8 @@ export default function CheckoutPage() {
                   onClick={() => setPaymentMethod('card')}
                   className={`py-3 px-2 border text-center font-bold uppercase transition-all ${
                     paymentMethod === 'card' ? 'bg-white text-black border-white' : 'border-zinc-800 text-zinc-400'
-                  }`}
+                  } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={isProcessing}
                 >
                   CARTÃO
                 </button>
@@ -288,7 +258,8 @@ export default function CheckoutPage() {
                   onClick={() => setPaymentMethod('apple_pay')}
                   className={`py-3 px-2 border text-center font-bold uppercase transition-all ${
                     paymentMethod === 'apple_pay' ? 'bg-white text-black border-white' : 'border-zinc-800 text-zinc-400'
-                  }`}
+                  } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  disabled={isProcessing}
                 >
                   APPLE PAY
                 </button>
@@ -297,7 +268,7 @@ export default function CheckoutPage() {
               {paymentMethod === 'pix' && (
                 <div className="p-4 bg-zinc-950 border border-zinc-800 font-mono text-xs text-zinc-400 space-y-2">
                   <p className="text-white font-bold">✓ APROVAÇÃO IMEDIATA</p>
-                  <p>O código Pix Copia e Cola e o QR Code serão gerados em tempo real na tela.</p>
+                  <p>O código Pix Copia e Cola será gerado na próxima tela, atrelado ao seu número de pedido oficial.</p>
                 </div>
               )}
 
@@ -307,27 +278,20 @@ export default function CheckoutPage() {
                   <p>Processamento direto com encriptação no navegador.</p>
                 </div>
               )}
-
-              {paymentMethod === 'apple_pay' && (
-                <div className="p-4 bg-zinc-950 border border-zinc-800 font-mono text-xs text-zinc-400 space-y-2">
-                  <p className="text-white font-bold"> APPLE PAY</p>
-                  <p>Disponível para dispositivos Apple compatíveis no navegador Safari.</p>
-                </div>
-              )}
             </div>
 
             <button
               type="submit"
               disabled={isProcessing}
-              className="w-full bg-white text-black font-bold text-xs tracking-[0.25em] uppercase py-4 hover:bg-zinc-200 transition-all shadow-xl font-sans"
+              className={`w-full font-bold text-xs tracking-[0.25em] uppercase py-4 transition-all shadow-xl font-sans ${isProcessing ? 'bg-zinc-800 text-zinc-500 cursor-wait' : 'bg-white text-black hover:bg-zinc-200'}`}
             >
-              {isProcessing ? 'GERANDO COBRANÇA...' : `GERAR PIX DE ${formattedSubtotal}`}
+              {isProcessing ? 'A REGISTRAR PEDIDO...' : `GERAR PEDIDO DE ${formattedSubtotal}`}
             </button>
           </form>
         </div>
 
         {/* COLUNA DIREITA: RESUMO */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className={`lg:col-span-5 space-y-6 transition-opacity ${isProcessing ? 'opacity-30' : 'opacity-100'}`}>
           <div className="bg-[#080808] border border-zinc-900 p-6 space-y-6">
             <h2 className="font-serif text-lg text-white font-bold tracking-wider uppercase border-b border-zinc-800 pb-3">
               RESUMO DA SACOLA ({totalItems}).
