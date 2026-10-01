@@ -1,21 +1,19 @@
 ﻿'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
 import FadeIn from '@/components/FadeIn';
 
 export default function CheckoutPage() {
-  const { items, subtotal, totalItems, isLoaded } = useCart();
+  const { items, subtotal, totalItems, clearCart, isLoaded } = useCart();
 
-  // Estados do Comprador
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [cpf, setCpf] = useState('');
   const [phone, setPhone] = useState('');
 
-  // Estados de Endereço
   const [cep, setCep] = useState('');
   const [street, setStreet] = useState('');
   const [number, setNumber] = useState('');
@@ -24,12 +22,11 @@ export default function CheckoutPage() {
   const [state, setState] = useState('');
   const [loadingCep, setLoadingCep] = useState(false);
 
-  // Método de Pagamento
   const [paymentMethod, setPaymentMethod] = useState<'pix' | 'card' | 'apple_pay'>('pix');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [orderCreated, setOrderCreated] = useState<any>(null);
+  const [pixResult, setPixResult] = useState<any>(null);
+  const [copiedPix, setCopiedPix] = useState(false);
 
-  // Consulta automática de CEP (ViaCEP)
   const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '');
     setCep(value);
@@ -76,7 +73,13 @@ export default function CheckoutPage() {
 
       const result = await response.json();
       if (result.success) {
-        setOrderCreated(result);
+        if (paymentMethod === 'pix' && result.pixDetails) {
+          setPixResult(result.pixDetails);
+          clearCart();
+        } else {
+          alert('Pedido registrado com sucesso!');
+          clearCart();
+        }
       } else {
         alert(result.error || 'Ocorreu um erro ao processar o pagamento.');
       }
@@ -88,6 +91,12 @@ export default function CheckoutPage() {
     }
   };
 
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedPix(true);
+    setTimeout(() => setCopiedPix(false), 3000);
+  };
+
   if (!isLoaded) {
     return (
       <div className="pt-36 pb-24 text-center min-h-[70vh] flex items-center justify-center font-mono text-xs text-zinc-500">
@@ -96,7 +105,47 @@ export default function CheckoutPage() {
     );
   }
 
-  if (items.length === 0 && !orderCreated) {
+  // TELA DE EXIBIÇÃO DO QR CODE PIX GERADO
+  if (pixResult) {
+    return (
+      <div className="pt-36 pb-24 px-6 max-w-xl mx-auto text-center space-y-8 font-sans">
+        <FadeIn>
+          <div className="bg-[#080808] border border-zinc-900 p-8 space-y-6">
+            <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase block">PAGAMENTO PENDENTE</span>
+            <h1 className="font-serif text-2xl text-white font-bold tracking-wider uppercase">PAGUE COM PIX.</h1>
+            <p className="text-xs text-zinc-400 font-mono">Abra o aplicativo do seu banco e escaneie o código abaixo:</p>
+
+            {pixResult.qrCodeBase64 && (
+              <div className="flex justify-center py-4">
+                <img 
+                  src={`data:image/jpeg;base64,${pixResult.qrCodeBase64}`} 
+                  alt="QR Code Pix" 
+                  className="w-56 h-56 border-4 border-white rounded-lg"
+                />
+              </div>
+            )}
+
+            {pixResult.qrCode && (
+              <div className="space-y-3 font-mono text-xs">
+                <button
+                  onClick={() => copyToClipboard(pixResult.qrCode)}
+                  className="w-full bg-white text-black font-bold py-4 tracking-widest uppercase hover:bg-zinc-200 transition-all"
+                >
+                  {copiedPix ? '✓ CÓDIGO COPIADO!' : 'COPIAR CÓDIGO PIX'}
+                </button>
+              </div>
+            )}
+
+            <div className="pt-4 border-t border-zinc-900 font-mono text-[10px] text-zinc-500">
+              Assim que o banco confirmar a transferência, você receberá a confirmação por e-mail.
+            </div>
+          </div>
+        </FadeIn>
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
     return (
       <div className="pt-36 pb-24 px-6 max-w-2xl mx-auto text-center space-y-6 font-sans">
         <h1 className="font-serif text-2xl text-white font-bold tracking-wider uppercase">NENHUM ARTEFATO SELECIONADO.</h1>
@@ -118,11 +167,10 @@ export default function CheckoutPage() {
       </FadeIn>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        {/* COLUNA ESQUERDA: FORMULÁRIO */}
         <div className="lg:col-span-7 space-y-8">
           <form onSubmit={handleProcessPayment} className="space-y-8">
             
-            {/* 01. DADOS PESSOAIS */}
+            {/* 01. IDENTIFICAÇÃO */}
             <div className="bg-[#080808] border border-zinc-900 p-6 space-y-4">
               <h2 className="font-serif text-base text-white font-bold tracking-wider uppercase border-b border-zinc-800 pb-3">
                 01. IDENTIFICAÇÃO.
@@ -147,7 +195,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* 02. ENDEREÇO DE ENTREGA */}
+            {/* 02. ENDEREÇO */}
             <div className="bg-[#080808] border border-zinc-900 p-6 space-y-4">
               <h2 className="font-serif text-base text-white font-bold tracking-wider uppercase border-b border-zinc-800 pb-3">
                 02. ENDEREÇO DE ENTREGA.
@@ -176,7 +224,7 @@ export default function CheckoutPage() {
               </div>
             </div>
 
-            {/* 03. MÉTODO DE PAGAMENTO */}
+            {/* 03. PAGAMENTO */}
             <div className="bg-[#080808] border border-zinc-900 p-6 space-y-4">
               <h2 className="font-serif text-base text-white font-bold tracking-wider uppercase border-b border-zinc-800 pb-3">
                 03. PAGAMENTO.
@@ -214,21 +262,21 @@ export default function CheckoutPage() {
               {paymentMethod === 'pix' && (
                 <div className="p-4 bg-zinc-950 border border-zinc-800 font-mono text-xs text-zinc-400 space-y-2">
                   <p className="text-white font-bold">✓ APROVAÇÃO IMEDIATA</p>
-                  <p>O código Pix Copia e Cola e o QR Code serão gerados logo após clicar no botão abaixo.</p>
+                  <p>O código Pix Copia e Cola e o QR Code serão gerados em tempo real na tela.</p>
                 </div>
               )}
 
               {paymentMethod === 'card' && (
                 <div className="p-4 bg-zinc-950 border border-zinc-800 font-mono text-xs text-zinc-400 space-y-2">
                   <p className="text-white font-bold">✓ CARTÃO DE CRÉDITO</p>
-                  <p>Tokenização segura e processamento direto via Mercado Pago SDK.</p>
+                  <p>Processamento direto com encriptação no navegador.</p>
                 </div>
               )}
 
               {paymentMethod === 'apple_pay' && (
                 <div className="p-4 bg-zinc-950 border border-zinc-800 font-mono text-xs text-zinc-400 space-y-2">
-                  <p className="text-white font-bold"> APPLE PAY (RESERVA)</p>
-                  <p>Disponível para utilizadores num dispositivo Apple compatível após a associação do domínio no painel do Mercado Pago.</p>
+                  <p className="text-white font-bold"> APPLE PAY</p>
+                  <p>Disponível para dispositivos Apple compatíveis no navegador Safari.</p>
                 </div>
               )}
             </div>
@@ -238,7 +286,7 @@ export default function CheckoutPage() {
               disabled={isProcessing}
               className="w-full bg-white text-black font-bold text-xs tracking-[0.25em] uppercase py-4 hover:bg-zinc-200 transition-all shadow-xl font-sans"
             >
-              {isProcessing ? 'PROCESSANDO PEDIDO...' : `CONCLUIR PEDIDO (${formattedSubtotal})`}
+              {isProcessing ? 'GERANDO COBRANÇA...' : `GERAR PIX DE ${formattedSubtotal}`}
             </button>
           </form>
         </div>

@@ -1,41 +1,44 @@
 ﻿import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
-
 export async function POST(req: Request) {
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ekljqqdhrltlydomfeua.supabase.co';
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder_for_build';
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     const body = await req.json();
 
-    // Extrai o ID do Pedido (suporta formato do Webhook MP real ou formato de Teste)
-    const orderId = body.order_id || body.data?.id;
-    const paymentStatus = body.payment_status || body.status || 'PAGO';
+    // Notificação do Mercado Pago
+    if (body.type === 'payment' || body.action === 'payment.created' || body.action === 'payment.updated') {
+      const paymentId = body.data?.id || body.id;
 
-    if (!orderId) {
-      return NextResponse.json({ error: 'Order ID is required' }, { status: 400 });
+      if (paymentId) {
+        const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+          headers: {
+            Authorization: `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
+          },
+        });
+
+        if (mpResponse.ok) {
+          const paymentData = await mpResponse.json();
+          
+          // Atualiza o status do pedido no Supabase se houver tabela 'orders'
+          await supabase
+            .from('orders')
+            .update({
+              status: paymentData.status,
+              updated_at: new Date().toISOString(),
+            })
+            .eq('mp_payment_id', paymentId.toString());
+        }
+      }
     }
 
-    // Atualiza o pedido para PAGO na tabela 'orders' do Supabase
-    // Isso dispara automaticamente o trigger PostgreSQL 'trigger_order_settlement'
-    const { data, error } = await supabase
-      .from('orders')
-      .update({ payment_status: paymentStatus })
-      .eq('id', orderId)
-      .select();
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: 'Webhook processado com sucesso. Liquidação autônoma ativada no PostgreSQL.',
-      settled_order: data
-    });
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    return NextResponse.json({ received: true });
+  } catch (error: any) {
+    console.error('Erro no processamento do Webhook:', error);
+    return NextResponse.json({ received: true, error: error.message }, { status: 200 });
   }
 }

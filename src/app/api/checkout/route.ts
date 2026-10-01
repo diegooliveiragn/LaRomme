@@ -1,73 +1,102 @@
 ﻿import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
-import { sendPixGeneratedEmail } from '@/lib/email';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-);
-
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
-    const { fullName, email, cpf, totalAmount, orderNumber, customerId, state } = body;
+    const body = await req.json();
+    const { items, payer, address, paymentMethod, subtotal } = body;
 
-    const { data: order, error: orderErr } = await supabase
-      .from('orders')
-      .insert([{
-        order_number: orderNumber,
-        customer_id: customerId,
-        total_amount: totalAmount,
-        payment_status: 'PENDENTE',
-        delivery_state: state || 'CE'
-      }])
-      .select('id')
-      .single();
-
-    if (orderErr) throw orderErr;
-
-    let pixCode = `00020126580014br.gov.bcb.pix0136${orderNumber}5204000053039865406${totalAmount.toFixed(2)}5802BR5908LAROMME6009FORTALEZA62070503***6304`;
-    let qrCodeBase64 = '';
-
-    if (process.env.MERCADOPAGO_ACCESS_TOKEN) {
-      try {
-        const mpRes = await fetch('https://api.mercadopago.com/v1/payments', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.MERCADOPAGO_ACCESS_TOKEN}`,
-            'Content-Type': 'application/json',
-            'X-Idempotency-Key': orderNumber
-          },
-          body: JSON.stringify({
-            transaction_amount: Number(totalAmount),
-            description: `Artefato LaRomme - Pedido ${orderNumber}`,
-            payment_method_id: 'pix',
-            payer: { email: email, first_name: fullName },
-            external_reference: orderNumber
-          })
-        });
-
-        const mpData = await mpRes.json();
-        if (mpData.point_of_interaction?.transaction_data) {
-          pixCode = mpData.point_of_interaction.transaction_data.qr_code;
-          qrCodeBase64 = mpData.point_of_interaction.transaction_data.qr_code_base64;
-        }
-      } catch (e) {
-        console.error('Erro na API Mercado Pago, usando fallback:', e);
-      }
+    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+    if (!accessToken) {
+      return NextResponse.json({ success: false, error: 'Credenciais de pagamento não configuradas.' }, { status: 500 });
     }
 
-    await sendPixGeneratedEmail(email, fullName, orderNumber, pixCode, totalAmount);
+    const cleanCpf = payer.cpf.replace(/\D/g, '');
+    const cleanPhone = payer.phone.replace(/\D/g, '');
+    const areaCode = cleanPhone.substring(0, 2) || '85';
+    const phoneNumber = cleanPhone.substring(2) || '999999999';
+
+    // Formata os itens para a API do Mercado Pago
+    const mpItems = items.map((item: any) => ({
+      id: item.productId,
+      title: `${item.name} (${item.size} / ${item.colorName})`,
+      quantity: item.quantity,
+      unit_price: item.priceNumeric,
+      currency_id: 'BRL',
+    }));
+
+    let paymentPayload: any = {
+      transaction_amount: subtotal,
+      description: `Pedido LaRomme - Drop 01: ORIGO`,
+      payment_method_id: paymentMethod === 'pix' ? 'pix' : 'master',
+      payer: {
+        email: payer.email,
+        first_name: payer.fullName.split(' ')[0],
+        last_name: payer.fullName.split(' ').slice(1).join(' ') || 'LaRomme',
+        identification: {
+          type: cleanCpf.length > 11 ? 'CNPJ' : 'CPF',
+          number: cleanCpf,
+        },
+        address: {
+          zip_code: address.cep.replace(/\D/g, ''),
+          street_name: address.street,
+          street_number: address.number,
+          neighborhood: address.neighborhood,
+          city: address.city,
+          federal_unit: address.state,
+        },
+      },
+      notification_url: 'https://www.laromme.com.br/api/webhooks/mercadopago',
+    };
+
+    if (paymentMethod === 'pix') {
+      paymentPayload.payment_method_id = 'pix';
+    }
+
+    const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'X-Idempotency-Key': `laromme-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+      },
+      body: JSON.stringify(paymentPayload),
+    });
+
+    const mpData = await mpResponse.json();
+
+    if (!mpResponse.ok) {
+      console.error('Erro na API do Mercado Pago:', mpData);
+      return NextResponse.json({ 
+        success: false, 
+        error: mpData.message || 'Erro ao processar transação junto ao Mercado Pago.' 
+      }, { status: 400 });
+    }
+
+    // Estruturação da resposta com dados do Pix se aplicável
+    let qrCode = null;
+    let qrCodeBase64 = null;
+    let ticketUrl = null;
+
+    if (mpData.point_of_interaction?.transaction_data) {
+      qrCode = mpData.point_of_interaction.transaction_data.qr_code;
+      qrCodeBase64 = mpData.point_of_interaction.transaction_data.qr_code_base64;
+      ticketUrl = mpData.point_of_interaction.transaction_data.ticket_url;
+    }
 
     return NextResponse.json({
       success: true,
-      orderId: order.id,
-      orderNumber,
-      pixCopiaECola: pixCode,
-      qrCodeBase64
+      orderId: mpData.id,
+      status: mpData.status,
+      paymentMethod,
+      pixDetails: paymentMethod === 'pix' ? {
+        qrCode,
+        qrCodeBase64,
+        ticketUrl,
+      } : null,
     });
 
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (error: any) {
+    console.error('Erro interno na API de checkout:', error);
+    return NextResponse.json({ success: false, error: 'Erro interno do servidor.' }, { status: 500 });
   }
 }
