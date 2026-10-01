@@ -27,14 +27,49 @@ export default function CheckoutPage() {
   const [pixResult, setPixResult] = useState<any>(null);
   const [copiedPix, setCopiedPix] = useState(false);
 
-  const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '');
-    setCep(value);
+  // MÁSCARA DINÂMICA: CPF e CNPJ
+  const handleCpfChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let v = e.target.value.replace(/\D/g, '');
+    if (v.length <= 11) {
+      v = v.replace(/(\d{3})(\d)/, '$1.$2');
+      v = v.replace(/(\d{3})(\d)/, '$1.$2');
+      v = v.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    } else {
+      v = v.replace(/^(\d{2})(\d)/, '$1.$2');
+      v = v.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+      v = v.replace(/\.(\d{3})(\d)/, '.$1/$2');
+      v = v.replace(/(\d{4})(\d)/, '$1-$2');
+    }
+    setCpf(v.substring(0, 18));
+  };
 
-    if (value.length === 8) {
+  // MÁSCARA DINÂMICA: Telefone (10 ou 11 dígitos)
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let v = e.target.value.replace(/\D/g, '');
+    if (v.length <= 10) {
+      v = v.replace(/^(\d{2})(\d)/g, '($1) $2');
+      v = v.replace(/(\d{4})(\d)/, '$1-$2');
+    } else {
+      v = v.replace(/^(\d{2})(\d)/g, '($1) $2');
+      v = v.replace(/(\d{5})(\d)/, '$1-$2');
+    }
+    setPhone(v.substring(0, 15));
+  };
+
+  // MÁSCARA E BUSCA VIA CEP
+  const handleCepChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    let cleanValue = e.target.value.replace(/\D/g, '');
+    let formattedCep = cleanValue;
+    
+    if (cleanValue.length > 5) {
+      formattedCep = cleanValue.replace(/^(\d{5})(\d)/, '$1-$2');
+    }
+    setCep(formattedCep.substring(0, 9));
+
+    if (cleanValue.length === 8) {
       setLoadingCep(true);
       try {
-        const res = await fetch(`https://viacep.com.br/ws/${value}/json/`);
+        const res = await fetch(`https://viacep.com.br/ws/${cleanValue}/json/`);
         const data = await res.json();
         if (!data.erro) {
           setStreet(data.logradouro || '');
@@ -105,7 +140,7 @@ export default function CheckoutPage() {
     );
   }
 
-  // TELA DE EXIBIÇÃO DO QR CODE PIX GERADO
+  // TELA TEMPORÁRIA DO QR CODE (Será substituída na Fase 3 pelo roteamento de Pedido)
   if (pixResult) {
     return (
       <div className="pt-36 pb-24 px-6 max-w-xl mx-auto text-center space-y-8 font-sans">
@@ -186,11 +221,11 @@ export default function CheckoutPage() {
                 </div>
                 <div>
                   <label className="block text-zinc-400 mb-1">CPF / CNPJ:</label>
-                  <input required type="text" value={cpf} onChange={(e) => setCpf(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="000.000.000-00" />
+                  <input required type="text" value={cpf} onChange={handleCpfChange} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="000.000.000-00" />
                 </div>
                 <div>
                   <label className="block text-zinc-400 mb-1">TELEFONE / WHATSAPP:</label>
-                  <input required type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="(00) 00000-0000" />
+                  <input required type="tel" value={phone} onChange={handlePhoneChange} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="(00) 00000-0000" />
                 </div>
               </div>
             </div>
@@ -203,7 +238,7 @@ export default function CheckoutPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
                 <div>
                   <label className="block text-zinc-400 mb-1">CEP {loadingCep && '(BUSCANDO...)'}:</label>
-                  <input required type="text" maxLength={8} value={cep} onChange={handleCepChange} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="60000000" />
+                  <input required type="text" value={cep} onChange={handleCepChange} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" placeholder="00000-000" />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-zinc-400 mb-1">LOGRADOURO / RUA:</label>
