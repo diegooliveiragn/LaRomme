@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { items, payer, address, paymentMethod, subtotal } = body;
+    const { items, payer, address, paymentMethod, subtotal, cardData } = body;
 
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN;
     if (!accessToken) {
@@ -15,23 +15,19 @@ export async function POST(req: Request) {
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
     
     if (!supabaseUrl || !supabaseKey) {
-       console.error("Supabase keys missing in environment");
        return NextResponse.json({ success: false, error: 'Banco de dados inacessível.' }, { status: 500 });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-        auth: { persistSession: false }
-    });
+    const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
 
     const cleanCpf = payer.cpf ? payer.cpf.replace(/\D/g, '') : '';
     const cleanPhone = payer.phone ? payer.phone.replace(/\D/g, '') : '';
     const cleanCep = address.cep ? address.cep.replace(/\D/g, '') : '';
 
-    // 1. CHAMA O MERCADO PAGO PRIMEIRO PARA GERAR O PIX/COBRANÇA
-    const paymentPayload: any = {
+    // 1. MONTAGEM DA COBRANÇA
+    let paymentPayload: any = {
       transaction_amount: subtotal,
       description: `Pedido LaRomme`,
-      payment_method_id: paymentMethod === 'pix' ? 'pix' : 'master',
       payer: {
         email: payer.email,
         first_name: payer.fullName ? payer.fullName.split(' ')[0] : 'Cliente',
@@ -52,6 +48,26 @@ export async function POST(req: Request) {
       notification_url: 'https://www.laromme.com.br/api/webhooks/mercadopago',
     };
 
+    // SE FOR PIX
+    if (paymentMethod === 'pix') {
+      paymentPayload.payment_method_id = 'pix';
+    } 
+    // SE FOR CARTÃO DE CRÉDITO (O Brick envia os dados no cardData.formData)
+    else if (paymentMethod === 'card' && cardData) {
+      paymentPayload.token = cardData.token;
+      paymentPayload.installments = cardData.installments;
+      paymentPayload.payment_method_id = cardData.payment_method_id;
+      paymentPayload.issuer_id = cardData.issuer_id;
+      
+      // O MP exige o email do pagador dentro de payer.email no nível raiz
+      if (cardData.payer && cardData.payer.email) {
+          paymentPayload.payer.email = cardData.payer.email;
+      }
+    } else {
+        return NextResponse.json({ success: false, error: 'Método de pagamento inválido ou dados ausentes.' }, { status: 400 });
+    }
+
+    // 2. DISPARA A COBRANÇA PARA O MERCADO PAGO
     const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
       headers: {
@@ -68,11 +84,11 @@ export async function POST(req: Request) {
       console.error('Mercado Pago falhou:', mpData);
       return NextResponse.json({ 
         success: false, 
-        error: mpData.message || 'Erro ao processar transação financeira.' 
+        error: mpData.message || 'O cartão foi recusado pelo banco emissor.' 
       }, { status: 400 });
     }
 
-    // 2. INSERE O PEDIDO NO SUPABASE (Tabela: orders)
+    // 3. SE SUCESSO OU PENDENTE, SALVA O PEDIDO NO SUPABASE
     const { data: orderData, error: orderError } = await supabase
       .from('orders')
       .insert({
@@ -99,7 +115,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Ocorreu um erro interno ao registrar a encomenda.' }, { status: 500 });
     }
 
-    // 3. INSERE OS ITENS DO PEDIDO (Tabela: order_items)
+    // 4. INSERE OS ITENS
     const orderItemsPayload = items.map((item: any) => ({
         order_id: orderData.id,
         product_name: item.name,
@@ -109,35 +125,26 @@ export async function POST(req: Request) {
         quantity: item.quantity,
         unit_price: item.priceNumeric
     }));
+    await supabase.from('order_items').insert(orderItemsPayload);
 
-    const { error: itemsError } = await supabase.from('order_items').insert(orderItemsPayload);
-    
-    if (itemsError) {
-        console.error('Erro ao salvar os itens no Supabase:', itemsError);
-    }
-
+    // 5. COLETA OS DADOS DO PIX SE APLICÁVEL
     let qrCode = null;
     let qrCodeBase64 = null;
     let ticketUrl = null;
 
-    if (mpData.point_of_interaction?.transaction_data) {
+    if (paymentMethod === 'pix' && mpData.point_of_interaction?.transaction_data) {
       qrCode = mpData.point_of_interaction.transaction_data.qr_code;
       qrCodeBase64 = mpData.point_of_interaction.transaction_data.qr_code_base64;
       ticketUrl = mpData.point_of_interaction.transaction_data.ticket_url;
     }
 
-    // 4. RETORNA O SUCESSO, O ID DA PÁGINA DE RASTREIO E OS DADOS DO PIX
     return NextResponse.json({
       success: true,
       orderUuid: orderData.id,
       orderShortId: orderData.short_id,
       status: mpData.status,
       paymentMethod,
-      pixDetails: paymentMethod === 'pix' ? {
-        qrCode,
-        qrCodeBase64,
-        ticketUrl,
-      } : null,
+      pixDetails: paymentMethod === 'pix' ? { qrCode, qrCodeBase64, ticketUrl } : null,
     });
 
   } catch (error: any) {
