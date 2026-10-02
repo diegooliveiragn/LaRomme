@@ -16,22 +16,26 @@ export async function POST(req: Request) {
 
     const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
 
-    // 1. CHECAGEM DE ESTOQUE ANTES DO PAGAMENTO
-    for (const item of items) {
-      const { data: stockItem } = await supabase
-        .from('product_stock')
-        .select('quantity')
-        .eq('product_slug', item.productId || 'origo')
-        .eq('size', item.size)
-        .eq('color', item.colorName)
-        .single();
+    // 1. CHECAGEM DEFENSIVA DE ESTOQUE
+    try {
+      for (const item of items) {
+        const { data: stockItem } = await supabase
+          .from('product_stock')
+          .select('quantity')
+          .eq('product_slug', item.productId || 'origo')
+          .eq('size', item.size)
+          .eq('color', item.colorName)
+          .maybeSingle();
 
-      if (stockItem && stockItem.quantity < item.quantity) {
-        return NextResponse.json({
-          success: false,
-          error: `A quantidade solicitada para o item "${item.name} (${item.size}/${item.colorName})" não está mais disponível no estoque.`
-        }, { status: 400 });
+        if (stockItem && stockItem.quantity < item.quantity) {
+          return NextResponse.json({
+            success: false,
+            error: `Quantidade indisponível no estoque para "${item.name} (${item.size}/${item.colorName})".`
+          }, { status: 400 });
+        }
       }
+    } catch (stockErr) {
+      console.warn('Aviso: Tabela product_stock não verificada:', stockErr);
     }
 
     const cleanCpf = payer.cpf ? payer.cpf.replace(/\D/g, '') : '';
@@ -61,7 +65,7 @@ export async function POST(req: Request) {
       paymentPayload.issuer_id = cardData.issuer_id;
       if (cardData.payer && cardData.payer.email) paymentPayload.payer.email = cardData.payer.email;
     } else {
-      return NextResponse.json({ success: false, error: 'Método inválido.' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Método de pagamento inválido.' }, { status: 400 });
     }
 
     const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
@@ -75,9 +79,10 @@ export async function POST(req: Request) {
     });
 
     const mpData = await mpResponse.json();
-    if (!mpResponse.ok) return NextResponse.json({ success: false, error: mpData.message || 'Pagamento recusado.' }, { status: 400 });
+    if (!mpResponse.ok) return NextResponse.json({ success: false, error: mpData.message || 'Pagamento recusado pelo gateway.' }, { status: 400 });
 
-    // 2. REGISTRA O PEDIDO
+    // 2. SALVA O PEDIDO NO SUPABASE
+    const fallbackShortId = Math.floor(100000 + Math.random() * 900000).toString();
     const { data: orderData, error: orderError } = await supabase
       .from('orders')
       .insert({
@@ -94,13 +99,18 @@ export async function POST(req: Request) {
         payment_method: paymentMethod,
         mp_payment_id: mpData.id.toString(),
         subtotal: totalAmount,
-        status: mpData.status || 'pending'
+        status: mpData.status || 'pending',
+        short_id: fallbackShortId
       })
       .select('id, short_id')
       .single();
 
-    if (orderError || !orderData) return NextResponse.json({ success: false, error: 'Erro ao salvar pedido.' }, { status: 500 });
+    if (orderError || !orderData) {
+      console.error('Erro detalhado no Supabase ao salvar pedido:', orderError);
+      return NextResponse.json({ success: false, error: 'Erro ao registrar pedido no banco de dados.' }, { status: 500 });
+    }
 
+    // 3. SALVA OS ITENS
     const orderItemsPayload = items.map((item: any) => ({
       order_id: orderData.id,
       product_name: item.name,
@@ -112,29 +122,31 @@ export async function POST(req: Request) {
     }));
     await supabase.from('order_items').insert(orderItemsPayload);
 
-    // 3. DECREMENTA O ESTOQUE E REMOVE DAS CAPTURAS DE CARRINHO ABANDONADO
-    for (const item of items) {
-      const { data: currentStock } = await supabase
-        .from('product_stock')
-        .select('quantity')
-        .eq('product_slug', item.productId || 'origo')
-        .eq('size', item.size)
-        .eq('color', item.colorName)
-        .single();
-
-      if (currentStock) {
-        const newQty = Math.max(0, currentStock.quantity - item.quantity);
-        await supabase
+    // 4. TENTA DECREMENTAR ESTOQUE E REVERTER CARRINHO ABANDONADO
+    try {
+      for (const item of items) {
+        const { data: currentStock } = await supabase
           .from('product_stock')
-          .update({ quantity: newQty, updated_at: new Date().toISOString() })
+          .select('quantity')
           .eq('product_slug', item.productId || 'origo')
           .eq('size', item.size)
-          .eq('color', item.colorName);
-      }
-    }
+          .eq('color', item.colorName)
+          .maybeSingle();
 
-    // Marca o carrinho abandonado como recuperado caso tenha sido registrado
-    await supabase.from('abandoned_carts').delete().eq('customer_email', payer.email);
+        if (currentStock) {
+          const newQty = Math.max(0, currentStock.quantity - item.quantity);
+          await supabase
+            .from('product_stock')
+            .update({ quantity: newQty, updated_at: new Date().toISOString() })
+            .eq('product_slug', item.productId || 'origo')
+            .eq('size', item.size)
+            .eq('color', item.colorName);
+        }
+      }
+      await supabase.from('abandoned_carts').delete().eq('customer_email', payer.email);
+    } catch (errStockUpdate) {
+      console.warn('Aviso: Falha ao atualizar estoque pós-venda:', errStockUpdate);
+    }
 
     let qrCode = null, qrCodeBase64 = null, ticketUrl = null;
     if (paymentMethod === 'pix' && mpData.point_of_interaction?.transaction_data) {
@@ -152,7 +164,7 @@ export async function POST(req: Request) {
           <h1 style="font-family: Georgia, serif; font-size: 24px; letter-spacing: 4px; text-transform: uppercase; margin: 0;">LaRomme</h1>
         </div>
         <p style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Olá, ${payer.fullName.split(' ')[0]}.</p>
-        <p style="font-size: 14px; line-height: 1.6;">O seu pedido <strong>#${orderData.short_id}</strong> foi registrado no nosso ecossistema.</p>
+        <p style="font-size: 14px; line-height: 1.6;">O seu pedido <strong>#${orderData.short_id || fallbackShortId}</strong> foi registrado no nosso ecossistema.</p>
         ${isApproved ? `
           <div style="background-color: #000; color: #fff; padding: 15px; text-align: center; margin: 30px 0; font-weight: bold; letter-spacing: 2px;">
             PAGAMENTO APROVADO
@@ -179,7 +191,7 @@ export async function POST(req: Request) {
       resend.emails.send({
         from: 'LaRomme <pedidos@laromme.com.br>',
         to: payer.email,
-        subject: isApproved ? `Pagamento Aprovado - Pedido #${orderData.short_id}` : `Aguardando Pagamento - Pedido #${orderData.short_id}`,
+        subject: isApproved ? `Pagamento Aprovado - Pedido #${orderData.short_id || fallbackShortId}` : `Aguardando Pagamento - Pedido #${orderData.short_id || fallbackShortId}`,
         html: emailHtml,
       }).catch(err => console.error('Erro Resend:', err));
     }
@@ -187,7 +199,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       orderUuid: orderData.id,
-      orderShortId: orderData.short_id,
+      orderShortId: orderData.short_id || fallbackShortId,
       status: mpData.status,
       paymentMethod,
       pixDetails: paymentMethod === 'pix' ? { qrCode, qrCodeBase64, ticketUrl } : null,
@@ -195,6 +207,6 @@ export async function POST(req: Request) {
 
   } catch (error: any) {
     console.error('Exceção capturada na API:', error);
-    return NextResponse.json({ success: false, error: 'Erro de comunicação.' }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Erro de comunicação no servidor.' }, { status: 500 });
   }
 }

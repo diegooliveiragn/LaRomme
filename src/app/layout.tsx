@@ -1,32 +1,17 @@
 ﻿import type { Metadata } from 'next';
-import { Cinzel, Archivo, Space_Mono } from 'next/font/google';
-import SmoothScroll from '@/components/SmoothScroll';
+import Script from 'next/script';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { CartProvider } from '@/context/CartContext';
 import './globals.css';
 
-const cinzel = Cinzel({ 
-  subsets: ['latin'], 
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-serif'
-});
-
-const archivo = Archivo({ 
-  subsets: ['latin'], 
-  weight: ['300', '400', '500', '600', '700'],
-  variable: '--font-sans'
-});
-
-const spaceMono = Space_Mono({
-  subsets: ['latin'],
-  weight: ['400', '700'],
-  variable: '--font-mono'
-});
-
 export const metadata: Metadata = {
-  title: 'LaRomme. | Arquitetura de Vestuário',
-  description: 'Entre a leveza da areia e a estrutura do concreto. Fortaleza, Brasil.',
+  title: 'LaRomme • Maison de Haute Couture',
+  description: 'Moda autoral e elegância atemporal.',
+  icons: {
+    icon: '/icon.png',
+    apple: '/apple-icon.png',
+  },
 };
 
 export default function RootLayout({
@@ -35,19 +20,29 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className={`${cinzel.variable} ${archivo.variable} ${spaceMono.variable} bg-black text-white antialiased selection:bg-white selection:text-black overscroll-none`}>
+    <html lang="pt-BR" className="scroll-smooth bg-[#080808] text-white">
       <head>
-        <meta name="theme-color" content="#000000" />
+        {/* GOOGLE ANALYTICS (GA4) */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-NGQME5BB8G"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-NGQME5BB8G', {
+              page_path: window.location.pathname,
+            });
+          `}
+        </Script>
       </head>
-      <body className="bg-black text-white min-h-screen flex flex-col font-sans">
+      <body className="min-h-screen flex flex-col justify-between selection:bg-white selection:text-black antialiased">
         <CartProvider>
-          <SmoothScroll>
-            <Header />
-            <main className="flex-1">
-              {children}
-            </main>
-            <Footer />
-          </SmoothScroll>
+          <Header />
+          <main className="flex-grow">{children}</main>
+          <Footer />
         </CartProvider>
       </body>
     </html>
