@@ -2,14 +2,21 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 
 export default function Header() {
+  const pathname = usePathname();
   const { items, isOpen, openCart, closeCart, removeFromCart, activeOrder, clearActiveOrder } = useCart();
   const [menuMobileOpen, setMenuMobileOpen] = useState(false);
 
+  // Oculta o header do e-commerce em todas as páginas do Cortex OS
+  if (pathname?.startsWith('/cortex')) {
+    return null;
+  }
+
   const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
-  const subtotal = items.reduce((sum, item) => sum + item.priceNumeric * item.quantity, 0);
+  const subtotal = items.reduce((sum, item) => sum + (item.priceNumeric || 0) * item.quantity, 0);
 
   return (
     <>

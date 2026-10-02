@@ -4,116 +4,101 @@ import React from 'react';
 
 export default function CortexDashboardPage() {
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
+    <div className="space-y-8 animate-in fade-in duration-300">
       
-      {/* CABEÇALHO DA PÁGINA */}
-      <div className="flex justify-between items-end border-b border-zinc-900 pb-6">
+      {/* TÍTULO EXECUTIVO */}
+      <div className="flex justify-between items-end border-b border-slate-800/40 pb-5">
         <div>
-          <h1 className="font-serif text-2xl uppercase tracking-[0.15em] text-white">OLHO DE HÓRUS</h1>
-          <p className="text-xs text-zinc-500 uppercase tracking-widest mt-2">Visão Executiva & Telemetria em Tempo Real</p>
+          <h1 className="font-serif text-2xl font-bold tracking-wide uppercase">Olho de Hórus</h1>
+          <p className="text-xs text-slate-400 mt-1">Cockpit de Telemetria Operacional & Saúde Financeira</p>
         </div>
         <div className="text-right">
-          <div className="text-[10px] text-zinc-400 uppercase tracking-widest">Data de Referência</div>
-          <div className="text-xs text-white font-bold mt-1 tracking-widest">
-            {new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+          <span className="text-[10px] uppercase font-mono tracking-widest text-slate-500 block">Status da Apuração</span>
+          <span className="text-xs font-semibold text-emerald-400 flex items-center justify-end gap-1.5 mt-0.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+            Consolidado em Tempo Real
+          </span>
+        </div>
+      </div>
+
+      {/* CARDS DE KPIS */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+        <div className="p-5 rounded-xl border bg-slate-900/40 border-slate-800/80 shadow-sm space-y-3">
+          <div className="flex justify-between items-center text-xs text-slate-400 font-medium">
+            <span>Faturamento Bruto (Hoje)</span>
+            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          </div>
+          <div className="text-2xl font-bold tracking-tight">R$ 0,00</div>
+          <div className="text-[11px] text-slate-500 border-t border-slate-800/60 pt-2 flex justify-between">
+            <span>Meta Diária: R$ 2.500</span>
+            <span className="font-semibold text-slate-400">0%</span>
+          </div>
+        </div>
+
+        <div className="p-5 rounded-xl border bg-slate-900/40 border-slate-800/80 shadow-sm space-y-3">
+          <div className="flex justify-between items-center text-xs text-slate-400 font-medium">
+            <span>Vendas Concluídas</span>
+            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+          </div>
+          <div className="text-2xl font-bold tracking-tight">0 <span className="text-xs font-normal text-slate-400">pedidos</span></div>
+          <div className="text-[11px] text-slate-500 border-t border-slate-800/60 pt-2">
+            Ticket Médio: <span className="font-semibold text-slate-300">R$ 0,00</span>
+          </div>
+        </div>
+
+        <div className="p-5 rounded-xl border bg-amber-500/5 border-amber-500/20 shadow-sm space-y-3">
+          <div className="flex justify-between items-center text-xs text-amber-400 font-medium">
+            <span>Pix Pendentes / Abandonos</span>
+            <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+          </div>
+          <div className="text-2xl font-bold tracking-tight text-amber-400">0</div>
+          <div className="text-[11px] text-amber-400/80 border-t border-amber-500/20 pt-2">
+            Receita Retida: <span className="font-semibold">R$ 0,00</span>
+          </div>
+        </div>
+
+        <div className="p-5 rounded-xl border bg-slate-900/40 border-slate-800/80 shadow-sm space-y-3">
+          <div className="flex justify-between items-center text-xs text-slate-400 font-medium">
+            <span>Alertas de Estoque (WMS)</span>
+            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+          </div>
+          <div className="text-2xl font-bold tracking-tight">0 <span className="text-xs font-normal text-slate-400">SKUs</span></div>
+          <div className="text-[11px] text-emerald-400 border-t border-slate-800/60 pt-2">
+            Estoque Fisico Regular
           </div>
         </div>
       </div>
 
-      {/* WIDGETS PRIMÁRIOS (KPIs) */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Card 1 */}
-        <div className="border border-zinc-900 bg-[#080808] p-5">
-          <div className="flex justify-between items-start">
-            <span className="text-[10px] text-zinc-500 uppercase tracking-widest">Receita do Dia</span>
-            <svg className="w-4 h-4 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          </div>
-          <div className="mt-4">
-            <span className="text-2xl font-serif text-white">R$ 0,00</span>
-          </div>
-          <div className="mt-2 text-[9px] text-zinc-500 uppercase tracking-widest border-t border-zinc-900 pt-2">
-            Aguardando sincronização...
-          </div>
-        </div>
-
-        {/* Card 2 */}
-        <div className="border border-zinc-900 bg-[#080808] p-5">
-          <div className="flex justify-between items-start">
-            <span className="text-[10px] text-zinc-500 uppercase tracking-widest">Pedidos Pagos</span>
-            <svg className="w-4 h-4 text-zinc-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
-          </div>
-          <div className="mt-4 flex items-baseline space-x-2">
-            <span className="text-2xl font-serif text-white">0</span>
-            <span className="text-xs text-zinc-500">vendas hoje</span>
-          </div>
-          <div className="mt-2 text-[9px] text-zinc-500 uppercase tracking-widest border-t border-zinc-900 pt-2">
-            Aguardando sincronização...
-          </div>
-        </div>
-
-        {/* Card 3 */}
-        <div className="border border-zinc-900 bg-[#080808] p-5">
-          <div className="flex justify-between items-start">
-            <span className="text-[10px] text-amber-500/70 uppercase tracking-widest">Abandonos de Pix</span>
-            <svg className="w-4 h-4 text-amber-500/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-          </div>
-          <div className="mt-4 flex items-baseline space-x-2">
-            <span className="text-2xl font-serif text-amber-500">0</span>
-            <span className="text-xs text-zinc-500">potenciais perdidos</span>
-          </div>
-          <div className="mt-2 text-[9px] text-amber-500/50 uppercase tracking-widest border-t border-zinc-900 pt-2">
-            Módulo de Recuperação Off
-          </div>
-        </div>
-
-        {/* Card 4 */}
-        <div className="border border-zinc-900 bg-[#080808] p-5">
-          <div className="flex justify-between items-start">
-            <span className="text-[10px] text-zinc-500 uppercase tracking-widest">Estoque Crítico</span>
-            <svg className="w-4 h-4 text-red-500/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-          </div>
-          <div className="mt-4 flex items-baseline space-x-2">
-            <span className="text-2xl font-serif text-white">0</span>
-            <span className="text-xs text-zinc-500">SKUs em alerta</span>
-          </div>
-          <div className="mt-2 text-[9px] text-zinc-500 uppercase tracking-widest border-t border-zinc-900 pt-2">
-            Sem alertas WMS
-          </div>
-        </div>
-      </div>
-
-      {/* ÁREA DE GRÁFICOS E RADAR (MOCKUP VISUAL) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 pt-4">
+      {/* ÁREA PRINCIPAL DOS GRÁFICOS */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Gráfico Principal */}
-        <div className="lg:col-span-2 border border-zinc-900 bg-[#080808] p-6 h-96 flex flex-col">
-          <div className="flex justify-between items-center mb-6 border-b border-zinc-900 pb-4">
-            <span className="text-xs font-serif uppercase tracking-widest">Fluxo de Caixa Operacional</span>
-            <span className="text-[9px] text-zinc-500 uppercase tracking-widest bg-zinc-900 px-2 py-1">Visão Mensal</span>
+        {/* Painel do Gráfico */}
+        <div className="lg:col-span-2 p-6 rounded-xl border bg-slate-900/40 border-slate-800/80 flex flex-col h-96">
+          <div className="flex justify-between items-center pb-4 border-b border-slate-800/60 mb-6">
+            <h2 className="text-sm font-semibold tracking-wide">DRE Operacional Simplificado (Entradas vs. Custos)</h2>
+            <span className="text-xs px-2.5 py-1 rounded bg-slate-800 text-slate-300 font-mono">Apuração Mensal</span>
           </div>
-          <div className="flex-1 border border-dashed border-zinc-800 flex items-center justify-center text-[10px] text-zinc-600 uppercase tracking-widest">
-            [ Área reservada para Motor Gráfico de Receita vs. Custo ]
+          <div className="flex-1 rounded-lg border border-dashed border-slate-800 flex items-center justify-center text-xs text-slate-500 font-medium">
+            [ Gráfico de Curva Financeira em Tempo Real ]
           </div>
         </div>
 
-        {/* Radar Competitivo / Últimas Ações */}
-        <div className="border border-zinc-900 bg-[#080808] p-6 h-96 flex flex-col">
-          <div className="mb-6 border-b border-zinc-900 pb-4">
-            <span className="text-xs font-serif uppercase tracking-widest">Log do Sistema</span>
-          </div>
-          <div className="flex-1 space-y-4">
-            <div className="flex space-x-3 items-start">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+        {/* Auditoria / Log */}
+        <div className="p-6 rounded-xl border bg-slate-900/40 border-slate-800/80 flex flex-col h-96">
+          <h2 className="text-sm font-semibold tracking-wide pb-4 border-b border-slate-800/60 mb-6">Atividades do Sistema</h2>
+          <div className="space-y-4 flex-1 overflow-y-auto">
+            <div className="flex space-x-3 items-start text-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 mt-1 shrink-0" />
               <div>
-                <p className="text-[10px] text-white uppercase tracking-widest">Acesso CEO Autenticado</p>
-                <p className="text-[9px] text-zinc-500 font-sans mt-0.5">Sessão iniciada com sucesso via Supabase Auth.</p>
+                <p className="font-semibold text-slate-200">Autenticação Executiva Concluída</p>
+                <p className="text-slate-400 text-[11px] mt-0.5">Sessão blindada ativada via Supabase Auth.</p>
               </div>
             </div>
-            <div className="flex space-x-3 items-start">
-              <div className="w-1.5 h-1.5 rounded-full bg-zinc-600 mt-1.5 shrink-0" />
+            <div className="flex space-x-3 items-start text-xs">
+              <span className="w-2 h-2 rounded-full bg-amber-400 mt-1 shrink-0" />
               <div>
-                <p className="text-[10px] text-white uppercase tracking-widest">Cadeado Front-end Ativado</p>
-                <p className="text-[9px] text-zinc-500 font-sans mt-0.5">Rotas protegidas. Estrutura de banco mapeada.</p>
+                <p className="font-semibold text-slate-200">Interface Ergonômica Ativada</p>
+                <p className="text-slate-400 text-[11px] mt-0.5">Tipografia Sans-serif e Suporte a Modo Claro/Escuro.</p>
               </div>
             </div>
           </div>
