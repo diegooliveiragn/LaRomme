@@ -1,71 +1,63 @@
 ﻿'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Product } from '@/data/products';
 
 export interface CartItem {
-  cartItemId: string;
-  productId: string;
+  id: string;
+  cartItemId?: string;
   name: string;
-  category: string;
-  priceString: string;
+  price: string;
   priceNumeric: number;
+  priceString?: string;
+  image: string;
   size: string;
   colorName: string;
-  colorHex: string;
-  image: string;
+  colorHex?: string;
+  category?: string;
+  productId: string;
   quantity: number;
+}
+
+export interface ActiveOrder {
+  id: string;
+  shortId: string;
 }
 
 interface CartContextType {
   items: CartItem[];
-  addToCart: (product: Product, size: string, colorIndex: number) => void;
-  removeFromCart: (cartItemId: string) => void;
-  updateQuantity: (cartItemId: string, delta: number) => void;
-  clearCart: () => void;
-  totalItems: number;
-  subtotal: number;
+  isOpen: boolean;
   isLoaded: boolean;
+  subtotal: number;
+  totalItems: number;
+  openCart: () => void;
+  closeCart: () => void;
+  addToCart: (firstArg: any, secondArg?: any, thirdArg?: any) => void;
+  removeFromCart: (target?: number | string) => void;
+  updateQuantity: (target?: string | number, delta?: number) => void;
+  clearCart: () => void;
+  activeOrder: ActiveOrder | null;
+  setActiveOrderData: (order: ActiveOrder | null) => void;
+  clearActiveOrder: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [activeOrder, setActiveOrder] = useState<ActiveOrder | null>(null);
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('laromme_cart');
-      if (saved) {
-        const parsedItems = JSON.parse(saved);
-        
-        // Sanitização: Filtrar itens corrompidos do array salvo e garantir que propriedades importantes existem
-        const validItems = parsedItems.filter((item: any) => 
-          item && 
-          item.cartItemId && 
-          item.name && 
-          typeof item.priceNumeric === 'number' &&
-          !isNaN(item.priceNumeric) &&
-          item.image && 
-          typeof item.quantity === 'number'
-        );
-
-        // Se encontrou itens com formato invalido no banco do storage do browser, vai atualizar limpando os ruins
-        if (validItems.length !== parsedItems.length) {
-          console.warn("Removidos itens corrompidos ou legados do localStorage do Carrinho.");
-          localStorage.setItem('laromme_cart', JSON.stringify(validItems));
-        }
-
-        setItems(validItems);
-      }
-    } catch (e) {
-      console.error('Erro ao carregar o carrinho do LocalStorage:', e);
-      localStorage.removeItem('laromme_cart'); // Limpar dados corrompidos inteiros
-      setItems([]);
-    } finally {
-      setIsLoaded(true);
+    const savedCart = localStorage.getItem('laromme_cart');
+    if (savedCart) {
+      try { setItems(JSON.parse(savedCart)); } catch (e) {}
     }
+    const savedOrder = localStorage.getItem('laromme_active_order');
+    if (savedOrder) {
+      try { setActiveOrder(JSON.parse(savedOrder)); } catch (e) {}
+    }
+    setIsLoaded(true);
   }, []);
 
   useEffect(() => {
@@ -74,85 +66,134 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   }, [items, isLoaded]);
 
-  const parsePrice = (priceStr: string) => {
-    if (!priceStr) return 0;
-    // Pega valor exemplo: "R$ 159,90" e transforma em numérico: 159.9
-    const clean = priceStr.replace('R$', '').replace('.', '').replace(',', '.').trim();
-    const parsed = parseFloat(clean);
-    return isNaN(parsed) ? 0 : parsed;
-  };
+  const openCart = () => setIsOpen(true);
+  const closeCart = () => setIsOpen(false);
 
-  const addToCart = (product: Product, size: string, colorIndex: number) => {
-    const color = product.colors && product.colors[colorIndex] 
-      ? product.colors[colorIndex] 
-      : { name: 'PADRÃO', hex: '#000000', images: product.defaultImages || [] };
-      
-    const image = (color.images && color.images.length > 0) ? color.images[0] : (product.defaultImages && product.defaultImages[0] ? product.defaultImages[0] : '');
-    const colorName = color.name || 'PADRÃO';
-    const cartItemId = `${product.id}-${colorName}-${size}`;
-    const priceNumeric = parsePrice(product.price);
+  const subtotal = items.reduce((acc, item) => acc + (item.priceNumeric || 0) * item.quantity, 0);
+  const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
+
+  const addToCart = (firstArg: any, secondArg?: any, thirdArg?: any) => {
+    let newItem: CartItem;
+
+    if (secondArg !== undefined) {
+      const product = firstArg;
+      const size = secondArg;
+      const colorIdx = typeof thirdArg === 'number' ? thirdArg : 0;
+      const selectedColor = product.colors && product.colors[colorIdx] 
+        ? product.colors[colorIdx] 
+        : { name: 'Padrão', hex: '#000000' };
+
+      const cartItemId = `${product.id || product.slug || 'item'}-${size}-${selectedColor.name}`;
+
+      newItem = {
+        id: product.id || product.slug || 'item',
+        cartItemId,
+        productId: product.id || product.slug || 'origo',
+        name: product.name || 'Artefato',
+        price: product.price || product.priceString || `R$ ${product.priceNumeric || 0}`,
+        priceNumeric: product.priceNumeric || (typeof product.price === 'number' ? product.price : 0),
+        priceString: product.priceString || product.price || `R$ ${product.priceNumeric || 0}`,
+        image: product.image || (product.images && product.images[0]) || '',
+        size: size,
+        colorName: selectedColor.name || selectedColor || 'Padrão',
+        colorHex: selectedColor.hex || '#000000',
+        category: product.category || 'ARTEFATO',
+        quantity: 1,
+      };
+    } else {
+      const item = firstArg;
+      const cartItemId = item.cartItemId || item.id || `${item.productId || 'item'}-${item.size}-${item.colorName}`;
+      newItem = {
+        id: item.id || item.productId || 'item',
+        cartItemId,
+        productId: item.productId || item.id || 'origo',
+        name: item.name || 'Artefato',
+        price: item.price || item.priceString || `R$ ${item.priceNumeric || 0}`,
+        priceNumeric: item.priceNumeric || 0,
+        priceString: item.priceString || item.price || `R$ ${item.priceNumeric || 0}`,
+        image: item.image || '',
+        size: item.size || 'ÚNICO',
+        colorName: item.colorName || 'Padrão',
+        colorHex: item.colorHex || '#000000',
+        category: item.category || 'ARTEFATO',
+        quantity: item.quantity || 1,
+      };
+    }
 
     setItems((prev) => {
-      const existingIndex = prev.findIndex((item) => item.cartItemId === cartItemId);
+      const existingIndex = prev.findIndex(
+        (i) => (i.cartItemId && i.cartItemId === newItem.cartItemId) || 
+               (i.productId === newItem.productId && i.size === newItem.size && i.colorName === newItem.colorName)
+      );
       if (existingIndex > -1) {
         const updated = [...prev];
-        updated[existingIndex].quantity += 1;
+        updated[existingIndex].quantity += newItem.quantity;
         return updated;
-      } else {
-        return [
-          ...prev,
-          {
-            cartItemId,
-            productId: product.id,
-            name: product.name,
-            category: product.category,
-            priceString: product.price,
-            priceNumeric,
-            size,
-            colorName,
-            colorHex: color.hex || '#000000',
-            image,
-            quantity: 1,
-          },
-        ];
       }
+      return [...prev, newItem];
+    });
+    setIsOpen(true);
+  };
+
+  const removeFromCart = (target?: number | string) => {
+    if (target === undefined) return;
+    setItems((prev) => {
+      if (typeof target === 'number') {
+        return prev.filter((_, i) => i !== target);
+      }
+      return prev.filter((item) => item.cartItemId !== target && item.id !== target);
     });
   };
 
-  const removeFromCart = (cartItemId: string) => {
-    setItems((prev) => prev.filter((item) => item.cartItemId !== cartItemId));
-  };
-
-  const updateQuantity = (cartItemId: string, delta: number) => {
-    setItems((prev) =>
-      prev
-        .map((item) => {
-          if (item.cartItemId === cartItemId) {
+  const updateQuantity = (target?: string | number, delta: number = 0) => {
+    if (target === undefined) return;
+    setItems((prev) => {
+      return prev
+        .map((item, idx) => {
+          const isTarget = typeof target === 'number' ? idx === target : item.cartItemId === target || item.id === target;
+          if (isTarget) {
             const newQty = item.quantity + delta;
             return newQty > 0 ? { ...item, quantity: newQty } : null;
           }
           return item;
         })
-        .filter(Boolean) as CartItem[]
-    );
+        .filter(Boolean) as CartItem[];
+    });
   };
 
   const clearCart = () => setItems([]);
 
-  const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
-  const subtotal = items.reduce((acc, item) => acc + (item.priceNumeric * item.quantity), 0);
+  const setActiveOrderData = (order: ActiveOrder | null) => {
+    setActiveOrder(order);
+    if (order) {
+      localStorage.setItem('laromme_active_order', JSON.stringify(order));
+    } else {
+      localStorage.removeItem('laromme_active_order');
+    }
+  };
+
+  const clearActiveOrder = () => {
+    setActiveOrder(null);
+    localStorage.removeItem('laromme_active_order');
+  };
 
   return (
     <CartContext.Provider
       value={{
         items,
+        isOpen,
+        isLoaded,
+        subtotal,
+        totalItems,
+        openCart,
+        closeCart,
         addToCart,
         removeFromCart,
         updateQuantity,
         clearCart,
-        totalItems,
-        subtotal,
-        isLoaded,
+        activeOrder,
+        setActiveOrderData,
+        clearActiveOrder,
       }}
     >
       {children}
@@ -162,8 +203,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
 export function useCart() {
   const context = useContext(CartContext);
-  if (!context) {
-    throw new Error('useCart precisa ser utilizado dentro de um CartProvider');
-  }
+  if (!context) throw new Error('useCart deve ser usado dentro de CartProvider');
   return context;
 }
