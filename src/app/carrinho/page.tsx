@@ -1,5 +1,6 @@
 ﻿'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useCart } from '@/context/CartContext';
@@ -8,7 +9,69 @@ import FadeIn from '@/components/FadeIn';
 export default function CarrinhoPage() {
   const { items, removeFromCart, updateQuantity, subtotal, totalItems, isLoaded } = useCart();
 
+  const [cep, setCep] = useState('');
+  const [calculatingFrete, setCalculatingFrete] = useState(false);
+  const [freightOption, setFreightOption] = useState<{ name: string; price: number; days: number } | null>(null);
+
+  // CRONÔMETRO DE RESERVA DE LOTE (15 MINUTOS)
+  const [timeLeft, setTimeLeft] = useState(900);
+
+  useEffect(() => {
+    if (items.length === 0) return;
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [items.length]);
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+    const s = (seconds % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
+
+  const handleCalculateFrete = async () => {
+    const cleanCep = cep.replace(/\D/g, '');
+    if (cleanCep.length < 8) return;
+
+    setCalculatingFrete(true);
+    try {
+      const res = await fetch('/api/frete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cep: cleanCep, items }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setFreightOption({ 
+            name: data[0].name || 'EXPRESSO FORTALEZA / BRASIL', 
+            price: data[0].price || 0, 
+            days: data[0].delivery_time || 3 
+          });
+        } else if (data.price !== undefined) {
+          setFreightOption({ 
+            name: data.name || 'ENTREGA PADRÃO', 
+            price: Number(data.price), 
+            days: Number(data.days || 3) 
+          });
+        }
+      }
+    } catch (e) {
+      console.error('Erro ao consultar frete:', e);
+    } finally {
+      setCalculatingFrete(false);
+    }
+  };
+
   const formattedSubtotal = subtotal.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  });
+
+  const finalTotal = subtotal + (freightOption ? freightOption.price : 0);
+  const formattedTotal = finalTotal.toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
   });
@@ -49,7 +112,16 @@ export default function CarrinhoPage() {
   }
 
   return (
-    <div className="pt-32 pb-24 px-6 md:px-12 max-w-6xl mx-auto space-y-12 font-sans">
+    <div className="pt-32 pb-24 px-6 md:px-12 max-w-6xl mx-auto space-y-8 font-sans">
+      
+      {/* BANNER DE RESERVA DE LOTE */}
+      <FadeIn>
+        <div className="bg-[#080808] border border-zinc-900 px-4 py-3 text-center text-[10px] font-mono text-zinc-400 uppercase tracking-widest flex items-center justify-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+          <span>RESERVA TEMPORÁRIA DE LOTE: <strong className="text-amber-400 font-bold">{formatTime(timeLeft)}</strong> MINUTOS.</span>
+        </div>
+      </FadeIn>
+
       <FadeIn>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-zinc-900 pb-6 gap-4">
           <div>
@@ -133,15 +205,45 @@ export default function CarrinhoPage() {
                   <span>SUBTOTAL:</span>
                   <span className="text-white font-bold">{formattedSubtotal}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>FRETE:</span>
-                  <span className="text-zinc-500 uppercase">CALCULADO NO CHECKOUT</span>
+
+                {/* SIMULADOR DE FRETE */}
+                <div className="border-t border-b border-zinc-900 py-3 space-y-3">
+                  <label className="text-[10px] text-zinc-500 uppercase block tracking-wider">CÁLCULO DE FRETE (CEP):</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      maxLength={9}
+                      value={cep}
+                      onChange={(e) => setCep(e.target.value)}
+                      placeholder="60000-000"
+                      className="bg-zinc-950 border border-zinc-800 px-3 py-2 text-white text-xs w-full focus:outline-none focus:border-white font-mono"
+                    />
+                    <button
+                      onClick={handleCalculateFrete}
+                      disabled={calculatingFrete}
+                      className="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-white px-4 py-2 text-[10px] font-bold uppercase transition-colors"
+                    >
+                      {calculatingFrete ? '...' : 'OK'}
+                    </button>
+                  </div>
+
+                  {freightOption ? (
+                    <div className="flex justify-between text-[11px] text-emerald-400 font-mono pt-1">
+                      <span>{freightOption.name} ({freightOption.days}d):</span>
+                      <span>{freightOption.price === 0 ? 'GRÁTIS' : freightOption.price.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between text-[10px]">
+                      <span>FRETE ESTIMADO:</span>
+                      <span className="text-zinc-500 uppercase">INFORME O CEP</span>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              <div className="border-t border-zinc-900 pt-4 flex justify-between font-mono text-sm">
+              <div className="pt-2 flex justify-between font-mono text-sm">
                 <span className="text-white font-bold">TOTAL ESTIMADO:</span>
-                <span className="text-white font-bold">{formattedSubtotal}</span>
+                <span className="text-white font-bold">{formattedTotal}</span>
               </div>
 
               <Link
