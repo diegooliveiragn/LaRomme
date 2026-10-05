@@ -17,6 +17,31 @@ export default function CheckoutPage() {
 
   const subtotal = items.reduce((acc, item) => acc + item.priceNumeric * item.quantity, 0);
 
+  // Busca automática de CEP via ViaCEP
+  const handleCepChange = async (cepValue: string) => {
+    setAddress((prev) => ({ ...prev, cep: cepValue }));
+    const clean = cepValue.replace(/\D/g, '');
+    if (clean.length === 8) {
+      try {
+        const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+        if (res.ok) {
+          const data = await res.json();
+          if (!data.erro) {
+            setAddress((prev) => ({
+              ...prev,
+              street: data.logradouro || prev.street,
+              neighborhood: data.bairro || prev.neighborhood,
+              city: data.localidade || prev.city,
+              state: data.uf || prev.state,
+            }));
+          }
+        }
+      } catch (e) {
+        // Fallback silencioso se o serviço estiver indisponível
+      }
+    }
+  };
+
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (items.length === 0) return;
@@ -41,7 +66,13 @@ export default function CheckoutPage() {
       const data = await res.json();
 
       if (data.success && data.orderUuid) {
-        // Grava a Reserva Ativa no contexto global e esvazia o carrinho
+        if (data.pix) {
+          try {
+            localStorage.setItem(`laromme_pix_${data.orderUuid}`, JSON.stringify(data.pix));
+          } catch (e) {
+            console.error('Erro ao armazenar Pix localmente:', e);
+          }
+        }
         setActiveOrderData({ id: data.orderUuid, shortId: data.orderShortId });
         clearCart();
         router.push(`/pedido/${data.orderUuid}`);
@@ -128,8 +159,9 @@ export default function CheckoutPage() {
                 type="text"
                 placeholder="CEP"
                 required
+                maxLength={9}
                 value={address.cep}
-                onChange={(e) => setAddress({ ...address, cep: e.target.value })}
+                onChange={(e) => handleCepChange(e.target.value)}
                 className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white transition-colors"
               />
               <input

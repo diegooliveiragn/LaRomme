@@ -101,10 +101,10 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
       </FadeIn>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
+
         {/* ÁREA PRINCIPAL: PIX OU CONFIRMAÇÃO */}
         <div className="lg:col-span-7 space-y-6">
-          
+
           {/* PAINEL PIX SE PENDENTE */}
           {isPending && order?.payment_method === 'pix' && pixData && (
             <div className="bg-[#080808] border border-amber-900/50 p-6 md:p-8 space-y-6 text-center">
