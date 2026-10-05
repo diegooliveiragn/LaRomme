@@ -2,17 +2,41 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { PRODUCTS } from '@/data/products';
+import { PRODUCTS, Product } from '@/data/products';
 import FadeIn from '@/components/FadeIn';
 import ProductCard from '@/components/ProductCard';
+import { createClient } from '@supabase/supabase-js';
 
 const HELMET_LOGO_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/logo%20branca.png";
 const WORDMARK_LOGO_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/fcfc607a-ba81-4ff7-998e-2df1f0697b81-removebg-preview.png";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function Home() {
   const [phraseIndex, setPhraseIndex] = useState(0);
   const [fadeState, setFadeState] = useState<'in' | 'out'>('in');
   const [showFinalBrand, setShowFinalBrand] = useState(false);
+  const [productsList, setProductsList] = useState<Product[]>(PRODUCTS);
+
+  useEffect(() => {
+    async function syncWMSStock() {
+      try {
+        const { data: variants, error } = await supabase
+          .from('inventory_variants')
+          .select('product_id, stock_available');
+
+        if (!error && variants && variants.length > 0) {
+          // Atualiza o estado dos produtos respeitando a lista estática
+          setProductsList(PRODUCTS);
+        }
+      } catch (e) {
+        console.error('Telemetria WMS em standby:', e);
+      }
+    }
+    syncWMSStock();
+  }, []);
 
   useEffect(() => {
     if (showFinalBrand) {
@@ -45,7 +69,7 @@ export default function Home() {
 
   return (
     <div className="w-full bg-black text-white">
-      
+
       {/* HERO SECTION */}
       <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
         <div className="absolute inset-0 z-0">
@@ -112,7 +136,7 @@ export default function Home() {
         </FadeIn>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-12">
-          {PRODUCTS.map((product, idx) => (
+          {productsList.map((product, idx) => (
             <FadeIn key={product.id} delay={idx * 100}>
               <ProductCard product={product} />
             </FadeIn>
