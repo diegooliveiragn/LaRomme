@@ -70,6 +70,18 @@ export default function CortexCatalogoPage() {
     fetchData();
   }, []);
 
+  const triggerCacheRevalidation = async (slug?: string) => {
+    try {
+      await fetch('/api/revalidate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug }),
+      });
+    } catch (e) {
+      console.error('Erro ao solicitar revalidação de cache:', e);
+    }
+  };
+
   const handleEditClick = (prod: Product) => {
     setSelectedProduct(prod);
     setEditForm({ ...prod });
@@ -94,10 +106,13 @@ export default function CortexCatalogoPage() {
       if (error) throw error;
 
       setProducts((prev) =>
-        prev.map((p) => (p.id === selectedProduct.id ? { ...p, ...editForm } as Product : p))
+        prev.map((p) => (p.id === selectedProduct.id ? ({ ...p, ...editForm } as Product) : p))
       );
-      
-      alert('Artefato atualizado com sucesso. O cache da vitrine será revalidado na próxima requisição.');
+
+      // Revalidação em tempo real
+      await triggerCacheRevalidation(selectedProduct.id);
+
+      alert('Artefato atualizado e vitrine pública revalidada em tempo real!');
       setIsEditing(false);
     } catch (e) {
       alert('Falha ao atualizar o produto no banco de dados.');
@@ -106,8 +121,7 @@ export default function CortexCatalogoPage() {
     }
   };
 
-  // Funções simuladas para a grade de variações (WMS)
-  const productVariants = selectedProduct 
+  const productVariants = selectedProduct
     ? variants.filter((v) => v.product_id === selectedProduct.id)
     : [];
 
@@ -118,9 +132,8 @@ export default function CortexCatalogoPage() {
     setSaving(true);
     const numQty = Number(qty);
     const newPhysical = currentPhysical + numQty;
-    
-    // Simplificando o stock_available para o momento (Físico - Reservado)
-    const variantInfo = variants.find(v => v.id === variantId);
+
+    const variantInfo = variants.find((v) => v.id === variantId);
     const newAvailable = newPhysical - (variantInfo?.stock_reserved || 0);
 
     try {
@@ -132,8 +145,16 @@ export default function CortexCatalogoPage() {
       if (error) throw error;
 
       setVariants((prev) =>
-        prev.map((v) => (v.id === variantId ? { ...v, stock_physical: newPhysical, stock_available: newAvailable } : v))
+        prev.map((v) =>
+          v.id === variantId
+            ? { ...v, stock_physical: newPhysical, stock_available: newAvailable }
+            : v
+        )
       );
+
+      if (selectedProduct) {
+        await triggerCacheRevalidation(selectedProduct.id);
+      }
     } catch (e) {
       alert('Falha ao atualizar estoque da variante.');
     } finally {
@@ -158,11 +179,10 @@ export default function CortexCatalogoPage() {
       </div>
 
       <div className="flex flex-col lg:flex-row gap-8">
-        
         {/* LISTAGEM DE ARTEFATOS (PAINEL ESQUERDO) */}
         <div className="lg:w-1/3 flex flex-col space-y-4">
           <h2 className="text-sm font-semibold tracking-wide border-b border-slate-800/60 pb-2">Acervo da Maison</h2>
-          
+
           <div className="bg-slate-900/40 border border-slate-800/80 rounded-xl overflow-hidden shadow-sm flex-1">
             {loading ? (
               <div className="p-8 text-center text-xs text-slate-500">Lendo catálogo...</div>
@@ -205,7 +225,6 @@ export default function CortexCatalogoPage() {
             </div>
           ) : (
             <div className="bg-slate-900/40 border border-slate-800/80 rounded-xl overflow-hidden shadow-sm flex flex-col h-full">
-              
               {/* HEADER DO PRODUTO */}
               <div className="p-6 border-b border-slate-800/60 flex justify-between items-start bg-slate-950/40">
                 <div className="flex items-center space-x-4">
@@ -249,7 +268,6 @@ export default function CortexCatalogoPage() {
 
               {/* CONTEÚDO DAS ABAS */}
               <div className="p-6 flex-1 overflow-y-auto">
-                
                 {/* ABA 1: EDIÇÃO DE PRODUTO */}
                 {activeTab === 'VITRINE' && (
                   <div className="space-y-6 max-w-2xl">
@@ -317,7 +335,7 @@ export default function CortexCatalogoPage() {
                             onClick={handleSaveProduct}
                             className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-bold uppercase tracking-widest transition-colors shadow-lg"
                           >
-                            {saving ? 'Gravando...' : 'Salvar Alteraçoes'}
+                            {saving ? 'Gravando...' : 'Salvar e Revalidar Vitrine'}
                           </button>
                           <button
                             disabled={saving}
@@ -389,8 +407,8 @@ export default function CortexCatalogoPage() {
                                 <td className="py-3 px-4 text-center font-mono text-amber-500/80">{variant.stock_reserved || 0}</td>
                                 <td className="py-3 px-4 text-center font-mono">
                                   <span className={`px-2 py-0.5 rounded ${
-                                    (variant.stock_available || 0) <= 0 
-                                      ? 'bg-rose-500/10 text-rose-400' 
+                                    (variant.stock_available || 0) <= 0
+                                      ? 'bg-rose-500/10 text-rose-400'
                                       : 'bg-emerald-500/10 text-emerald-400'
                                   }`}>
                                     {variant.stock_available || 0}
@@ -413,11 +431,9 @@ export default function CortexCatalogoPage() {
                   </div>
                 )}
               </div>
-
             </div>
           )}
         </div>
-
       </div>
     </div>
   );
