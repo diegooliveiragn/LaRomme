@@ -2,22 +2,42 @@
 
 import { useState } from 'react';
 import FadeIn from '@/components/FadeIn';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function SenadoVipPage() {
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
-  const [submitted, setSetSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email) {
-      setSetSubmitted(true);
+    if (!email) return;
+
+    setLoading(true);
+    try {
+      await supabase.from('senado_vip').insert([
+        {
+          email: email.trim().toLowerCase(),
+          origin: 'portal_senado_vip',
+          status: 'active',
+        },
+      ]);
+    } catch (err) {
+      console.error('Erro ao cadastrar no Senado VIP:', err);
+    } finally {
+      setLoading(false);
+      setSubmitted(true);
     }
   };
 
   return (
     <div className="pt-36 pb-28 px-6 md:px-12 max-w-3xl mx-auto space-y-16 font-sans">
-      
+
       <FadeIn>
         <div className="text-center space-y-4">
           <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase">PORTAL DO MEMBRO</span>
@@ -63,9 +83,10 @@ export default function SenadoVipPage() {
 
             <button
               type="submit"
-              className="w-full bg-white text-black font-bold text-xs tracking-[0.3em] uppercase py-4 hover:bg-zinc-200 transition-all font-sans shadow-xl"
+              disabled={loading}
+              className="w-full bg-white text-black font-bold text-xs tracking-[0.3em] uppercase py-4 hover:bg-zinc-200 transition-all font-sans shadow-xl disabled:opacity-50"
             >
-              ACESSAR SENADO VIP.
+              {loading ? 'VALIDANDO MEMBRO...' : 'ACESSAR SENADO VIP.'}
             </button>
           </form>
         </FadeIn>
@@ -75,10 +96,10 @@ export default function SenadoVipPage() {
             <span className="text-[10px] text-zinc-500 uppercase tracking-widest block">SOLICITAÇÃO RECEBIDA</span>
             <h2 className="font-serif text-2xl text-white font-bold tracking-wider uppercase">BEM-VINDO, SENADOR.</h2>
             <p className="text-xs text-zinc-300 leading-relaxed font-sans font-light max-w-md mx-auto">
-              Sua chave de acesso para o e-mail <span className="text-white font-bold">{email}</span> foi validada no sistema. Você receberá notificações prioritárias sobre o Drop 02 diretamente na sua caixa de entrada.
+              Sua chave de acesso para o e-mail <span className="text-white font-bold">{email}</span> foi registrada no sistema. Você receberá notificações prioritárias sobre os próximos lotes diretamente na sua caixa de entrada.
             </p>
             <button
-              onClick={() => setSetSubmitted(false)}
+              onClick={() => setSubmitted(false)}
               className="text-xs text-zinc-400 underline underline-offset-4 hover:text-white pt-4"
             >
               VOLTAR AO FORMULÁRIO.
