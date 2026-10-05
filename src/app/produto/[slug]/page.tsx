@@ -1,12 +1,17 @@
 ﻿'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
 import { PRODUCTS, Product } from '@/data/products';
 import { useCart } from '@/context/CartContext';
 import FadeIn from '@/components/FadeIn';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function ProductPage({ params }: { params: { slug: string } }) {
   const product: Product | undefined = PRODUCTS.find((p) => p.id === params.slug);
@@ -15,29 +20,55 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     notFound();
   }
 
-  // Pega os outros produtos para o carrossel inferior
+  // Outros produtos para o carrossel inferior
   const otherProducts = PRODUCTS.filter((p) => p.id !== product.id);
 
   const { addToCart } = useCart();
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
-  
-  // Se for Tamanho Único, o estado inicial já é 'TU'
+
+  // Se for Tamanho Único, o estado inicial é 'TU'
   const [selectedSize, setSelectedSize] = useState<string>(product.isOneSize ? 'TU' : 'M');
-  
+
   const [showProportionModal, setShowProportionModal] = useState(false);
   const [addedToast, setAddedToast] = useState(false);
-  
+
   const [height, setHeight] = useState('180');
   const [weight, setWeight] = useState('80');
   const [fitPreference, setFitPreference] = useState<'ANATÔMICO' | 'PADRÃO' | 'AMPLO'>('PADRÃO');
   const [openAccordion, setOpenAccordion] = useState<number | null>(0);
-  
+
   const [zoomStyle, setZoomStyle] = useState<{ [key: number]: React.CSSProperties }>({});
+
+  // ESTOQUE WMS EM TEMPO REAL
+  const [stockMap, setStockMap] = useState<Record<string, number>>({});
+  const [hasFetchedStock, setHasFetchedStock] = useState(false);
+
+  useEffect(() => {
+    async function fetchRealtimeStock() {
+      try {
+        const { data: variants, error } = await supabase
+          .from('inventory_variants')
+          .select('size, stock_available');
+
+        if (!error && variants && variants.length > 0) {
+          const map: Record<string, number> = {};
+          variants.forEach((v) => {
+            const key = v.size ? v.size.toUpperCase() : 'TU';
+            map[key] = (map[key] || 0) + (v.stock_available ?? 0);
+          });
+          setStockMap(map);
+          setHasFetchedStock(true);
+        }
+      } catch (err) {
+        console.error('Erro ao ler estoque WMS Supabase:', err);
+      }
+    }
+    fetchRealtimeStock();
+  }, [product.id]);
 
   const currentImages = product.colors[selectedColorIndex]?.images || product.defaultImages;
 
   const handleAddToCart = () => {
-    // Garante que se for tamanho único, manda "TU"
     const sizeToCart = product.isOneSize ? 'TU' : selectedSize;
     addToCart(product, sizeToCart, selectedColorIndex);
     setAddedToast(true);
@@ -84,7 +115,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         <div className="lg:col-span-7 space-y-6">
           {currentImages.map((imgUrl, idx) => (
             <FadeIn key={idx} delay={idx * 100}>
-              <div 
+              <div
                 className="relative aspect-[3/4] w-full bg-zinc-950 border border-zinc-900 overflow-hidden cursor-crosshair group"
                 onMouseMove={(e) => handleMouseMove(e, idx)}
                 onMouseLeave={() => handleMouseLeave(idx)}
@@ -145,15 +176,13 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
 
           <FadeIn delay={200}>
             <div className="space-y-3 border-t border-zinc-900 pt-6">
-              
+
               {product.isOneSize ? (
-                // LAYOUT PARA TAMANHO ÚNICO (BONÉS)
                 <div className="flex justify-between items-center text-xs font-mono">
                   <span className="text-zinc-400">TAMANHO:</span>
                   <span className="text-white font-bold tracking-widest border border-white px-4 py-2">ÚNICO (AJUSTÁVEL)</span>
                 </div>
               ) : (
-                // LAYOUT PARA ROUPAS (P, M, G, GG)
                 <>
                   <div className="flex justify-between items-center text-xs font-mono">
                     <span className="text-zinc-400">TAMANHO:</span>
@@ -165,19 +194,25 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
                     </button>
                   </div>
                   <div className="grid grid-cols-4 gap-2">
-                    {['P', 'M', 'G', 'GG'].map((size) => (
-                      <button
-                        key={size}
-                        onClick={() => setSelectedSize(size)}
-                        className={`py-3 text-xs font-mono border transition-all ${
-                          selectedSize === size
-                            ? 'bg-white text-black border-white font-bold'
-                            : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-600'
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
+                    {['P', 'M', 'G', 'GG'].map((size) => {
+                      const isOutOfStock = hasFetchedStock && stockMap[size] !== undefined && stockMap[size] <= 0;
+                      return (
+                        <button
+                          key={size}
+                          disabled={isOutOfStock}
+                          onClick={() => setSelectedSize(size)}
+                          className={`py-3 text-xs font-mono border transition-all ${
+                            isOutOfStock
+                              ? 'opacity-30 border-zinc-900 text-zinc-700 line-through cursor-not-allowed'
+                              : selectedSize === size
+                                ? 'bg-white text-black border-white font-bold'
+                                : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-600'
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      );
+                    })}
                   </div>
                 </>
               )}
@@ -185,7 +220,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           </FadeIn>
 
           <FadeIn delay={250}>
-            <button 
+            <button
               onClick={handleAddToCart}
               className="w-full bg-white text-black font-bold text-xs tracking-[0.3em] uppercase py-4 hover:bg-zinc-200 transition-all shadow-2xl active:scale-[0.99]"
             >
@@ -297,19 +332,19 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
               CONTINUE EXPLORANDO.
             </h2>
           </div>
-          
+
           <div className="flex overflow-x-auto gap-6 pb-8 snap-x snap-mandatory hide-scrollbar">
             {otherProducts.map((p) => (
-              <Link 
-                href={`/produto/${p.id}`} 
+              <Link
+                href={`/produto/${p.id}`}
                 key={p.id}
                 className="group flex-none w-64 md:w-80 snap-start bg-[#080808] border border-zinc-900 p-5 hover:border-zinc-700 transition-all duration-300"
               >
                 <div className="relative aspect-[3/4] w-full bg-zinc-950 overflow-hidden mb-4">
-                  <Image 
-                    src={p.defaultImages[0]} 
-                    alt={p.name} 
-                    fill 
+                  <Image
+                    src={p.defaultImages[0]}
+                    alt={p.name}
+                    fill
                     className="object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 opacity-90"
                   />
                 </div>
