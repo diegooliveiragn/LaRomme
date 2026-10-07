@@ -4,7 +4,6 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-// Inicialização otimizada para Server-Side
 const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: {
     autoRefreshToken: false,
@@ -34,7 +33,8 @@ export async function POST(req: Request) {
       return acc + unitPrice * qty;
     }, 0);
 
-    const totalAmount = calculatedSubtotal + (Number(shippingCost) || 0);
+    const safeShippingCost = Number(shippingCost) || 0;
+    const totalAmount = calculatedSubtotal + safeShippingCost;
 
     if (totalAmount <= 0) {
       return NextResponse.json(
@@ -90,35 +90,34 @@ export async function POST(req: Request) {
       }
     }
 
-    // Tenta salvar no Supabase
+    // Payload seguro para inserção na tabela orders
+    const orderPayload = {
+      short_id: orderShortId,
+      status: 'pending',
+      total_amount: totalAmount,
+      subtotal: calculatedSubtotal,
+      shipping_cost: safeShippingCost,
+      payment_method: 'pix',
+      customer_name: payer.fullName,
+      customer_email: payer.email.trim().toLowerCase(),
+      customer_cpf: payer.cpf.replace(/\D/g, ''),
+      customer_phone: payer.phone.replace(/\D/g, ''),
+      shipping_cep: address.cep.replace(/\D/g, ''),
+      shipping_street: address.street,
+      shipping_number: address.number,
+      shipping_neighborhood: address.neighborhood,
+      shipping_city: address.city,
+      shipping_state: address.state,
+    };
+
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .insert([
-        {
-          short_id: orderShortId,
-          status: 'pending',
-          total_amount: totalAmount,
-          subtotal: calculatedSubtotal,
-          shipping_cost: Number(shippingCost) || 0,
-          payment_method: 'pix',
-          customer_name: payer.fullName,
-          customer_email: payer.email.trim().toLowerCase(),
-          customer_cpf: payer.cpf.replace(/\D/g, ''),
-          customer_phone: payer.phone.replace(/\D/g, ''),
-          shipping_cep: address.cep.replace(/\D/g, ''),
-          shipping_street: address.street,
-          shipping_number: address.number,
-          shipping_neighborhood: address.neighborhood,
-          shipping_city: address.city,
-          shipping_state: address.state,
-        },
-      ])
+      .insert([orderPayload])
       .select()
       .single();
 
     if (orderError) {
       console.error('Erro Supabase:', orderError);
-      // AGORA O ERRO ESPECÍFICO DO BANCO APARECERÁ NA TELA
       return NextResponse.json({ 
         success: false, 
         error: `Supabase: ${orderError.message} | Detalhes: ${orderError.details || 'N/A'}` 
