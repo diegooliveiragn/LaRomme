@@ -3,7 +3,14 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+// Inicialização otimizada para Server-Side
+const supabase = createClient(supabaseUrl, serviceRoleKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
 export async function POST(req: Request) {
   try {
@@ -14,7 +21,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Sacola vazia.' }, { status: 400 });
     }
 
-    // Cálculo rigoroso do subtotal no servidor
     const calculatedSubtotal = items.reduce((acc: number, item: any) => {
       let price = item.priceNumeric;
       if (!price && item.priceString) {
@@ -38,14 +44,11 @@ export async function POST(req: Request) {
     }
 
     const orderShortId = `LR-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    // Criar preferência / pagamento no Mercado Pago
     const mpAccessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
     let pixData = null;
 
     if (mpAccessToken) {
       const cleanCpf = (payer.cpf || '').replace(/\D/g, '');
-      const cleanPhone = (payer.phone || '').replace(/\D/g, '');
 
       const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
         method: 'POST',
@@ -80,7 +83,6 @@ export async function POST(req: Request) {
           ticketUrl: mpData.point_of_interaction?.transaction_data?.ticket_url,
         };
       } else {
-        console.error('Erro Mercado Pago:', mpData);
         return NextResponse.json(
           { success: false, error: mpData.message || 'Falha ao gerar Pix no Mercado Pago.' },
           { status: 400 }
@@ -88,7 +90,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // Salva Pedido no Supabase
+    // Tenta salvar no Supabase
     const { data: order, error: orderError } = await supabase
       .from('orders')
       .insert([
@@ -115,11 +117,14 @@ export async function POST(req: Request) {
       .single();
 
     if (orderError) {
-      console.error('Erro ao salvar pedido no Supabase:', orderError);
-      return NextResponse.json({ success: false, error: 'Erro ao registrar pedido no banco.' }, { status: 500 });
+      console.error('Erro Supabase:', orderError);
+      // AGORA O ERRO ESPECÍFICO DO BANCO APARECERÁ NA TELA
+      return NextResponse.json({ 
+        success: false, 
+        error: `Supabase: ${orderError.message} | Detalhes: ${orderError.details || 'N/A'}` 
+      }, { status: 500 });
     }
 
-    // Salva itens do pedido
     const orderItems = items.map((item: any) => ({
       order_id: order.id,
       product_id: item.id,
@@ -140,7 +145,6 @@ export async function POST(req: Request) {
       pix: pixData,
     });
   } catch (err: any) {
-    console.error('Erro interno checkout:', err);
-    return NextResponse.json({ success: false, error: 'Erro interno ao processar checkout.' }, { status: 500 });
+    return NextResponse.json({ success: false, error: `Erro Crítico: ${err.message}` }, { status: 500 });
   }
 }
