@@ -2,155 +2,123 @@
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-export async function POST(request: Request) {
+const supabase = createClient(supabaseUrl, serviceRoleKey, {
+  auth: { autoRefreshToken: false, persistSession: false }
+});
+
+export async function POST(req: Request) {
   try {
-    const url = new URL(request.url);
-    const body = await request.json().catch(() => ({}));
+    const url = new URL(req.url);
+    const body = await req.json().catch(() => ({}));
 
-    // Tenta capturar o ID do pagamento enviado pelo Mercado Pago
-    const paymentId = body.data?.id || body.id || url.searchParams.get('data.id') || url.searchParams.get('id');
+    // ID do pagamento enviado pelo Mercado Pago
+    const paymentId = body?.data?.id || url.searchParams.get('data.id') || url.searchParams.get('id');
 
     if (!paymentId) {
-      return NextResponse.json({ status: 'ignored', reason: 'No payment ID provided' }, { status: 200 });
+      return NextResponse.json({ status: 'ignored', message: 'No payment ID provided' }, { status: 200 });
     }
 
     const mpAccessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
     if (!mpAccessToken) {
-      console.error('[WEBHOOK] MERCADOPAGO_ACCESS_TOKEN não configurado.');
-      return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
+      return NextResponse.json({ error: 'Mercado Pago token missing' }, { status: 500 });
     }
 
-    // Consulta os detalhes reais da transação diretamente na API do Mercado Pago
-    const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-      headers: {
-        Authorization: `Bearer ${mpAccessToken}`,
-      },
+    // Consulta detalhes do pagamento diretamente no Mercado Pago
+    const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+      headers: { Authorization: `Bearer ${mpAccessToken}` },
     });
 
-    if (!mpResponse.ok) {
-      console.error(`[WEBHOOK] Erro ao consultar pagamento MP (${paymentId}):`, mpResponse.statusText);
-      return NextResponse.json({ status: 'error', reason: 'Failed to fetch MP payment' }, { status: 200 });
+    if (!mpRes.ok) {
+      return NextResponse.json({ error: 'Failed to fetch payment details' }, { status: 400 });
     }
 
-    const paymentData = await mpResponse.json();
-    const status = paymentData.status; // 'approved', 'pending', etc.
-    const externalReference = paymentData.external_reference; // ID do pedido no Supabase
+    const paymentData = await mpRes.json();
+    const mpStatus = paymentData.status; // 'approved', 'cancelled', 'rejected', etc.
+    const externalRef = paymentData.external_reference; // Contém o short_id ex: "LR-123456"
 
-    if (!externalReference) {
-      return NextResponse.json({ status: 'ignored', reason: 'No external_reference found' }, { status: 200 });
+    // Busca o pedido correspondente no Supabase
+    let query = supabase.from('orders').select('id, status, short_id');
+    if (externalRef) {
+      query = query.eq('short_id', externalRef);
+    } else {
+      query = query.eq('mp_payment_id', paymentId);
     }
 
-    // SE O PAGAMENTO FOI APROVADO COM SUCESSO:
-    if (status === 'approved') {
-      // 1. Busca os dados do pedido no Supabase
-      const { data: order, error: orderErr } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('id', externalReference)
-        .single();
+    const { data: order } = await query.single();
 
-      if (orderErr || !order) {
-        console.error('[WEBHOOK] Pedido não encontrado no banco:', externalReference);
-        return NextResponse.json({ status: 'order_not_found' }, { status: 200 });
-      }
+    if (!order) {
+      return NextResponse.json({ status: 'ignored', message: 'Order not found' }, { status: 200 });
+    }
 
-      // Se já estiver pago, ignora para evitar duplicação
-      if (order.status === 'paid') {
-        return NextResponse.json({ status: 'already_processed' }, { status: 200 });
-      }
-
-      const feeDetails = paymentData.fee_details || [];
-      const gatewayFee = feeDetails.reduce((sum: number, fee: any) => sum + Number(fee.amount || 0), 0);
-      const totalAmount = Number(order.total_amount || order.subtotal || 0);
-      const netRevenue = totalAmount - gatewayFee;
-
-      // 2. Atualiza o Pedido para 'paid' e grava os valores financeiros
+    // CENÁRIO 1: PIX PAGO COM SUCESSO (Status -> approved)
+    if (mpStatus === 'approved' && order.status !== 'approved') {
       await supabase
         .from('orders')
-        .update({
-          status: 'paid',
-          gateway_fee: gatewayFee,
-          net_revenue: netRevenue,
-        })
-        .eq('id', externalReference);
+        .update({ status: 'approved', mp_payment_id: String(paymentId), updated_at: new Date().toISOString() })
+        .eq('id', order.id);
 
-      // 3. AUTOMATISMO DE CRM: Cadastra ou Atualiza a ficha do Patrono em `customers`
-      if (order.customer_email) {
-        const { data: existingCustomer } = await supabase
-          .from('customers')
-          .select('id')
-          .eq('email', order.customer_email)
-          .maybeSingle();
-
-        if (!existingCustomer) {
-          await supabase.from('customers').insert([
-            {
-              email: order.customer_email,
-              full_name: order.customer_name || 'Patrono',
-              phone: order.customer_phone || null,
-              default_address: order.shipping_address || null,
-            },
-          ]);
-        } else {
-          await supabase
-            .from('customers')
-            .update({
-              full_name: order.customer_name || 'Patrono',
-              phone: order.customer_phone || null,
-              default_address: order.shipping_address || null,
-            })
-            .eq('id', existingCustomer.id);
-        }
-      }
-
-      // 4. AUTOMATISMO DE WMS: Liquidação de Estoque Físico e Reservado
-      const items = order.items || [];
-      for (const item of items) {
-        // Tenta localizar a variante correspondente pelo SKU ou ID do produto
-        const { data: variant } = await supabase
-          .from('inventory_variants')
-          .select('*')
-          .eq('product_id', item.productId || item.id)
-          .eq('size', item.size || 'UNICO')
-          .maybeSingle();
-
-        if (variant) {
-          const qty = Number(item.quantity || 1);
-          const newPhysical = Math.max(0, (variant.stock_physical || 0) - qty);
-          const newReserved = Math.max(0, (variant.stock_reserved || 0) - qty);
-          const newAvailable = Math.max(0, newPhysical - newReserved);
-
-          // Atualiza os saldos reais no WMS
-          await supabase
+      // Confirma baixa no estoque reservado
+      const { data: items } = await supabase.from('order_items').select('*').eq('order_id', order.id);
+      if (items) {
+        for (const item of items) {
+          const { data: variant } = await supabase
             .from('inventory_variants')
-            .update({
-              stock_physical: newPhysical,
-              stock_reserved: newReserved,
-              stock_available: newAvailable,
-            })
-            .eq('id', variant.id);
+            .select('stock_reserved, stock_physical')
+            .eq('product_id', item.product_id)
+            .eq('size', item.product_size)
+            .single();
 
-          // Lança o log de auditoria no Livro Razão de Estoque
-          await supabase.from('inventory_movements').insert([
-            {
-              variant_id: variant.id,
-              movement_type: 'SALE_DISPATCH',
-              quantity: -qty,
-              reference_id: order.id,
-            },
-          ]);
+          if (variant) {
+            await supabase
+              .from('inventory_variants')
+              .update({
+                stock_reserved: Math.max(0, (variant.stock_reserved || 0) - item.quantity),
+                stock_physical: Math.max(0, (variant.stock_physical || 0) - item.quantity),
+              })
+              .eq('product_id', item.product_id)
+              .eq('size', item.product_size);
+          }
         }
       }
-
-      console.log(`[CORTEX OS] Pedido #${order.short_id || order.id} processado com sucesso via Webhook!`);
     }
 
-    return NextResponse.json({ status: 'success' }, { status: 200 });
-  } catch (error: any) {
-    console.error('[WEBHOOK ERROR]:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // CENÁRIO 2: PIX EXPIRADO OU CANCELADO (Status -> cancelled / rejected)
+    if ((mpStatus === 'cancelled' || mpStatus === 'rejected' || mpStatus === 'expired') && order.status === 'pending') {
+      await supabase
+        .from('orders')
+        .update({ status: 'cancelled', mp_payment_id: String(paymentId), updated_at: new Date().toISOString() })
+        .eq('id', order.id);
+
+      // DEVOLVE AS PEÇAS PARA O ESTOQUE DISPONÍVEL
+      const { data: items } = await supabase.from('order_items').select('*').eq('order_id', order.id);
+      if (items) {
+        for (const item of items) {
+          const { data: variant } = await supabase
+            .from('inventory_variants')
+            .select('stock_available, stock_reserved')
+            .eq('product_id', item.product_id)
+            .eq('size', item.product_size)
+            .single();
+
+          if (variant) {
+            await supabase
+              .from('inventory_variants')
+              .update({
+                stock_reserved: Math.max(0, (variant.stock_reserved || 0) - item.quantity),
+                stock_available: (variant.stock_available || 0) + item.quantity,
+              })
+              .eq('product_id', item.product_id)
+              .eq('size', item.product_size);
+          }
+        }
+      }
+    }
+
+    return NextResponse.json({ success: true, status: mpStatus }, { status: 200 });
+  } catch (err: any) {
+    console.error('Erro no Webhook:', err);
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
