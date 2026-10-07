@@ -5,10 +5,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 const supabase = createClient(supabaseUrl, serviceRoleKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
+  auth: { autoRefreshToken: false, persistSession: false }
 });
 
 export async function POST(req: Request) {
@@ -20,6 +17,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Sacola vazia.' }, { status: 400 });
     }
 
+    // 1. CHECAGEM RÍGIDA DE ESTOQUE (Se 2 pessoas clicarem juntas, só 1 passa)
+    for (const item of items) {
+      const { data: variant } = await supabase
+        .from('inventory_variants')
+        .select('stock_available')
+        .eq('product_id', item.id)
+        .eq('size', item.size)
+        .single();
+
+      if (!variant || (variant.stock_available ?? 0) < item.quantity) {
+        return NextResponse.json(
+          { success: false, error: `Sinto muito. Alguém foi mais rápido e o item "${item.name}" (${item.size}) esgotou.` },
+          { status: 400 }
+        );
+      }
+    }
+
+    // 2. CÁLCULO FINANCEIRO
     const calculatedSubtotal = items.reduce((acc: number, item: any) => {
       let price = item.priceNumeric;
       if (!price && item.priceString) {
@@ -37,19 +52,16 @@ export async function POST(req: Request) {
     const totalAmount = calculatedSubtotal + safeShippingCost;
 
     if (totalAmount <= 0) {
-      return NextResponse.json(
-        { success: false, error: 'O valor total do pedido precisa ser maior que zero.' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'O valor total do pedido precisa ser maior que zero.' }, { status: 400 });
     }
 
     const orderShortId = `LR-${Math.floor(100000 + Math.random() * 900000)}`;
     const mpAccessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
     let pixData = null;
 
+    // 3. GERAÇÃO DO PIX NO MERCADO PAGO
     if (mpAccessToken) {
       const cleanCpf = (payer.cpf || '').replace(/\D/g, '');
-
       const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
         method: 'POST',
         headers: {
@@ -83,14 +95,11 @@ export async function POST(req: Request) {
           ticketUrl: mpData.point_of_interaction?.transaction_data?.ticket_url,
         };
       } else {
-        return NextResponse.json(
-          { success: false, error: mpData.message || 'Falha ao gerar Pix no Mercado Pago.' },
-          { status: 400 }
-        );
+        return NextResponse.json({ success: false, error: mpData.message || 'Falha ao gerar Pix no Mercado Pago.' }, { status: 400 });
       }
     }
 
-    // Payload seguro para inserção na tabela orders
+    // 4. SALVA O PEDIDO NO BANCO
     const orderPayload = {
       short_id: orderShortId,
       status: 'pending',
@@ -110,20 +119,13 @@ export async function POST(req: Request) {
       shipping_state: address.state,
     };
 
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .insert([orderPayload])
-      .select()
-      .single();
+    const { data: order, error: orderError } = await supabase.from('orders').insert([orderPayload]).select().single();
 
     if (orderError) {
-      console.error('Erro Supabase:', orderError);
-      return NextResponse.json({ 
-        success: false, 
-        error: `Supabase: ${orderError.message} | Detalhes: ${orderError.details || 'N/A'}` 
-      }, { status: 500 });
+      return NextResponse.json({ success: false, error: `Supabase: ${orderError.message}` }, { status: 500 });
     }
 
+    // 5. SALVA OS ITENS E RESERVA O ESTOQUE FISICAMENTE
     const orderItems = items.map((item: any) => ({
       order_id: order.id,
       product_id: item.id,
@@ -136,6 +138,27 @@ export async function POST(req: Request) {
     }));
 
     await supabase.from('order_items').insert(orderItems);
+
+    // MOVE O ESTOQUE DE "AVAILABLE" PARA "RESERVED"
+    for (const item of items) {
+      const { data: currentVariant } = await supabase
+        .from('inventory_variants')
+        .select('stock_available, stock_reserved')
+        .eq('product_id', item.id)
+        .eq('size', item.size)
+        .single();
+
+      if (currentVariant) {
+        await supabase
+          .from('inventory_variants')
+          .update({
+            stock_available: currentVariant.stock_available - item.quantity,
+            stock_reserved: currentVariant.stock_reserved + item.quantity
+          })
+          .eq('product_id', item.id)
+          .eq('size', item.size);
+      }
+    }
 
     return NextResponse.json({
       success: true,
