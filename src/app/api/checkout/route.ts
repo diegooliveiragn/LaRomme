@@ -1,212 +1,146 @@
 ﻿import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { Resend } from 'resend';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, serviceRoleKey);
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { items, payer, address, paymentMethod, subtotal, shippingCost = 0, shippingService = 'Frete Padrão', cardData } = body;
+    const { items, payer, address, shippingCost } = body;
 
-    const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN || process.env.MP_ACCESS_TOKEN;
-    if (!accessToken) return NextResponse.json({ success: false, error: 'Credenciais do MP ausentes.' }, { status: 500 });
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return NextResponse.json({ success: false, error: 'Sacola vazia.' }, { status: 400 });
+    }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-    if (!supabaseUrl || !supabaseKey) return NextResponse.json({ success: false, error: 'Banco inacessível.' }, { status: 500 });
-
-    const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
-
-    // 1. CHECAGEM DEFENSIVA DE ESTOQUE
-    try {
-      for (const item of items) {
-        const { data: stockItem } = await supabase
-          .from('product_stock')
-          .select('quantity')
-          .eq('product_slug', item.productId || 'origo')
-          .eq('size', item.size)
-          .eq('color', item.colorName)
-          .maybeSingle();
-
-        if (stockItem && stockItem.quantity < item.quantity) {
-          return NextResponse.json({
-            success: false,
-            error: `Quantidade indisponível no estoque para "${item.name} (${item.size}/${item.colorName})".`
-          }, { status: 400 });
-        }
+    // Cálculo rigoroso do subtotal no servidor
+    const calculatedSubtotal = items.reduce((acc: number, item: any) => {
+      let price = item.priceNumeric;
+      if (!price && item.priceString) {
+        price = parseFloat(item.priceString.replace(/[^\d,-]/g, '').replace(',', '.'));
       }
-    } catch (stockErr) {
-      console.warn('Aviso: Tabela product_stock não verificada:', stockErr);
+      if (!price && item.price) {
+        price = parseFloat(String(item.price).replace(/[^\d,-]/g, '').replace(',', '.'));
+      }
+      const unitPrice = Number(price) || 0;
+      const qty = Number(item.quantity) || 1;
+      return acc + unitPrice * qty;
+    }, 0);
+
+    const totalAmount = calculatedSubtotal + (Number(shippingCost) || 0);
+
+    if (totalAmount <= 0) {
+      return NextResponse.json(
+        { success: false, error: 'O valor total do pedido precisa ser maior que zero.' },
+        { status: 400 }
+      );
     }
 
-    const cleanCpf = payer.cpf ? payer.cpf.replace(/\D/g, '') : '';
-    const cleanPhone = payer.phone ? payer.phone.replace(/\D/g, '') : '';
-    const cleanCep = address.cep ? address.cep.replace(/\D/g, '') : '';
-    const totalAmount = parseFloat((subtotal + shippingCost).toFixed(2));
+    const orderShortId = `LR-${Math.floor(100000 + Math.random() * 900000)}`;
 
-    let paymentPayload: any = {
-      transaction_amount: totalAmount,
-      description: `Pedido LaRomme (${shippingService})`,
-      payer: {
-        email: payer.email,
-        first_name: payer.fullName ? payer.fullName.split(' ')[0] : 'Cliente',
-        last_name: payer.fullName && payer.fullName.includes(' ') ? payer.fullName.split(' ').slice(1).join(' ') : 'LaRomme',
-        identification: { type: cleanCpf.length > 11 ? 'CNPJ' : 'CPF', number: cleanCpf },
-        address: { zip_code: cleanCep, street_name: address.street, street_number: address.number, neighborhood: address.neighborhood, city: address.city, federal_unit: address.state },
-      },
-      notification_url: 'https://www.laromme.com.br/api/webhooks/mercadopago',
-    };
+    // Criar preferência / pagamento no Mercado Pago
+    const mpAccessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+    let pixData = null;
 
-    if (paymentMethod === 'pix') {
-      paymentPayload.payment_method_id = 'pix';
-    } else if (paymentMethod === 'card' && cardData) {
-      paymentPayload.token = cardData.token;
-      paymentPayload.installments = cardData.installments;
-      paymentPayload.payment_method_id = cardData.payment_method_id;
-      paymentPayload.issuer_id = cardData.issuer_id;
-      if (cardData.payer && cardData.payer.email) paymentPayload.payer.email = cardData.payer.email;
-    } else {
-      return NextResponse.json({ success: false, error: 'Método de pagamento inválido.' }, { status: 400 });
+    if (mpAccessToken) {
+      const cleanCpf = (payer.cpf || '').replace(/\D/g, '');
+      const cleanPhone = (payer.phone || '').replace(/\D/g, '');
+
+      const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${mpAccessToken}`,
+          'X-Idempotency-Key': orderShortId,
+        },
+        body: JSON.stringify({
+          transaction_amount: Number(totalAmount.toFixed(2)),
+          description: `LaRomme - Pedido ${orderShortId}`,
+          payment_method_id: 'pix',
+          payer: {
+            email: payer.email.trim().toLowerCase(),
+            first_name: payer.fullName.split(' ')[0] || 'Patrono',
+            last_name: payer.fullName.split(' ').slice(1).join(' ') || 'LaRomme',
+            identification: {
+              type: cleanCpf.length > 11 ? 'CNPJ' : 'CPF',
+              number: cleanCpf || '00000000000',
+            },
+          },
+        }),
+      });
+
+      const mpData = await mpResponse.json();
+
+      if (mpData.id) {
+        pixData = {
+          paymentId: mpData.id,
+          qrCode: mpData.point_of_interaction?.transaction_data?.qr_code,
+          qrCodeBase64: mpData.point_of_interaction?.transaction_data?.qr_code_base64,
+          ticketUrl: mpData.point_of_interaction?.transaction_data?.ticket_url,
+        };
+      } else {
+        console.error('Erro Mercado Pago:', mpData);
+        return NextResponse.json(
+          { success: false, error: mpData.message || 'Falha ao gerar Pix no Mercado Pago.' },
+          { status: 400 }
+        );
+      }
     }
 
-    const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        'X-Idempotency-Key': `laromme-pay-${Date.now()}-${Math.random().toString(36).substring(7)}`,
-      },
-      body: JSON.stringify(paymentPayload),
-    });
-
-    const mpData = await mpResponse.json();
-    if (!mpResponse.ok) return NextResponse.json({ success: false, error: mpData.message || 'Pagamento recusado pelo gateway.' }, { status: 400 });
-
-    // 2. SALVA O PEDIDO NO SUPABASE
-    const fallbackShortId = Math.floor(100000 + Math.random() * 900000).toString();
-    const { data: orderData, error: orderError } = await supabase
+    // Salva Pedido no Supabase
+    const { data: order, error: orderError } = await supabase
       .from('orders')
-      .insert({
-        customer_name: payer.fullName,
-        customer_email: payer.email,
-        customer_cpf: cleanCpf,
-        customer_phone: cleanPhone,
-        shipping_cep: cleanCep,
-        shipping_street: address.street,
-        shipping_number: address.number,
-        shipping_neighborhood: address.neighborhood,
-        shipping_city: address.city,
-        shipping_state: address.state,
-        payment_method: paymentMethod,
-        mp_payment_id: mpData.id.toString(),
-        subtotal: totalAmount,
-        status: mpData.status || 'pending',
-        short_id: fallbackShortId
-      })
-      .select('id, short_id')
+      .insert([
+        {
+          short_id: orderShortId,
+          status: 'pending',
+          total_amount: totalAmount,
+          subtotal: calculatedSubtotal,
+          shipping_cost: Number(shippingCost) || 0,
+          payment_method: 'pix',
+          customer_name: payer.fullName,
+          customer_email: payer.email.trim().toLowerCase(),
+          customer_cpf: payer.cpf.replace(/\D/g, ''),
+          customer_phone: payer.phone.replace(/\D/g, ''),
+          shipping_cep: address.cep.replace(/\D/g, ''),
+          shipping_street: address.street,
+          shipping_number: address.number,
+          shipping_neighborhood: address.neighborhood,
+          shipping_city: address.city,
+          shipping_state: address.state,
+        },
+      ])
+      .select()
       .single();
 
-    if (orderError || !orderData) {
-      console.error('Erro detalhado no Supabase ao salvar pedido:', orderError);
-      return NextResponse.json({ success: false, error: 'Erro ao registrar pedido no banco de dados.' }, { status: 500 });
+    if (orderError) {
+      console.error('Erro ao salvar pedido no Supabase:', orderError);
+      return NextResponse.json({ success: false, error: 'Erro ao registrar pedido no banco.' }, { status: 500 });
     }
 
-    // 3. SALVA OS ITENS
-    const orderItemsPayload = items.map((item: any) => ({
-      order_id: orderData.id,
+    // Salva itens do pedido
+    const orderItems = items.map((item: any) => ({
+      order_id: order.id,
+      product_id: item.id,
       product_name: item.name,
       product_size: item.size,
       product_color: item.colorName,
       product_image: item.image,
+      unit_price: item.priceNumeric || parseFloat(String(item.priceString || item.price).replace(/[^\d,-]/g, '').replace(',', '.')),
       quantity: item.quantity,
-      unit_price: item.priceNumeric
     }));
-    await supabase.from('order_items').insert(orderItemsPayload);
 
-    // 4. TENTA DECREMENTAR ESTOQUE E REVERTER CARRINHO ABANDONADO
-    try {
-      for (const item of items) {
-        const { data: currentStock } = await supabase
-          .from('product_stock')
-          .select('quantity')
-          .eq('product_slug', item.productId || 'origo')
-          .eq('size', item.size)
-          .eq('color', item.colorName)
-          .maybeSingle();
-
-        if (currentStock) {
-          const newQty = Math.max(0, currentStock.quantity - item.quantity);
-          await supabase
-            .from('product_stock')
-            .update({ quantity: newQty, updated_at: new Date().toISOString() })
-            .eq('product_slug', item.productId || 'origo')
-            .eq('size', item.size)
-            .eq('color', item.colorName);
-        }
-      }
-      await supabase.from('abandoned_carts').delete().eq('customer_email', payer.email);
-    } catch (errStockUpdate) {
-      console.warn('Aviso: Falha ao atualizar estoque pós-venda:', errStockUpdate);
-    }
-
-    let qrCode = null, qrCodeBase64 = null, ticketUrl = null;
-    if (paymentMethod === 'pix' && mpData.point_of_interaction?.transaction_data) {
-      qrCode = mpData.point_of_interaction.transaction_data.qr_code;
-      qrCodeBase64 = mpData.point_of_interaction.transaction_data.qr_code_base64;
-      ticketUrl = mpData.point_of_interaction.transaction_data.ticket_url;
-    }
-
-    const isApproved = mpData.status === 'approved';
-    const orderLink = `https://www.laromme.com.br/pedido/${orderData.id}`;
-    
-    const emailHtml = `
-      <div style="font-family: 'Courier New', Courier, monospace; max-width: 600px; margin: 0 auto; padding: 40px 20px; color: #000; background-color: #fff;">
-        <div style="text-align: center; border-bottom: 1px solid #000; padding-bottom: 20px; margin-bottom: 30px;">
-          <h1 style="font-family: Georgia, serif; font-size: 24px; letter-spacing: 4px; text-transform: uppercase; margin: 0;">LaRomme</h1>
-        </div>
-        <p style="font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">Olá, ${payer.fullName.split(' ')[0]}.</p>
-        <p style="font-size: 14px; line-height: 1.6;">O seu pedido <strong>#${orderData.short_id || fallbackShortId}</strong> foi registrado no nosso ecossistema.</p>
-        ${isApproved ? `
-          <div style="background-color: #000; color: #fff; padding: 15px; text-align: center; margin: 30px 0; font-weight: bold; letter-spacing: 2px;">
-            PAGAMENTO APROVADO
-          </div>
-        ` : `
-          <div style="border: 1px solid #000; padding: 20px; text-align: center; margin: 30px 0;">
-            <p style="margin-top: 0; font-weight: bold; letter-spacing: 2px;">AGUARDANDO PAGAMENTO PIX</p>
-            <div style="background-color: #f4f4f4; padding: 10px; word-break: break-all; font-size: 11px;">
-              ${qrCode || 'Código Pix indisponível.'}
-            </div>
-          </div>
-        `}
-        <div style="margin: 40px 0; text-align: center;">
-          <a href="${orderLink}" style="display: inline-block; background-color: #000; color: #fff; padding: 15px 30px; text-decoration: none; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;">
-            Acompanhar Encomenda
-          </a>
-        </div>
-      </div>
-    `;
-
-    const resendApiKey = process.env.RESEND_API_KEY;
-    if (resendApiKey) {
-      const resend = new Resend(resendApiKey);
-      resend.emails.send({
-        from: 'LaRomme <pedidos@laromme.com.br>',
-        to: payer.email,
-        subject: isApproved ? `Pagamento Aprovado - Pedido #${orderData.short_id || fallbackShortId}` : `Aguardando Pagamento - Pedido #${orderData.short_id || fallbackShortId}`,
-        html: emailHtml,
-      }).catch(err => console.error('Erro Resend:', err));
-    }
+    await supabase.from('order_items').insert(orderItems);
 
     return NextResponse.json({
       success: true,
-      orderUuid: orderData.id,
-      orderShortId: orderData.short_id || fallbackShortId,
-      status: mpData.status,
-      paymentMethod,
-      pixDetails: paymentMethod === 'pix' ? { qrCode, qrCodeBase64, ticketUrl } : null,
+      orderUuid: order.id,
+      orderShortId: order.short_id,
+      pix: pixData,
     });
-
-  } catch (error: any) {
-    console.error('Exceção capturada na API:', error);
-    return NextResponse.json({ success: false, error: 'Erro de comunicação no servidor.' }, { status: 500 });
+  } catch (err: any) {
+    console.error('Erro interno checkout:', err);
+    return NextResponse.json({ success: false, error: 'Erro interno ao processar checkout.' }, { status: 500 });
   }
 }

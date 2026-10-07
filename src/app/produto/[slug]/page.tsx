@@ -20,13 +20,10 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     notFound();
   }
 
-  // Outros produtos para o carrossel inferior
   const otherProducts = PRODUCTS.filter((p) => p.id !== product.id);
 
   const { addToCart } = useCart();
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
-
-  // Se for Tamanho Único, o estado inicial é 'TU'
   const [selectedSize, setSelectedSize] = useState<string>(product.isOneSize ? 'TU' : 'M');
 
   const [showProportionModal, setShowProportionModal] = useState(false);
@@ -36,25 +33,27 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
   const [weight, setWeight] = useState('80');
   const [fitPreference, setFitPreference] = useState<'ANATÔMICO' | 'PADRÃO' | 'AMPLO'>('PADRÃO');
   const [openAccordion, setOpenAccordion] = useState<number | null>(0);
-
   const [zoomStyle, setZoomStyle] = useState<{ [key: number]: React.CSSProperties }>({});
 
-  // ESTOQUE WMS EM TEMPO REAL
   const [stockMap, setStockMap] = useState<Record<string, number>>({});
   const [hasFetchedStock, setHasFetchedStock] = useState(false);
 
+  const productId = product.id;
+
   useEffect(() => {
     async function fetchRealtimeStock() {
+      if (!productId) return;
       try {
         const { data: variants, error } = await supabase
           .from('inventory_variants')
-          .select('size, stock_available');
+          .select('size, stock_available')
+          .eq('product_id', productId);
 
-        if (!error && variants && variants.length > 0) {
+        if (!error && variants) {
           const map: Record<string, number> = {};
           variants.forEach((v) => {
             const key = v.size ? v.size.toUpperCase() : 'TU';
-            map[key] = (map[key] || 0) + (v.stock_available ?? 0);
+            map[key] = v.stock_available ?? 0;
           });
           setStockMap(map);
           setHasFetchedStock(true);
@@ -64,11 +63,13 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       }
     }
     fetchRealtimeStock();
-  }, [product.id]);
+  }, [productId]);
 
   const currentImages = product.colors[selectedColorIndex]?.images || product.defaultImages;
+  const isSelectedSizeOutOfStock = hasFetchedStock && (stockMap[selectedSize] ?? 0) <= 0;
 
   const handleAddToCart = () => {
+    if (isSelectedSizeOutOfStock) return;
     const sizeToCart = product.isOneSize ? 'TU' : selectedSize;
     addToCart(product, sizeToCart, selectedColorIndex);
     setAddedToast(true);
@@ -176,7 +177,6 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
 
           <FadeIn delay={200}>
             <div className="space-y-3 border-t border-zinc-900 pt-6">
-
               {product.isOneSize ? (
                 <div className="flex justify-between items-center text-xs font-mono">
                   <span className="text-zinc-400">TAMANHO:</span>
@@ -195,7 +195,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
                   </div>
                   <div className="grid grid-cols-4 gap-2">
                     {['P', 'M', 'G', 'GG'].map((size) => {
-                      const isOutOfStock = hasFetchedStock && stockMap[size] !== undefined && stockMap[size] <= 0;
+                      const isOutOfStock = hasFetchedStock && (stockMap[size] ?? 0) <= 0;
                       return (
                         <button
                           key={size}
@@ -222,9 +222,18 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           <FadeIn delay={250}>
             <button
               onClick={handleAddToCart}
-              className="w-full bg-white text-black font-bold text-xs tracking-[0.3em] uppercase py-4 hover:bg-zinc-200 transition-all shadow-2xl active:scale-[0.99]"
+              disabled={isSelectedSizeOutOfStock}
+              className={`w-full font-bold text-xs tracking-[0.3em] uppercase py-4 transition-all shadow-2xl ${
+                isSelectedSizeOutOfStock
+                  ? 'bg-zinc-900 text-zinc-600 border border-zinc-800 cursor-not-allowed'
+                  : 'bg-white text-black hover:bg-zinc-200 active:scale-[0.99]'
+              }`}
             >
-              {addedToast ? '✓ ARTEFATO ADICIONADO!' : 'ADICIONAR AO CARRINHO.'}
+              {addedToast
+                ? '✓ ARTEFATO ADICIONADO!'
+                : isSelectedSizeOutOfStock
+                  ? 'TAMANHO INDISPONÍVEL'
+                  : 'ADICIONAR AO CARRINHO.'}
             </button>
           </FadeIn>
 
@@ -273,7 +282,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         </div>
       </div>
 
-      {/* MODAL DE SISTEMA DE PROPORÇÃO */}
+      {/* MODAL DE PROPORÇÃO */}
       {!product.isOneSize && showProportionModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex justify-end animate-in fade-in duration-300">
           <div className="w-full max-w-md bg-[#080808] border-l border-zinc-800 p-8 flex flex-col justify-between space-y-6">
@@ -324,7 +333,7 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
         </div>
       )}
 
-      {/* CARROSSEL CROSS-SELL NA BASE DA PDP */}
+      {/* CARROSSEL BOTTOM */}
       <FadeIn delay={400}>
         <div className="pt-24 border-t border-zinc-900 mt-20 space-y-12">
           <div className="flex items-center justify-between">
@@ -358,7 +367,6 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           </div>
         </div>
       </FadeIn>
-
     </div>
   );
 }

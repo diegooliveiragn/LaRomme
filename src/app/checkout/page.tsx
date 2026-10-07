@@ -15,12 +15,39 @@ export default function CheckoutPage() {
   const [payer, setPayer] = useState({ fullName: '', email: '', cpf: '', phone: '' });
   const [address, setAddress] = useState({ cep: '', street: '', number: '', neighborhood: '', city: '', state: '' });
 
-  const subtotal = items.reduce((acc, item) => acc + item.priceNumeric * item.quantity, 0);
+  // Funções de Máscara
+  const maskCPFCNPJ = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 14);
+    if (digits.length <= 11) {
+      return digits
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d)/, '$1.$2')
+        .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+    }
+    return digits
+      .replace(/^(\d{2})(\d)/, '$1.$2')
+      .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+      .replace(/\.(\d{3})(\d)/, '.$1/$2')
+      .replace(/(\d{4})(\d)/, '$1-$2');
+  };
 
-  // Busca automática de CEP via ViaCEP
+  const maskPhone = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 11);
+    if (digits.length <= 10) {
+      return digits.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{4})(\d)/, '$1-$2');
+    }
+    return digits.replace(/^(\d{2})(\d)/, '($1) $2').replace(/(\d{5})(\d)/, '$1-$2');
+  };
+
+  const maskCEP = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 8);
+    return digits.replace(/^(\d{5})(\d)/, '$1-$2');
+  };
+
   const handleCepChange = async (cepValue: string) => {
-    setAddress((prev) => ({ ...prev, cep: cepValue }));
-    const clean = cepValue.replace(/\D/g, '');
+    const masked = maskCEP(cepValue);
+    setAddress((prev) => ({ ...prev, cep: masked }));
+    const clean = masked.replace(/\D/g, '');
     if (clean.length === 8) {
       try {
         const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
@@ -36,9 +63,7 @@ export default function CheckoutPage() {
             }));
           }
         }
-      } catch (e) {
-        // Fallback silencioso se o serviço estiver indisponível
-      }
+      } catch (e) {}
     }
   };
 
@@ -58,7 +83,6 @@ export default function CheckoutPage() {
           payer,
           address,
           paymentMethod: 'pix',
-          subtotal,
           shippingCost: 0,
         }),
       });
@@ -69,9 +93,7 @@ export default function CheckoutPage() {
         if (data.pix) {
           try {
             localStorage.setItem(`laromme_pix_${data.orderUuid}`, JSON.stringify(data.pix));
-          } catch (e) {
-            console.error('Erro ao armazenar Pix localmente:', e);
-          }
+          } catch (e) {}
         }
         setActiveOrderData({ id: data.orderUuid, shortId: data.orderShortId });
         clearCart();
@@ -129,15 +151,15 @@ export default function CheckoutPage() {
                 placeholder="E-MAIL"
                 required
                 value={payer.email}
-                onChange={(e) => setPayer({ ...payer, email: e.target.value })}
+                onChange={(e) => setPayer({ ...payer, email: e.target.value.toLowerCase().trim() })}
                 className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white transition-colors"
               />
               <input
                 type="text"
-                placeholder="CPF"
+                placeholder="CPF / CNPJ"
                 required
                 value={payer.cpf}
-                onChange={(e) => setPayer({ ...payer, cpf: e.target.value })}
+                onChange={(e) => setPayer({ ...payer, cpf: maskCPFCNPJ(e.target.value) })}
                 className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white transition-colors"
               />
               <input
@@ -145,7 +167,7 @@ export default function CheckoutPage() {
                 placeholder="TELEFONE / WHATSAPP"
                 required
                 value={payer.phone}
-                onChange={(e) => setPayer({ ...payer, phone: e.target.value })}
+                onChange={(e) => setPayer({ ...payer, phone: maskPhone(e.target.value) })}
                 className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white transition-colors"
               />
             </div>
@@ -209,7 +231,6 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* BOTÃO SUBMIT */}
           <button
             type="submit"
             disabled={loading}
