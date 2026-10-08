@@ -42,7 +42,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
     }
   };
 
-  // Carregamento inicial e Polling (Verificação a cada 4s se estiver pendente)
+  // Carregamento inicial e Polling (Interrompe assim que o status sai de 'pending')
   useEffect(() => {
     fetchOrderStatus();
 
@@ -50,8 +50,12 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
       fetchOrderStatus();
     }, 4000);
 
+    if (order && order.status !== 'pending') {
+      clearInterval(interval);
+    }
+
     return () => clearInterval(interval);
-  }, [orderId]);
+  }, [orderId, order?.status]);
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -81,6 +85,8 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
 
   const isApproved = order?.status === 'approved' || order?.status === 'paid';
   const isPending = order?.status === 'pending';
+  const shippingCost = Number(order?.shipping_cost) || 0;
+  const totalAmount = Number(order?.total_amount) || (Number(order?.subtotal || 0) + shippingCost);
 
   return (
     <div className="pt-32 pb-24 px-6 md:px-12 max-w-5xl mx-auto space-y-12 font-sans">
@@ -198,11 +204,11 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
               </div>
               <div className="flex justify-between text-zinc-400">
                 <span>FRETE:</span>
-                <span className="text-zinc-400">GRÁTIS</span>
+                <span className="text-zinc-300">{shippingCost > 0 ? `R$ ${shippingCost.toFixed(2)}` : 'GRÁTIS'}</span>
               </div>
               <div className="flex justify-between text-sm text-white font-bold pt-2 border-t border-zinc-900">
                 <span>TOTAL:</span>
-                <span>R$ {Number(order?.subtotal || 0).toFixed(2)}</span>
+                <span>R$ {totalAmount.toFixed(2)}</span>
               </div>
             </div>
           </div>
