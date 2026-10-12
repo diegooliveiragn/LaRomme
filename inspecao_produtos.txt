@@ -1,0 +1,362 @@
+﻿=== ARQUIVO: src/data/products.ts ===
+export interface ColorOption {
+  name: string;
+  hex: string;
+  images: string[];
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  category: string;
+  tag: string;
+  price: string;
+  description: string;
+  fabric: string;
+  fit: string;
+  care: string;
+  colors: ColorOption[];
+  defaultImages: string[];
+  isOneSize?: boolean;
+}
+
+export const PRODUCTS: Product[] = [
+  {
+    id: "vestigium",
+    name: "VESTIGIUM.",
+    category: "LIFESTYLE / ALGODÃO BOXY",
+    tag: "ALGODÃO ENCORPADO",
+    price: "R$ 229,90",
+    description: "Algodão encorpado com modelagem quadrada e caimento pesado. Possui estampa minimalista nas costas e etiqueta emborrachada externa.",
+    fabric: "100% Algodão Premium Heavyweight. Toque denso e estrutura rígida que não amassa com facilidade.",
+    fit: "Corte Boxy. Ombros deslocados (drop shoulder) e gola estruturada em ribana grossa.",
+    care: "Lavar à mão ou ciclo delicado. Secar à sombra. Não passar ferro sobre a etiqueta externa.",
+    colors: [
+      {
+        name: "OFF-WHITE",
+        hex: "#F5F5F0",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Boxy%20Frente.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Boxy%20Costas.png"
+        ]
+      }
+    ],
+    defaultImages: [
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Boxy%20Frente.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Boxy%20Costas.png"
+    ]
+  },
+  {
+    id: "signum",
+    name: "SIGNUM.",
+    category: "LIFESTYLE / DAD HAT",
+    tag: "FIVELA DE METAL",
+    price: "R$ 159,90",
+    description: "Boné de sarja rígida com o símbolo Capacete em bordado alto relevo. Fecho traseiro com fita de tecido e fivela de metal escovado.",
+    fabric: "Sarja premium 100% algodão, resistente ao desbotamento solar.",
+    fit: "Desestruturado frontalmente para encaixe perfeito na cabeça (Dad Hat clássico).",
+    care: "Limpar apenas localmente. Não colocar na máquina de lavar.",
+    isOneSize: true,
+    colors: [
+      {
+        name: "PRETO",
+        hex: "#0A0A0A",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Preto%20-%20Frente.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Lateral%20-%20Preto.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Preto%20-%20Costas.png"
+        ]
+      }
+    ],
+    defaultImages: [
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Preto%20-%20Frente.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Lateral%20-%20Preto.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Preto%20-%20Costas.png"
+    ]
+  },
+  {
+    id: "titulus",
+    name: "TITULUS.",
+    category: "LIFESTYLE / DAD HAT",
+    tag: "BORDADO & METAL",
+    price: "R$ 159,90",
+    description: "Boné Off-White iluminado. Assinatura LaRomme. centralizada. Ajuste por fita do mesmo tecido e fivela de metal antioxidante.",
+    fabric: "Sarja premium de gramatura alta, tom Off-White exclusivo.",
+    fit: "Curva da aba cirúrgica para bloqueio solar mantendo o campo de visão.",
+    care: "Limpeza com pano úmido e sabão de coco. Secagem à sombra.",
+    isOneSize: true,
+    colors: [
+      {
+        name: "OFF-WHITE",
+        hex: "#F5F5F0",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Frente%20-%20Branco.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Lateral%20-%20Branco.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Costas%20-%20Branco.png"
+        ]
+      }
+    ],
+    defaultImages: [
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Frente%20-%20Branco.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Lateral%20-%20Branco.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Bone%20Costas%20-%20Branco.png"
+    ]
+  },
+  {
+    id: "forza",
+    name: "FORZA.",
+    category: "PERFORMANCE / T-SHIRT",
+    tag: "SECAGEM RÁPIDA & REFLETIVOS",
+    price: "R$ 189,90",
+    description: "Camiseta técnica projetada para alta intensidade, com tecnologia de secagem rápida e detalhes refletivos para uso noturno.",
+    fabric: "Blend de poliamida com elastano. Toque gelado e sistema de dispersão de suor.",
+    fit: "Anatômica e aerodinâmica, acompanhando a linha do corpo sem compressão excessiva.",
+    care: "Lavar com água fria e sabão neutro. Não usar amaciante para preservar a tecnologia do tecido.",
+    colors: [
+      {
+        name: "CINZA",
+        hex: "#808080",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Forza%20Frente.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Forza%20Costas.png"
+        ]
+      }
+    ],
+    defaultImages: [
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Forza%20Frente.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Forza%20Costas.png"
+    ]
+  },
+  {
+    id: "libertas",
+    name: "LIBERTAS.",
+    category: "PERFORMANCE / REGATA",
+    tag: "MOBILIDADE ABSOLUTA",
+    price: "R$ 149,90",
+    description: "Cavas profundas e tecido maleável de secagem ultrarrápida. Essencial para esportes de areia. Detalhes em transfer refletivo.",
+    fabric: "Malha micro-perfurada de altíssima respirabilidade e proteção UV.",
+    fit: "Cavas laterais expandidas para liberdade total de rotação dos braços.",
+    care: "Lavar à mão. Secagem em menos de 30 minutos em ambiente arejado.",
+    colors: [
+      {
+        name: "BORDÔ",
+        hex: "#581820",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Regata%20Bordo%20-%20Frente.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Regata%20Bordo%20-%20Costas.png"
+        ]
+      },
+      {
+        name: "BRANCA",
+        hex: "#FFFFFF",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Regata%20Branca%20-%20Frente.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Regata%20Branca%20-%20Costas.png"
+        ]
+      },
+      {
+        name: "PRETA",
+        hex: "#0A0A0A",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Regata%20frente.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Regata%20Costas.png"
+        ]
+      }
+    ],
+    defaultImages: [
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Regata%20frente.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/Regata%20Costas.png"
+    ]
+  },
+  {
+    id: "umbra",
+    name: "UMBRA.",
+    category: "PERFORMANCE / 5-PANEL",
+    tag: "TÁTICO & RESPIRÁVEL",
+    price: "R$ 169,90",
+    description: "Equipamento técnico. Boné 5-Panel construído com painéis respiráveis e fecho tático de engate rápido.",
+    fabric: "Poliamida ultraleve. Não retém calor e seca em minutos.",
+    fit: "Copa rasa e modelagem flexível que se molda completamente ao topo da cabeça.",
+    care: "Permite lavagem leve pós-treino. Secagem instantânea.",
+    isOneSize: true,
+    colors: [
+      {
+        name: "BORDÔ",
+        hex: "#581820",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%205%20panel%20bordo%20-%20frente.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%205%20panel%20bordo%20-%20lado.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%205%20panel%20bordo%20-%20costas.png"
+        ]
+      },
+      {
+        name: "PRETO",
+        hex: "#0A0A0A",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%205%20panel%20preto%20-%20frente.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%205%20panel%20preto%20-%20lado.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%205%20panel%20preto%20-%20costas.png"
+        ]
+      }
+    ],
+    defaultImages: [
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%205%20panel%20bordo%20-%20frente.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%205%20panel%20bordo%20-%20lado.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%205%20panel%20bordo%20-%20costas.png"
+    ]
+  }
+];
+
+export const PRODUCTS_ORIGO = PRODUCTS;
+
+========================================
+=== ARQUIVO: src/app/page.tsx ===
+========================================
+'use client';
+
+import { useState, useEffect } from 'react';
+import Image from 'next/image';
+import { PRODUCTS, Product } from '@/data/products';
+import FadeIn from '@/components/FadeIn';
+import ProductCard from '@/components/ProductCard';
+import { createClient } from '@supabase/supabase-js';
+
+const HELMET_LOGO_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/logo%20branca.png";
+const WORDMARK_LOGO_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/fcfc607a-ba81-4ff7-998e-2df1f0697b81-removebg-preview.png";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+export default function Home() {
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const [fadeState, setFadeState] = useState<'in' | 'out'>('in');
+  const [showFinalBrand, setShowFinalBrand] = useState(false);
+  const [productsList, setProductsList] = useState<Product[]>(PRODUCTS);
+
+  useEffect(() => {
+    async function syncWMSStock() {
+      try {
+        const { data: variants, error } = await supabase
+          .from('inventory_variants')
+          .select('product_id, stock_available');
+
+        if (!error && variants && variants.length > 0) {
+          // Atualiza o estado dos produtos respeitando a lista estática
+          setProductsList(PRODUCTS);
+        }
+      } catch (e) {
+        console.error('Telemetria WMS em standby:', e);
+      }
+    }
+    syncWMSStock();
+  }, []);
+
+  useEffect(() => {
+    if (showFinalBrand) {
+      const resetTimer = setTimeout(() => {
+        setShowFinalBrand(false);
+        setPhraseIndex(0);
+        setFadeState('in');
+      }, 4200);
+      return () => clearTimeout(resetTimer);
+    }
+
+    const fadeOutTimer = setTimeout(() => {
+      setFadeState('out');
+    }, 3000);
+
+    const nextPhraseTimer = setTimeout(() => {
+      if (phraseIndex < 2) {
+        setPhraseIndex((prev) => prev + 1);
+        setFadeState('in');
+      } else {
+        setShowFinalBrand(true);
+      }
+    }, 3800);
+
+    return () => {
+      clearTimeout(fadeOutTimer);
+      clearTimeout(nextPhraseTimer);
+    };
+  }, [phraseIndex, showFinalBrand]);
+
+  return (
+    <div className="w-full bg-black text-white">
+
+      {/* HERO SECTION */}
+      <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <video autoPlay loop muted playsInline className="w-full h-full object-cover filter grayscale contrast-125 opacity-30 scale-105">
+            <source src="/praia.mp4" type="video/mp4" />
+            <source src="/video.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-transparent to-black" />
+        </div>
+
+        <div className="relative z-10 max-w-5xl px-4 md:px-6 text-center">
+          {!showFinalBrand ? (
+            <div className="min-h-[160px] flex items-center justify-center">
+              {phraseIndex === 0 && (
+                <p className={`font-serif text-[1.15rem] leading-relaxed md:text-4xl font-normal tracking-[0.25em] md:tracking-[0.3em] uppercase text-white transition-opacity duration-1000 ${fadeState === 'in' ? 'opacity-100' : 'opacity-0'}`}>
+                  FORÇA EM MOVIMENTO.
+                </p>
+              )}
+              {phraseIndex === 1 && (
+                <p className={`font-serif text-[1.15rem] leading-loose md:text-4xl font-normal tracking-[0.25em] md:tracking-[0.3em] uppercase text-white transition-opacity duration-1000 ${fadeState === 'in' ? 'opacity-100' : 'opacity-0'}`}>
+                  <span>A BRISA DO MAR.</span><br />
+                  <span className="inline-block mt-3 md:mt-2 whitespace-nowrap">A DISCIPLINA DO ESPORTE.</span>
+                </p>
+              )}
+              {phraseIndex === 2 && (
+                <p className={`font-serif text-[1.15rem] leading-loose md:text-4xl font-normal tracking-[0.25em] md:tracking-[0.3em] uppercase text-white transition-opacity duration-1000 px-2 ${fadeState === 'in' ? 'opacity-100' : 'opacity-0'}`}>
+                  ENTRE A LEVEZA DA AREIA E A ESTRUTURA DO CONCRETO.
+                </p>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center gap-6 animate-in fade-in duration-1000">
+              <div className="relative w-14 h-14 md:w-16 md:h-16 filter brightness-0 invert">
+                <Image src={HELMET_LOGO_URL} alt="LaRomme Capacete" fill className="object-contain" />
+              </div>
+              <div className="relative w-48 h-10 md:w-56 md:h-12 filter brightness-0 invert">
+                <Image src={WORDMARK_LOGO_URL} alt="LaRomme" fill className="object-contain" />
+              </div>
+              <p className="text-[9px] md:text-xs font-mono tracking-[0.3em] text-zinc-400 uppercase pt-2">
+                ARQUITETURA DE VESTUÁRIO • FORTALEZA, BRASIL
+              </p>
+              <div className="pt-8">
+                <a href="#origo" className="inline-block bg-white text-black font-bold text-[10px] md:text-[11px] tracking-[0.3em] uppercase px-8 py-4 hover:bg-zinc-200 transition-all shadow-xl font-sans">
+                  EXPLORAR ORIGO.
+                </a>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* BLOCO 01: VITRINE COMERCIAL MIXTA */}
+      <section id="origo" className="py-24 md:py-32 px-6 md:px-12 max-w-7xl mx-auto space-y-12 md:space-y-20">
+        <FadeIn>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-zinc-800 pb-8 gap-4">
+            <div>
+              <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase block mb-2 md:mb-4">CAPÍTULO 01</span>
+              <h2 className="font-serif text-2xl md:text-5xl tracking-[0.2em] text-white uppercase">SISTEMA ORIGO / 01.</h2>
+            </div>
+            <p className="text-[11px] md:text-xs text-zinc-400 max-w-md leading-relaxed tracking-wider font-light font-sans mt-2 md:mt-0">
+              Seis artefatos essenciais que unem a estrutura do Lifestyle com a tecnologia visual da Performance.
+            </p>
+          </div>
+        </FadeIn>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-12">
+          {productsList.map((product, idx) => (
+            <FadeIn key={product.id} delay={idx * 100}>
+              <ProductCard product={product} />
+            </FadeIn>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}

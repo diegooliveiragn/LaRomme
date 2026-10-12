@@ -130,7 +130,7 @@ export default function Home() {
               <h2 className="font-serif text-2xl md:text-5xl tracking-[0.2em] text-white uppercase">SISTEMA ORIGO / 01.</h2>
             </div>
             <p className="text-[11px] md:text-xs text-zinc-400 max-w-md leading-relaxed tracking-wider font-light font-sans mt-2 md:mt-0">
-              Seis artefatos essenciais que unem a estrutura do Lifestyle com a tecnologia visual da Performance.
+              Quatro artefatos essenciais que unem a estrutura do Lifestyle com a tecnologia visual da Performance.
             </p>
           </div>
         </FadeIn>

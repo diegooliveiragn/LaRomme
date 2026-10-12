@@ -2,6 +2,7 @@
 import Script from 'next/script';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import SmoothScroll from '@/components/SmoothScroll';
 import { CartProvider } from '@/context/CartContext';
 import './globals.css';
 
@@ -51,7 +52,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pt-BR" className="scroll-smooth bg-[#080808] text-white">
+    <html lang="pt-BR" className="bg-[#080808] text-white">
       <head>
         {/* GOOGLE ANALYTICS (GA4) */}
         <Script
@@ -70,11 +71,13 @@ export default function RootLayout({
         </Script>
       </head>
       <body className="min-h-screen flex flex-col justify-between selection:bg-white selection:text-black antialiased">
-        <CartProvider>
-          <Header />
-          <main className="flex-grow">{children}</main>
-          <Footer />
-        </CartProvider>
+        <SmoothScroll>
+          <CartProvider>
+            <Header />
+            <main className="flex-grow">{children}</main>
+            <Footer />
+          </CartProvider>
+        </SmoothScroll>
       </body>
     </html>
   );
