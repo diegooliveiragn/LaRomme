@@ -22,11 +22,15 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
 
   const otherProducts = PRODUCTS.filter((p) => p.id !== product.id);
 
-  const { addToCart } = useCart();
+  const { addToCart, isDropVipOnly, isVipUnlocked, vipMember, unlockVip } = useCart();
   const [selectedColorIndex, setSelectedColorIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string>(product.isOneSize ? 'TU' : 'M');
 
   const [showProportionModal, setShowProportionModal] = useState(false);
+  const [showVipModal, setShowVipModal] = useState(false);
+  const [vipInput, setVipInput] = useState('');
+  const [vipLoading, setVipLoading] = useState(false);
+  const [vipError, setVipError] = useState('');
   const [addedToast, setAddedToast] = useState(false);
 
   const [height, setHeight] = useState('180');
@@ -67,8 +71,13 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
 
   const currentImages = product.colors[selectedColorIndex]?.images || product.defaultImages;
   const isSelectedSizeOutOfStock = hasFetchedStock && (stockMap[selectedSize] ?? 0) <= 0;
+  const isLocked = isDropVipOnly && !isVipUnlocked;
 
-  const handleAddToCart = () => {
+  const handleActionClick = () => {
+    if (isLocked) {
+      setShowVipModal(true);
+      return;
+    }
     if (isSelectedSizeOutOfStock) return;
     const sizeToCart = product.isOneSize ? 'TU' : selectedSize;
     addToCart(product, sizeToCart, selectedColorIndex);
@@ -76,6 +85,24 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     setTimeout(() => {
       setAddedToast(false);
     }, 2800);
+  };
+
+  const handleVipSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!vipInput.trim()) return;
+
+    setVipLoading(true);
+    setVipError('');
+
+    const res = await unlockVip(vipInput);
+    setVipLoading(false);
+
+    if (res.success) {
+      setShowVipModal(false);
+      setVipInput('');
+    } else {
+      setVipError(res.message || 'Credencial não reconhecida.');
+    }
   };
 
   const calculateRecommendedSize = () => {
@@ -108,12 +135,19 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       <FadeIn>
         <div className="flex justify-between items-center text-xs font-mono text-zinc-500 border-b border-zinc-900 pb-4">
           <Link href="/#origo" className="hover:text-white transition-colors">← VOLTAR PARA O ACERVO</Link>
-          <span className="tracking-widest">DROP 01 // SISTEMA ORIGO</span>
+          <div className="flex items-center gap-3">
+            {isVipUnlocked && (
+              <span className="text-[10px] text-emerald-400 font-bold border border-emerald-500/30 px-2 py-0.5 rounded bg-emerald-950/20">
+                ✓ SENADO VIP ATIVO
+              </span>
+            )}
+            <span className="tracking-widest hidden sm:inline">DROP 01 // SISTEMA ORIGO</span>
+          </div>
         </div>
       </FadeIn>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-        {/* GALERIA EDITORIAL (PROPORÇÃO 1:1 SANGRADA) */}
+        {/* GALERIA EDITORIAL (PROPORÇÃO 1:1) */}
         <div className="lg:col-span-7 space-y-6">
           {currentImages.map((imgUrl, idx) => (
             <FadeIn key={idx} delay={idx * 100}>
@@ -242,19 +276,23 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           <FadeIn delay={250}>
             <div className="space-y-3 pt-2">
               <button
-                onClick={handleAddToCart}
-                disabled={isSelectedSizeOutOfStock}
+                onClick={handleActionClick}
+                disabled={!isLocked && isSelectedSizeOutOfStock}
                 className={`w-full font-bold text-xs tracking-[0.25em] uppercase py-4 transition-all shadow-xl ${
-                  isSelectedSizeOutOfStock
-                    ? 'bg-zinc-900 text-zinc-600 border border-zinc-800 cursor-not-allowed'
-                    : 'bg-white text-black hover:bg-zinc-200 active:scale-[0.99]'
+                  isLocked
+                    ? 'bg-amber-500/10 text-amber-300 border border-amber-500/40 hover:bg-amber-500/20 active:scale-[0.99]'
+                    : isSelectedSizeOutOfStock
+                      ? 'bg-zinc-900 text-zinc-600 border border-zinc-800 cursor-not-allowed'
+                      : 'bg-white text-black hover:bg-zinc-200 active:scale-[0.99]'
                 }`}
               >
                 {addedToast
                   ? '✓ PEÇA ADICIONADA À SACOLA'
-                  : isSelectedSizeOutOfStock
-                    ? 'GRADE INDISPONÍVEL'
-                    : `ADICIONAR À SACOLA — ${product.price}`}
+                  : isLocked
+                    ? 'ACESSO EXCLUSIVO // SENADO VIP →'
+                    : isSelectedSizeOutOfStock
+                      ? 'GRADE INDISPONÍVEL'
+                      : `ADICIONAR À SACOLA — ${product.price}`}
               </button>
 
               <div className="grid grid-cols-2 gap-2 text-[10px] font-mono text-zinc-500 pt-2 text-center">
@@ -308,6 +346,71 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
           </FadeIn>
         </div>
       </div>
+
+      {/* MODAL DE DESBLOQUEIO SENADO VIP */}
+      {showVipModal && (
+        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-6 animate-in fade-in duration-300">
+          <div className="w-full max-w-md bg-[#080808] border border-zinc-800 p-8 space-y-6 font-mono text-xs shadow-2xl relative">
+            <button
+              onClick={() => setShowVipModal(false)}
+              className="absolute top-6 right-6 text-zinc-500 hover:text-white text-base"
+            >
+              ✕
+            </button>
+
+            <div className="space-y-2 border-b border-zinc-900 pb-4">
+              <span className="text-[10px] tracking-[0.3em] text-amber-400 uppercase block">ACESSO RESTRITO</span>
+              <h3 className="font-serif text-xl text-white font-bold tracking-wider uppercase">SENADO VIP</h3>
+              <p className="text-zinc-400 font-sans text-xs font-light leading-relaxed">
+                O Drop 01 está disponível com 24h de antecedência exclusivamente para membros alistados.
+              </p>
+            </div>
+
+            <form onSubmit={handleVipSubmit} className="space-y-4">
+              <div>
+                <label className="block text-zinc-400 mb-2 uppercase tracking-widest text-[10px]">
+                  E-MAIL OU CÓDIGO DE ACESSO:
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="ex: seu@email.com ou passe"
+                  value={vipInput}
+                  onChange={(e) => setVipInput(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white transition-colors"
+                />
+              </div>
+
+              {vipError && (
+                <p className="text-[11px] text-rose-400 border border-rose-900/50 bg-rose-950/20 p-2.5">
+                  {vipError}
+                </p>
+              )}
+
+              <button
+                type="submit"
+                disabled={vipLoading}
+                className="w-full bg-white text-black font-bold py-3.5 uppercase tracking-widest hover:bg-zinc-200 transition-all disabled:opacity-50"
+              >
+                {vipLoading ? 'VALIDANDO...' : 'DESBLOQUEAR ACESSO'}
+              </button>
+            </form>
+
+            <div className="pt-2 border-t border-zinc-900 text-center font-sans">
+              <p className="text-zinc-500 text-[11px]">
+                Ainda não possui credencial?{' '}
+                <Link
+                  href="/senado-vip"
+                  onClick={() => setShowVipModal(false)}
+                  className="text-zinc-300 underline underline-offset-4 hover:text-white"
+                >
+                  Aliste-se no Senado VIP →
+                </Link>
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL DE PROPORÇÃO & MEDIDAS */}
       {!product.isOneSize && showProportionModal && (

@@ -1,6 +1,11 @@
 ﻿'use client';
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export interface CartItem {
   id: string;
@@ -23,6 +28,11 @@ export interface ActiveOrder {
   shortId: string;
 }
 
+export interface VipMember {
+  name: string;
+  email: string;
+}
+
 interface CartContextType {
   items: CartItem[];
   isOpen: boolean;
@@ -38,6 +48,12 @@ interface CartContextType {
   activeOrder: ActiveOrder | null;
   setActiveOrderData: (order: ActiveOrder | null) => void;
   clearActiveOrder: () => void;
+  // Acesso Antecipado Senado VIP
+  isDropVipOnly: boolean;
+  isVipUnlocked: boolean;
+  vipMember: VipMember | null;
+  unlockVip: (credential: string) => Promise<{ success: boolean; message?: string }>;
+  lockVip: () => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -48,6 +64,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [activeOrder, setActiveOrder] = useState<ActiveOrder | null>(null);
 
+  // Status de liberação do Drop 01 (VIP_ONLY por padrão até a abertura geral)
+  const isDropVipOnly = process.env.NEXT_PUBLIC_DROP_STATUS
+    ? process.env.NEXT_PUBLIC_DROP_STATUS === 'VIP_ONLY'
+    : true;
+
+  const [isVipUnlocked, setIsVipUnlocked] = useState(false);
+  const [vipMember, setVipMember] = useState<VipMember | null>(null);
+
   useEffect(() => {
     const savedCart = localStorage.getItem('laromme_cart');
     if (savedCart) {
@@ -57,6 +81,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (savedOrder) {
       try { setActiveOrder(JSON.parse(savedOrder)); } catch (e) {}
     }
+
+    // Carrega credencial VIP salva
+    const savedVip = localStorage.getItem('laromme_vip_auth');
+    if (savedVip) {
+      try {
+        const parsed = JSON.parse(savedVip);
+        if (parsed.unlocked) {
+          setIsVipUnlocked(true);
+          setVipMember(parsed.member || null);
+        }
+      } catch (e) {}
+    }
+
     setIsLoaded(true);
   }, []);
 
@@ -65,6 +102,50 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('laromme_cart', JSON.stringify(items));
     }
   }, [items, isLoaded]);
+
+  const unlockVip = async (credential: string): Promise<{ success: boolean; message?: string }> => {
+    const cleaned = credential.trim().toLowerCase();
+    const upperCleaned = credential.trim().toUpperCase();
+
+    // 1. Passe Mestre de Acesso Rápido
+    if (upperCleaned === 'ORIGO24H' || upperCleaned === 'SENADO24') {
+      const member: VipMember = { name: 'Membro do Senado', email: 'vip@laromme.com.br' };
+      setIsVipUnlocked(true);
+      setVipMember(member);
+      localStorage.setItem('laromme_vip_auth', JSON.stringify({ unlocked: true, member }));
+      return { success: true };
+    }
+
+    // 2. Validação por E-mail cadastrado no Supabase
+    try {
+      const { data, error } = await supabase
+        .from('senado_vip')
+        .select('nome, email')
+        .eq('email', cleaned)
+        .maybeSingle();
+
+      if (!error && data) {
+        const member: VipMember = { name: data.nome, email: data.email };
+        setIsVipUnlocked(true);
+        setVipMember(member);
+        localStorage.setItem('laromme_vip_auth', JSON.stringify({ unlocked: true, member }));
+        return { success: true };
+      }
+    } catch (err) {
+      console.error('Erro ao verificar credencial VIP:', err);
+    }
+
+    return {
+      success: false,
+      message: 'Credencial não localizada. Verifique o e-mail cadastrado ou o passe de acesso.',
+    };
+  };
+
+  const lockVip = () => {
+    setIsVipUnlocked(false);
+    setVipMember(null);
+    localStorage.removeItem('laromme_vip_auth');
+  };
 
   const openCart = () => setIsOpen(true);
   const closeCart = () => setIsOpen(false);
@@ -194,6 +275,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         activeOrder,
         setActiveOrderData,
         clearActiveOrder,
+        isDropVipOnly,
+        isVipUnlocked,
+        vipMember,
+        unlockVip,
+        lockVip,
       }}
     >
       {children}
