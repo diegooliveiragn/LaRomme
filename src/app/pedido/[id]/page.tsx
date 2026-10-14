@@ -12,6 +12,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
   const [loading, setLoading] = useState(true);
   const [pixData, setPixData] = useState<any>(null);
   const [copiedPix, setCopiedPix] = useState(false);
+  const [showRawKey, setShowRawKey] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -55,9 +56,54 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
   }, [orderId, order?.status]);
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
+    let success = false;
+
+    // Tentativa 1: API Moderna Clipboard
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        triggerSuccessFeedback();
+      }).catch(() => {
+        fallbackCopy(text);
+      });
+      return;
+    }
+
+    // Tentativa 2: Fallback para WebViews (Instagram/WhatsApp)
+    fallbackCopy(text);
+  };
+
+  const fallbackCopy = (text: string) => {
+    try {
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-9999px';
+      textArea.style.top = '0';
+      textArea.setAttribute('readonly', '');
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      const res = document.execCommand('copy');
+      document.body.removeChild(textArea);
+      if (res) {
+        triggerSuccessFeedback();
+      } else {
+        setShowRawKey(true);
+      }
+    } catch (err) {
+      setShowRawKey(true);
+    }
+  };
+
+  const triggerSuccessFeedback = () => {
+    // Feedback háptico tátil no mobile se disponível
+    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+      try {
+        navigator.vibrate([40, 30, 40]);
+      } catch (e) {}
+    }
     setCopiedPix(true);
-    setTimeout(() => setCopiedPix(false), 3000);
+    setTimeout(() => setCopiedPix(false), 4500);
   };
 
   if (loading && !order) {
@@ -72,7 +118,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
     return (
       <div className="pt-36 pb-24 px-6 max-w-2xl mx-auto text-center space-y-6 font-sans">
         <h1 className="font-serif text-2xl text-white font-bold tracking-wider uppercase">PEDIDO NÃO LOCALIZADO.</h1>
-        <p className="text-xs text-zinc-400 font-mono">Verifique o código acessado ou entre em contato com nosso atendimento.</p>
+        <p className="text-xs text-zinc-400 font-mono">Verifique o link acessado ou entre em contato com nosso atendimento.</p>
         <Link href="/" className="inline-block bg-white text-black font-bold text-xs tracking-widest px-8 py-4 uppercase">
           RETORNAR AO INÍCIO
         </Link>
@@ -110,8 +156,9 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
           {isPending && order?.payment_method === 'pix' && pixData && (
             <div className="bg-[#080808] border border-amber-900/50 p-6 md:p-8 space-y-6 text-center">
               <span className="text-[10px] font-mono tracking-[0.3em] text-amber-400 uppercase block">PAGAMENTO VIA PIX</span>
-              <p className="text-xs text-zinc-300 font-mono">
-                Escaneie o QR Code abaixo no aplicativo do seu banco para concluir o pedido.
+              
+              <p className="text-xs text-zinc-300 font-mono leading-relaxed">
+                Toque no botão abaixo para copiar o código ou escaneie o QR Code no seu aplicativo bancário.
               </p>
 
               {pixData.qrCodeBase64 && (
@@ -128,15 +175,55 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                 <div className="space-y-3 font-mono text-xs">
                   <button
                     onClick={() => copyToClipboard(pixData.qrCode)}
-                    className="w-full bg-white text-black font-bold py-4 tracking-widest uppercase hover:bg-zinc-200 transition-all"
+                    className={`w-full font-bold py-4 tracking-widest uppercase transition-all shadow-xl active:scale-[0.99] ${
+                      copiedPix
+                        ? 'bg-emerald-500 text-black border border-emerald-400 animate-pulse'
+                        : 'bg-white text-black hover:bg-zinc-200'
+                    }`}
                   >
-                    {copiedPix ? '✓ CÓDIGO PIX COPIADO!' : 'COPIAR CÓDIGO PIX'}
+                    {copiedPix ? '✓ CÓDIGO COPIADO! ABRA SEU BANCO' : 'COPIAR CÓDIGO PIX (COPIA E COLA)'}
                   </button>
+
+                  {/* INSTRUÇÕES PASSO A PASSO MOBILE */}
+                  <div className="grid grid-cols-3 gap-2 pt-3 text-[10px] text-zinc-400 text-left border-t border-zinc-900">
+                    <div className="p-2 border border-zinc-900 bg-zinc-950/60 rounded">
+                      <strong className="block text-white mb-0.5">1. COPIE</strong>
+                      Toque no botão acima.
+                    </div>
+                    <div className="p-2 border border-zinc-900 bg-zinc-950/60 rounded">
+                      <strong className="block text-white mb-0.5">2. ABRA</strong>
+                      Acesse o app do seu banco.
+                    </div>
+                    <div className="p-2 border border-zinc-900 bg-zinc-950/60 rounded">
+                      <strong className="block text-white mb-0.5">3. PAGUE</strong>
+                      Selecione Pix Copia e Cola.
+                    </div>
+                  </div>
+
+                  {/* CONTINGÊNCIA: CÓDIGO TEXTUAL VISÍVEL */}
+                  <div className="pt-2 text-right">
+                    <button
+                      type="button"
+                      onClick={() => setShowRawKey(!showRawKey)}
+                      className="text-[10px] text-zinc-500 underline hover:text-zinc-300"
+                    >
+                      {showRawKey ? 'Ocultar chave textual' : 'Problemas para copiar? Ver chave completa'}
+                    </button>
+                    {showRawKey && (
+                      <textarea
+                        readOnly
+                        value={pixData.qrCode}
+                        className="w-full mt-2 p-3 bg-zinc-950 border border-zinc-800 text-[10px] text-zinc-400 font-mono select-all focus:outline-none"
+                        rows={3}
+                        onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                      />
+                    )}
+                  </div>
                 </div>
               )}
 
               <p className="text-[10px] font-mono text-zinc-500 pt-2 border-t border-zinc-900">
-                Esta tela atualiza automaticamente assim que a transferência for identificada.
+                Esta tela atualiza automaticamente assim que a transferência for confirmada pelo banco.
               </p>
             </div>
           )}
