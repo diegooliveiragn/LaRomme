@@ -15,14 +15,12 @@ export default function CheckoutPage() {
   const [payer, setPayer] = useState({ fullName: '', email: '', cpf: '', phone: '' });
   const [address, setAddress] = useState({ cep: '', street: '', number: '', neighborhood: '', city: '', state: '' });
 
-  // Funções de Máscara
   const maskCPFCNPJ = (value: string) => {
     const digits = value.replace(/\D/g, '').slice(0, 14);
     if (digits.length <= 11) {
       return digits
         .replace(/(\d{3})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d)/, '$1.$2')
-        .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+        .replace(/(\d{3})(\d)/, '$1.$2') .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
     }
     return digits
       .replace(/^(\d{2})(\d)/, '$1.$2')
@@ -123,8 +121,8 @@ export default function CheckoutPage() {
     <div className="pt-32 pb-24 px-6 md:px-12 max-w-3xl mx-auto font-mono text-xs text-white space-y-8">
       <FadeIn>
         <div className="border-b border-zinc-900 pb-4 mb-8">
-          <span className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] block mb-1">AQUISITION PROCESS</span>
-          <h1 className="font-serif text-2xl uppercase tracking-[0.2em] font-bold">CHECKOUT DA MAISON</h1>
+          <span className="text-[10px] text-zinc-500 uppercase tracking-[0.3em] block mb-1">FINALIZAÇÃO DE PEDIDO</span>
+          <h1 className="font-serif text-2xl uppercase tracking-[0.2em] font-bold">PAGAMENTO & ENTREGA</h1>
         </div>
 
         {errorMsg && (
@@ -236,7 +234,7 @@ export default function CheckoutPage() {
             disabled={loading}
             className="w-full bg-white text-black py-4 font-mono font-bold uppercase tracking-[0.25em] hover:bg-zinc-200 transition-colors text-xs disabled:opacity-50"
           >
-            {loading ? 'GERANDO CÓDIGO PIX...' : 'GERAR PEDIDO PIX'}
+            {loading ? 'GERANDO PEDIDO...' : 'GERAR GUIA PIX'}
           </button>
         </form>
       </FadeIn>
