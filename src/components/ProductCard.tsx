@@ -12,39 +12,25 @@ export default function ProductCard({ product }: { product: Product }) {
     ? product.colors[activeColorIndex].images
     : product.defaultImages;
 
-  const frontImage = images[0];
-  const backImage = images.length > 1 ? images[1] : null;
+  // Garante a imagem frontal na vitrine
+  const currentImage = images[0];
 
   return (
-    <div className="group bg-[#080808] border border-zinc-900 p-6 md:p-8 flex flex-col justify-between hover:border-zinc-700 transition-all duration-500 h-full">
+    <div className="group bg-[#080808] border border-zinc-900 p-6 md:p-8 flex flex-col justify-between hover:border-zinc-700 transition-all duration-500 h-full font-sans">
       <div className="space-y-6">
         <Link href={`/produto/${product.id}`} className="block">
-          {/* MOLDURA EDITORIAL COM FUNDO NEUTRO E RESPIRO */}
-          <div className="relative aspect-square md:aspect-[3/4] w-full bg-[#EAEAEA] overflow-hidden flex items-center justify-center p-6 md:p-8 transition-colors duration-500">
-            {/* Foto Frontal Principal */}
+          {/* MOLDURA EDITORIAL SANGRADA (PROPORÇÃO 1:1) */}
+          <div className="relative aspect-square w-full bg-zinc-950 overflow-hidden border border-white/5">
             <Image
-              src={frontImage}
+              src={currentImage}
               alt={product.name}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-              className={`object-contain p-6 transition-all duration-700 ${
-                backImage ? 'group-hover:opacity-0 group-hover:scale-95' : 'group-hover:scale-105'
-              }`}
+              className="object-cover grayscale contrast-[1.08] opacity-85 group-hover:grayscale-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-700 ease-out"
               priority
             />
 
-            {/* Foto Traseira (Revelada no Hover) */}
-            {backImage && (
-              <Image
-                src={backImage}
-                alt={`${product.name} - costas`}
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-                className="object-contain p-6 opacity-0 group-hover:opacity-100 group-hover:scale-100 transition-all duration-700"
-              />
-            )}
-
-            <div className="absolute top-4 left-4 bg-black/85 backdrop-blur-md px-3 py-1.5 border border-white/10 text-[9px] font-mono tracking-widest text-zinc-300">
+            <div className="absolute top-3.5 left-3.5 bg-black/80 backdrop-blur-md px-3 py-1.5 border border-white/10 text-[9px] font-mono tracking-widest text-zinc-300 uppercase">
               {product.category}
             </div>
           </div>
@@ -55,11 +41,11 @@ export default function ProductCard({ product }: { product: Product }) {
             <h3 className="font-serif text-lg md:text-xl tracking-wider text-white font-bold">{product.name}</h3>
             <span className="text-[11px] md:text-xs font-mono text-zinc-300 font-bold whitespace-nowrap">{product.price}</span>
           </div>
-          <p className="text-[11px] text-zinc-500 tracking-wider mt-3 line-clamp-2 font-sans leading-relaxed">{product.description}</p>
+          <p className="text-[11px] text-zinc-500 tracking-wider mt-3 line-clamp-2 font-light leading-relaxed">{product.description}</p>
         </div>
       </div>
 
-      <div className="pt-8 border-t border-zinc-900 mt-8 space-y-6 font-sans">
+      <div className="pt-8 border-t border-zinc-900 mt-8 space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-[9px] font-mono text-zinc-500 uppercase">CORES:</span>
