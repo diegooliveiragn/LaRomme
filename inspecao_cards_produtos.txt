@@ -1,0 +1,208 @@
+﻿=== INSPEÇÃO DE CARDS E PRODUTOS ===
+
+========================================
+=== ARQUIVO: src\components\ProductCard.tsx ===
+========================================
+'use client';
+
+import { useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { Product } from '@/data/products';
+
+export default function ProductCard({ product }: { product: Product }) {
+  const [activeColorIndex, setActiveColorIndex] = useState(0);
+
+  // Pega as imagens baseadas na cor ativa com hover, ou cai nas imagens padrão
+  const currentImage = product.colors.length > 0 
+    ? product.colors[activeColorIndex].images[0] 
+    : product.defaultImages[0];
+
+  return (
+    <div className="group bg-[#080808] border border-zinc-900 p-6 md:p-8 flex flex-col justify-between hover:border-zinc-700 transition-all duration-500 h-full">
+      <div className="space-y-6">
+        <Link href={`/produto/${product.id}`} className="block">
+          <div className="relative aspect-square md:aspect-[3/4] w-full bg-zinc-950 overflow-hidden">
+            <Image 
+              src={currentImage} 
+              alt={product.name} 
+              fill 
+              className="object-cover grayscale md:grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700 opacity-90"
+            />
+            <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-md px-3 py-1.5 border border-white/10 text-[9px] font-mono tracking-widest text-zinc-300">
+              {product.category}
+            </div>
+          </div>
+        </Link>
+
+        <div>
+          <div className="flex justify-between items-baseline gap-4">
+            <h3 className="font-serif text-lg md:text-xl tracking-wider text-white font-bold">{product.name}</h3>
+            <span className="text-[11px] md:text-xs font-mono text-zinc-300 font-bold whitespace-nowrap">{product.price}</span>
+          </div>
+          <p className="text-[11px] text-zinc-500 tracking-wider mt-3 line-clamp-2 font-sans leading-relaxed">{product.description}</p>
+        </div>
+      </div>
+
+      <div className="pt-8 border-t border-zinc-900 mt-8 space-y-6 font-sans">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-[9px] font-mono text-zinc-500 uppercase">CORES:</span>
+            <div className="flex gap-2">
+              {product.colors.map((c, i) => (
+                <button 
+                  key={i} 
+                  onMouseEnter={() => setActiveColorIndex(i)}
+                  className={`w-3.5 h-3.5 rounded-full border transition-all ${activeColorIndex === i ? 'border-white scale-125' : 'border-zinc-700 hover:border-zinc-400'}`} 
+                  style={{ backgroundColor: c.hex }} 
+                  title={c.name} 
+                  aria-label={`Mudar para cor ${c.name}`}
+                />
+              ))}
+            </div>
+          </div>
+          <span className="text-[9px] font-mono text-zinc-600 uppercase">{product.colors[activeColorIndex]?.name}</span>
+        </div>
+
+        <Link
+          href={`/produto/${product.id}`}
+          className="block w-full text-center bg-zinc-900 hover:bg-white text-zinc-200 hover:text-black font-bold text-[10px] md:text-[11px] tracking-[0.25em] uppercase py-4 border border-zinc-800 transition-all duration-300"
+        >
+          VER ARTEFATO.
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+========================================
+=== ARQUIVO: src\data\products.ts ===
+========================================
+export interface ColorOption {
+  name: string;
+  hex: string;
+  images: string[];
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  category: string;
+  tag: string;
+  price: string;
+  description: string;
+  fabric: string;
+  fit: string;
+  care: string;
+  colors: ColorOption[];
+  defaultImages: string[];
+  isOneSize?: boolean;
+}
+
+export const PRODUCTS: Product[] = [
+  {
+    id: "vestigium",
+    name: "VESTIGIUM.",
+    category: "LIFESTYLE / ALGODÃO BOXY",
+    tag: "ALGODÃO NOBRE / TOQUE FRIO",
+    price: "R$ 229,90",
+    description: "Algodão penteado de fiação nobre com toque fresco, alta respirabilidade e estrutura Boxy alinhada ao clima do litoral. Ombros deslocados, gola em ribana de alta densidade e etiqueta externa emborrachada. Projetado para a transição entre a arena e o estado de repouso.",
+    fabric: "100% Algodão Penteado de Fiação Nobre. Toque fresco/gelado, alta respirabilidade e caimento estruturado sem abafar.",
+    fit: "Corte Boxy. Ombros deslocados (drop shoulder) e gola estruturada em ribana de alta gramatura.",
+    care: "Lavar à mão ou ciclo delicado em água fria. Secar à sombra. Não passar ferro sobre as impressões e etiquetas.",
+    colors: [
+      {
+        name: "BORDÔ",
+        hex: "#581820",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/boxy%20vinho%20escuro%20-%20frente.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/boxy%20vinho%20escuro.png"
+        ]
+      }
+    ],
+    defaultImages: [
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/boxy%20vinho%20escuro%20-%20frente.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/boxy%20vinho%20escuro.png"
+    ]
+  },
+  {
+    id: "tenax",
+    name: "TENAX.",
+    category: "PERFORMANCE / T-SHIRT",
+    tag: "SECAGEM RÁPIDA & REFLETIVOS",
+    price: "R$ 189,90",
+    description: "Camiseta de alta performance em blend de poliamida e elastano com toque gelado. Tecnologia de dispersão térmica de secagem ultrarrápida, capacete no peito tom sobre tom e detalhes em transfer refletivo para treinos noturnos.",
+    fabric: "Blend de poliamida com elastano. Toque gelado, proteção UV e dispersão contínua de suor.",
+    fit: "Anatômica e aerodinâmica, acompanhando a linha do corpo sem compressão excessiva.",
+    care: "Lavar com água fria e sabão neutro. Não usar amaciante para preservar a tecnologia do tecido.",
+    colors: [
+      {
+        name: "PRETO",
+        hex: "#0A0A0A",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/camisa%20preta.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/camisa%20preta%20-%20costas.png"
+        ]
+      }
+    ],
+    defaultImages: [
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/camisa%20preta.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/camisa%20preta%20-%20costas.png"
+    ]
+  },
+  {
+    id: "libertas",
+    name: "LIBERTAS.",
+    category: "PERFORMANCE / REGATA",
+    tag: "MOBILIDADE ABSOLUTA",
+    price: "R$ 149,90",
+    description: "Regata esportiva em malha microperfurada com cavas profundas que eliminam o atrito na rotação dos braços nos esportes de areia. Tecido de secagem instantânea, coordenadas geográficas na nuca e transfer refletivo.",
+    fabric: "Malha microperfurada ultraleve de alta respirabilidade e proteção UV.",
+    fit: "Cavas laterais expandidas para liberdade total de movimento nos ombros e braços.",
+    care: "Lavar à mão ou ciclo suave. Secagem rápida em ambiente arejado.",
+    colors: [
+      {
+        name: "PRETA",
+        hex: "#0A0A0A",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/regata%20preta%20libertas.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/regata%20preta%20libertas%20-%20costas.png"
+        ]
+      }
+    ],
+    defaultImages: [
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/regata%20preta%20libertas.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/regata%20preta%20libertas%20-%20costas.png"
+    ]
+  },
+  {
+    id: "umbra",
+    name: "UMBRA.",
+    category: "PERFORMANCE / 5-PANEL",
+    tag: "TÁTICO & RESPIRÁVEL",
+    price: "R$ 169,90",
+    description: "Boné 5-Panel ultraleve e respirável. Construído em poliamida sintética ripstop com painéis laterais perfurados a laser, fecho tático de engate rápido e detalhe em etiqueta laranja.",
+    fabric: "Poliamida ripstop ultraleve. Não retém calor e seca em minutos.",
+    fit: "Copa rasa e modelagem flexível que se molda perfeitamente à cabeça.",
+    care: "Permite lavagem leve pós-treino. Secagem instantânea à sombra.",
+    isOneSize: true,
+    colors: [
+      {
+        name: "PRETO",
+        hex: "#0A0A0A",
+        images: [
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%20preto%205%20panel%20-%20frente.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%20preto%205%20panel%20-%20lado.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%20preto%205%20panel.png"
+        ]
+      }
+    ],
+    defaultImages: [
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%20preto%205%20panel%20-%20frente.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%20preto%205%20panel%20-%20lado.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%20preto%205%20panel.png"
+    ]
+  }
+];
+
+export const PRODUCTS_ORIGO = PRODUCTS;
