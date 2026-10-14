@@ -8,9 +8,9 @@ export default function EditorialPage() {
       
       <FadeIn>
         <div className="text-center space-y-4">
-          <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase">ESPECIFICAÇÃO TÉCNICA & MATERIALIDADE</span>
+          <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase">MATÉRIA-PRIMA & ENGENHARIA TÊXTIL</span>
           <h1 className="font-serif text-3xl md:text-6xl tracking-[0.25em] text-white uppercase font-bold">EDITORIAL.</h1>
-          <p className="text-xs font-mono tracking-[0.3em] text-zinc-400">ARQUITETURA DO DROP 01 / ORIGO.</p>
+          <p className="text-xs font-mono tracking-[0.3em] text-zinc-400">DROP 01 / SISTEMA ORIGO.</p>
         </div>
       </FadeIn>
 
@@ -28,7 +28,7 @@ export default function EditorialPage() {
               <span className="font-serif text-lg text-white font-bold whitespace-nowrap md:ml-4">R$ 229,90</span>
             </div>
             <p className="text-xs md:text-sm text-zinc-300 leading-relaxed font-light">
-              100% Algodão Penteado de fiação nobre com toque fresco, alta respirabilidade e caimento Boxy alinhado ao clima de Fortaleza. Possui ombros deslocados (*drop shoulder*), gola estruturada em ribana de alta gramatura e etiqueta externa emborrachada no acabamento.
+              100% Algodão Penteado de fiação nobre com toque fresco, alta respirabilidade e caimento Boxy desenvolvido para a brisa e a temperatura do litoral. Ombros deslocados (*drop shoulder*), gola estruturada em ribana encorpada e acabamento discreto com etiqueta emborrachada.
             </p>
           </div>
         </FadeIn>
@@ -44,7 +44,7 @@ export default function EditorialPage() {
               <span className="font-serif text-lg text-white font-bold whitespace-nowrap md:ml-4">R$ 189,90</span>
             </div>
             <p className="text-xs md:text-sm text-zinc-300 leading-relaxed font-light">
-              Malha de poliamida com elastano de toque gelado e dispersão térmica de secagem ultrarrápida. Desenvolvida com a aplicação do Capacete no peito tom sobre tom e detalhes em transfer refletivo para alta visibilidade em treinos e corridas noturnas.
+              Blend nobre de poliamida com elastano de toque frio e dispersão contínua de calor. Desenvolvida para secagem rápida durante a prática esportiva, com aplicação do símbolo tom sobre tom no peito e detalhes em transfer refletivo para treinos ao entardecer ou à noite.
             </p>
           </div>
         </FadeIn>
@@ -60,7 +60,7 @@ export default function EditorialPage() {
               <span className="font-serif text-lg text-white font-bold whitespace-nowrap md:ml-4">R$ 149,90</span>
             </div>
             <p className="text-xs md:text-sm text-zinc-300 leading-relaxed font-light">
-              Regata de alta mobilidade em malha microperfurada com cavas profundas que eliminam o atrito na rotação de braços nos esportes praianos. Apresenta coordenadas geográficas de Fortaleza na nuca, transfer refletivo e secagem instantânea.
+              Regata em malha microperfurada ultraleve com cavas profundas, desenhadas para garantir amplitude completa e evitar atrito nos movimentos dos esportes de areia. Respirabilidade elevada, secagem rápida e detalhes refletivos na nuca.
             </p>
           </div>
         </FadeIn>
@@ -76,7 +76,7 @@ export default function EditorialPage() {
               <span className="font-serif text-lg text-white font-bold whitespace-nowrap md:ml-4">R$ 169,90</span>
             </div>
             <p className="text-xs md:text-sm text-zinc-300 leading-relaxed font-light">
-              Boné 5-Panel ultraleve e respirável. Desenvolvido em poliamida ripstop com perfurações laterais a laser, fecho tático de engate rápido, detalhe em etiqueta laranja e modelagem flexível para uso de alta intensidade sob o sol.
+              Boné 5-Panel ultraleve em poliamida ripstop com perfurações laterais cortadas a laser para ventilação contínua. Equipado com fivela de perfil baixo e ajuste rápido, aba flexível e etiqueta com contraste sutil para acompanhar corridas sob o sol.
             </p>
           </div>
         </FadeIn>
@@ -86,19 +86,19 @@ export default function EditorialPage() {
       {/* GUIA DE CONSERVAÇÃO */}
       <FadeIn delay={260}>
         <div className="border-t border-zinc-900 pt-12 space-y-6">
-          <h3 className="font-serif text-xl tracking-wider text-white font-bold uppercase">CUIDADOS & MANUTENÇÃO.</h3>
+          <h3 className="font-serif text-xl tracking-wider text-white font-bold uppercase">CUIDADOS & CONSERVAÇÃO.</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-zinc-400 font-mono">
             <div className="bg-zinc-950 p-6 border border-zinc-900">
               <span className="text-white font-bold block mb-2">01 // LAVAGEM</span>
-              Lavar à mão ou em ciclo delicado com água fria e sabão neutro.
+              Lavar à mão ou em ciclo delicado em água fria com sabão neutro. Não usar amaciante em tecidos técnicos.
             </div>
             <div className="bg-zinc-950 p-6 border border-zinc-900">
               <span className="text-white font-bold block mb-2">02 // SECAGEM</span>
-              Secar sempre à sombra. Não utilizar máquina secadora para preservar as fibras e os detalhes refletivos.
+              Secar à sombra em local arejado. Não usar secadora para preservar as fibras elásticas e os refletivos.
             </div>
             <div className="bg-zinc-950 p-6 border border-zinc-900">
               <span className="text-white font-bold block mb-2">03 // PASSAGEM</span>
-              Passar pelo avesso em temperatura média. Evitar o contato do ferro com os detalhes refletivos e etiquetas emborrachadas.
+              Passar pelo avesso em temperatura branda. Evitar passar o ferro diretamente sobre etiquetas e transferências.
             </div>
           </div>
         </div>
