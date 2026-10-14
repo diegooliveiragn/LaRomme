@@ -10,7 +10,6 @@ export default function Header() {
   const { items, isOpen, openCart, closeCart, removeFromCart, activeOrder, clearActiveOrder } = useCart();
   const [menuMobileOpen, setMenuMobileOpen] = useState(false);
 
-  // Oculta o header do e-commerce em todas as páginas do Cortex OS
   if (pathname?.startsWith('/cortex')) {
     return null;
   }
@@ -44,7 +43,7 @@ export default function Header() {
           >
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
             <span>
-              CARRINHO ({totalQuantity}){activeOrder ? ' • RESERVA ATIVA' : ''}
+              SACOLA ({totalQuantity}){activeOrder ? ' • RESERVA ATIVA' : ''}
             </span>
           </button>
 
@@ -63,7 +62,6 @@ export default function Header() {
         </div>
       </header>
 
-      {/* MENU MOBILE OVERLAY */}
       {menuMobileOpen && (
         <div className="fixed inset-0 z-30 bg-black/95 backdrop-blur-xl md:hidden pt-24 px-8 flex flex-col space-y-6 font-mono text-sm uppercase tracking-widest text-zinc-300">
           <Link href="/#origo" onClick={() => setMenuMobileOpen(false)} className="border-b border-zinc-900 pb-3">ACERVO</Link>
@@ -74,7 +72,6 @@ export default function Header() {
         </div>
       )}
 
-      {/* SLIDE-OVER DO CARRINHO */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={closeCart} />
@@ -82,13 +79,12 @@ export default function Header() {
           <div className="relative w-full max-w-md bg-[#090909] border-l border-zinc-800 text-white h-full flex flex-col justify-between p-6 md:p-8 z-10 font-mono shadow-2xl">
             <div>
               <div className="flex justify-between items-center border-b border-zinc-900 pb-4 mb-6">
-                <span className="text-xs uppercase tracking-[0.25em] text-zinc-400 font-serif">SACOLA DE ARTEFATOS</span>
+                <span className="text-xs uppercase tracking-[0.25em] text-zinc-400 font-serif">SUA SACOLA</span>
                 <button onClick={closeCart} className="text-zinc-500 hover:text-white text-xs uppercase tracking-widest">
                   [ FECHAR ]
                 </button>
               </div>
 
-              {/* CARTÃO DE RESERVA ATIVA */}
               {activeOrder && (
                 <div className="border border-zinc-800 bg-zinc-950 p-5 space-y-3 mb-6">
                   <div className="flex items-center justify-between border-b border-zinc-900 pb-2">
@@ -123,11 +119,10 @@ export default function Header() {
                 </div>
               )}
 
-              {/* LISTA DE ITENS NO CARRINHO */}
               {items.length === 0 ? (
                 <div className="py-12 text-center text-xs text-zinc-600 uppercase tracking-widest space-y-2">
                   <p>Sua sacola está vazia.</p>
-                  <p className="text-[10px] text-zinc-700">Selecione um artefato no catálogo.</p>
+                  <p className="text-[10px] text-zinc-700">Selecione uma peça no acervo.</p>
                 </div>
               ) : (
                 <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
@@ -153,7 +148,6 @@ export default function Header() {
               )}
             </div>
 
-            {/* RODAPÉ DO SLIDE-OVER */}
             {items.length > 0 && (
               <div className="border-t border-zinc-900 pt-6 space-y-4">
                 <div className="flex justify-between text-xs uppercase tracking-widest">
@@ -165,7 +159,7 @@ export default function Header() {
                   onClick={closeCart}
                   className="block w-full text-center bg-white text-black py-3 text-xs font-bold uppercase tracking-[0.2em] hover:bg-zinc-200 transition-colors"
                 >
-                  FINALIZAR ENCOMENDA
+                  FINALIZAR PEDIDO
                 </Link>
               </div>
             )}

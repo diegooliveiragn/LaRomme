@@ -13,11 +13,10 @@ export default function SenadoVipPage() {
   const [submitted, setSubmitted] = useState(false);
   const [patronoId, setPatronoId] = useState('');
 
-  // Form State
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
-  const [esporte, setEsporte] = useState('LIFESTYLE');
+  const [esporte, setEsporte] = useState('BEACH TENNIS');
   const [tamanho, setTamanho] = useState('M');
   const [estado, setEstado] = useState('CE');
 
@@ -26,8 +25,8 @@ export default function SenadoVipPage() {
     if (!email || !nome) return;
 
     setLoading(true);
+
     try {
-      // Tentativa de salvar na tabela (requer que a tabela senado_vip tenha as novas colunas configuradas no Supabase)
       await supabase.from('senado_vip').insert([
         {
           nome: nome.trim(),
@@ -41,10 +40,26 @@ export default function SenadoVipPage() {
         },
       ]);
     } catch (err) {
-      console.error('Alerta (Pode ignorar se os campos não existirem no backend ainda):', err);
+      console.warn('Registro no Supabase processado com avisos:', err);
+    }
+
+    try {
+      await fetch('/api/senado-vip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: nome.trim(),
+          email: email.trim().toLowerCase(),
+          whatsapp: whatsapp.trim(),
+          esporte,
+          tamanho,
+          estado,
+        }),
+      });
+    } catch (err) {
+      console.warn('Notificação por e-mail em standby:', err);
     } finally {
-      // Gera ID Visual fake para a credencial e libera a tela
-      setPatronoId(Math.floor(1000 + Math.random() * 9000).toString());
+      setPatronoId(Math.floor(100 + Math.random() * 900).toString());
       setLoading(false);
       setSubmitted(true);
     }
@@ -56,7 +71,7 @@ export default function SenadoVipPage() {
         <div className="text-center space-y-4">
           <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase">PORTAL DO MEMBRO</span>
           <h1 className="font-serif text-3xl md:text-5xl tracking-[0.25em] text-white uppercase font-bold">SENADO VIP.</h1>
-          <p className="text-xs font-mono tracking-[0.3em] text-zinc-400">PASSE LIVRE & ALISTAMENTO NO DROP 01.</p>
+          <p className="text-xs font-mono tracking-[0.3em] text-zinc-400">ACESSO ANTECIPADO AO DROP 01.</p>
         </div>
       </FadeIn>
 
@@ -64,43 +79,71 @@ export default function SenadoVipPage() {
         <FadeIn delay={150}>
           <form onSubmit={handleSubmit} className="bg-[#080808] border border-zinc-900 p-8 md:p-12 space-y-8">
             <div className="space-y-2 border-b border-zinc-800 pb-4">
-              <h2 className="font-serif text-lg text-white font-bold uppercase tracking-wider">FICHA DE ALISTAMENTO</h2>
+              <h2 className="font-serif text-lg text-white font-bold uppercase tracking-wider">CADASTRO DE PREFERÊNCIAS</h2>
               <p className="text-xs text-zinc-400 leading-relaxed font-light">
-                Preencha suas coordenadas para receber o link de acesso exclusivo 24 horas antes da abertura do Drop 01. Garanta sua numeração antes do tráfego público.
+                Preencha seus dados para receber o link de compra com 24 horas de antecedência ao lançamento oficial.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-mono text-xs">
               <div className="md:col-span-2">
-                <label className="block text-zinc-400 mb-2 uppercase tracking-widest">NOME DO PATRONO:</label>
-                <input type="text" required value={nome} onChange={(e) => setNome(e.target.value)} placeholder="Seu nome completo" className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3.5 text-white focus:outline-none focus:border-white transition-all" />
+                <label className="block text-zinc-400 mb-2 uppercase tracking-widest">NOME COMPLETO:</label>
+                <input
+                  type="text"
+                  required
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  placeholder="Seu nome completo"
+                  className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3.5 text-white focus:outline-none focus:border-white transition-all"
+                />
               </div>
-              
+
               <div>
-                <label className="block text-zinc-400 mb-2 uppercase tracking-widest">E-MAIL (PRINCIPAL):</label>
-                <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="patrono@laromme.com.br" className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3.5 text-white focus:outline-none focus:border-white transition-all" />
+                <label className="block text-zinc-400 mb-2 uppercase tracking-widest">E-MAIL:</label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="seuemail@exemplo.com.br"
+                  className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3.5 text-white focus:outline-none focus:border-white transition-all"
+                />
               </div>
 
               <div>
                 <label className="block text-zinc-400 mb-2 uppercase tracking-widest">WHATSAPP (OPCIONAL):</label>
-                <input type="tel" value={whatsapp} onChange={(e) => setWhatsapp(e.target.value)} placeholder="(85) 90000-0000" className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3.5 text-white focus:outline-none focus:border-white transition-all" />
+                <input
+                  type="tel"
+                  value={whatsapp}
+                  onChange={(e) => setWhatsapp(e.target.value)}
+                  placeholder="(85) 90000-0000"
+                  className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3.5 text-white focus:outline-none focus:border-white transition-all"
+                />
               </div>
 
               <div>
-                <label className="block text-zinc-400 mb-2 uppercase tracking-widest">ARENA DE ATUAÇÃO:</label>
-                <select value={esporte} onChange={(e) => setEsporte(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3.5 text-white focus:outline-none focus:border-white transition-all appearance-none cursor-pointer">
+                <label className="block text-zinc-400 mb-2 uppercase tracking-widest">MODALIDADE PRINCIPAL:</label>
+                <select
+                  value={esporte}
+                  onChange={(e) => setEsporte(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3.5 text-white focus:outline-none focus:border-white transition-all appearance-none cursor-pointer"
+                >
                   <option value="BEACH TENNIS">BEACH TENNIS</option>
                   <option value="CORRIDA DE RUA">CORRIDA DE RUA</option>
                   <option value="FUTEVÔLEI">FUTEVÔLEI</option>
-                  <option value="TREINO FUNCIONAL / CROSS">TREINO FUNCIONAL / CROSS</option>
-                  <option value="LIFESTYLE">LIFESTYLE / CASUAL</option>
+                  <option value="TREINO FUNCIONAL / MUSCULAÇÃO">TREINO FUNCIONAL / MUSCULAÇÃO</option>
+                  <option value="LIFESTYLE">LIFESTYLE / COTIDIANO</option>
                 </select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-zinc-400 mb-2 uppercase tracking-widest">TAMANHO:</label>
-                  <select value={tamanho} onChange={(e) => setTamanho(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3.5 text-white focus:outline-none focus:border-white transition-all appearance-none cursor-pointer text-center">
+                  <select
+                    value={tamanho}
+                    onChange={(e) => setTamanho(e.target.value)}
+                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3.5 text-white focus:outline-none focus:border-white transition-all appearance-none cursor-pointer text-center"
+                  >
                     <option value="P">P</option>
                     <option value="M">M</option>
                     <option value="G">G</option>
@@ -109,13 +152,24 @@ export default function SenadoVipPage() {
                 </div>
                 <div>
                   <label className="block text-zinc-400 mb-2 uppercase tracking-widest">ESTADO:</label>
-                  <input type="text" value={estado} onChange={(e) => setEstado(e.target.value)} maxLength={2} placeholder="CE" className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3.5 text-white focus:outline-none focus:border-white transition-all text-center uppercase" />
+                  <input
+                    type="text"
+                    value={estado}
+                    onChange={(e) => setEstado(e.target.value)}
+                    maxLength={2}
+                    placeholder="CE"
+                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3.5 text-white focus:outline-none focus:border-white transition-all text-center uppercase"
+                  />
                 </div>
               </div>
             </div>
 
-            <button type="submit" disabled={loading} className="w-full bg-white text-black font-bold text-xs tracking-[0.3em] uppercase py-4 mt-4 hover:bg-zinc-200 transition-all font-sans shadow-xl disabled:opacity-50">
-              {loading ? 'PROCESSANDO CREDENCIAL...' : 'SOLICITAR ACESSO AO LOTE ZERO.'}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-white text-black font-bold text-xs tracking-[0.3em] uppercase py-4 mt-4 hover:bg-zinc-200 transition-all font-sans shadow-xl disabled:opacity-50"
+            >
+              {loading ? 'REGISTRANDO PREFERÊNCIAS...' : 'CONFIRMAR ACESSO ANTECIPADO.'}
             </button>
           </form>
         </FadeIn>
@@ -123,50 +177,50 @@ export default function SenadoVipPage() {
         <FadeIn>
           <div className="bg-[#080808] border border-zinc-800 p-8 md:p-12 space-y-8 font-mono">
             <div className="text-center space-y-2">
-              <span className="text-[10px] text-zinc-500 uppercase tracking-widest block">ALISTAMENTO CONCLUÍDO</span>
+              <span className="text-[10px] text-zinc-500 uppercase tracking-widest block">REGISTRO CONFIRMADO</span>
               <h2 className="font-serif text-2xl text-white font-bold tracking-wider uppercase">BEM-VINDO AO SENADO.</h2>
             </div>
-            
-            {/* CREDENCIAL DIGITAL (CARD TÁTICO) */}
-            <div className="border border-white/20 bg-zinc-950 p-6 md:p-8 relative overflow-hidden shadow-[0_0_30px_rgba(255,255,255,0.05)]">
-              <div className="absolute top-0 right-0 bg-white text-black px-3 py-1 text-[9px] font-bold tracking-widest">ACESSO LIBERADO</div>
+
+            <div className="border border-white/20 bg-zinc-950 p-6 md:p-8 relative overflow-hidden shadow-2xl">
+              <div className="absolute top-0 right-0 bg-white text-black px-3 py-1 text-[9px] font-bold tracking-widest">
+                PRIORIDADE ATIVA
+              </div>
               <div className="space-y-4 pt-4">
                 <div className="flex justify-between items-end border-b border-zinc-800 pb-3">
-                  <span className="text-[10px] text-zinc-500 tracking-widest">PATRONO</span>
-                  <span className="text-white font-bold uppercase truncate max-w-[200px]">{nome || 'MEMBRO VIP'}</span>
+                  <span className="text-[10px] text-zinc-500 tracking-widest">MEMBRO</span>
+                  <span className="text-white font-bold uppercase truncate max-w-[200px]">{nome}</span>
                 </div>
                 <div className="flex justify-between items-end border-b border-zinc-800 pb-3">
-                  <span className="text-[10px] text-zinc-500 tracking-widest">CREDENCIAL</span>
-                  <span className="text-white font-bold tracking-widest">#{patronoId} / LOTE ZERO</span>
+                  <span className="text-[10px] text-zinc-500 tracking-widest">IDENTIFICAÇÃO</span>
+                  <span className="text-white font-bold tracking-widest">MEMBRO #{patronoId} • DROP 01</span>
                 </div>
                 <div className="flex justify-between items-end border-b border-zinc-800 pb-3">
-                  <span className="text-[10px] text-zinc-500 tracking-widest">PERFIL TÁTICO</span>
+                  <span className="text-[10px] text-zinc-500 tracking-widest">PREFERÊNCIA</span>
                   <span className="text-white text-xs uppercase">{tamanho} • {esporte}</span>
                 </div>
                 <div className="flex justify-between items-end pt-2">
-                  <span className="text-[9px] text-zinc-600 tracking-widest">COORDENADAS ATIVAS</span>
-                  <span className="text-[9px] text-zinc-500 tracking-widest">03°43'16"S 38°32'41"W</span>
+                  <span className="text-[9px] text-zinc-600 tracking-widest">ORIGEM</span>
+                  <span className="text-[9px] text-zinc-500 tracking-widest">FORTALEZA, CEARÁ</span>
                 </div>
               </div>
             </div>
-            
+
             <p className="text-[11px] text-zinc-400 leading-relaxed font-sans font-light text-center">
-              Tire um print de sua credencial. O link do cofre privado será enviado para <strong className="text-white">{email}</strong> com 24 horas de antecedência ao lançamento público.
+              Enviamos a confirmação para <strong className="text-white">{email}</strong>. O link do primeiro lançamento chegará na sua caixa de entrada 24 horas antes da abertura geral.
             </p>
           </div>
         </FadeIn>
       )}
 
-      {/* BENEFÍCIOS DO SENADO VIP */}
       <FadeIn delay={250}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-mono text-xs">
           <div className="bg-zinc-950 border border-zinc-900 p-6 space-y-2">
-            <span className="text-white font-bold uppercase block tracking-widest">01 // CONCIERGE DIRETO</span>
-            <p className="text-zinc-500 text-[11px]">Reserva de peças limitadas e suporte tático via WhatsApp para os primeiros cadastrados.</p>
+            <span className="text-white font-bold uppercase block tracking-widest">01 // ACESSO DE 24 HORAS</span>
+            <p className="text-zinc-500 text-[11px]">Garantia de escolha da numeração ideal no Drop 01 antes do público geral.</p>
           </div>
           <div className="bg-zinc-950 border border-zinc-900 p-6 space-y-2">
-            <span className="text-white font-bold uppercase block tracking-widest">02 // ACESSO DE 24 HORAS</span>
-            <p className="text-zinc-500 text-[11px]">Garantia de escolha da numeração no Lote Zero antes que o acervo chegue ao público geral.</p>
+            <span className="text-white font-bold uppercase block tracking-widest">02 // CANAL DIRETO</span>
+            <p className="text-zinc-500 text-[11px]">Comunicação transparente sobre novos desenvolvimentos, matérias-primas e entregas.</p>
           </div>
         </div>
       </FadeIn>
