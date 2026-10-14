@@ -7,14 +7,25 @@ import { CartProvider } from '@/context/CartContext';
 import './globals.css';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.laromme.com.br';
+const OG_IMAGE_URL = 'https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/logo%20branca.png';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'LaRomme • Maison de Haute Couture',
+    default: 'LaRomme • Entre o Esporte e o Cotidiano',
     template: '%s • LaRomme',
   },
-  description: 'Moda autoral e elegância atemporal.',
+  description: 'Design com intenção, proporção e presença. Vestuário essencial desenvolvido para a transição entre a prática esportiva e a cidade. Fortaleza, Brasil.',
+  keywords: [
+    'LaRomme',
+    'Vestuário Esportivo',
+    'Beach Tennis',
+    'Lifestyle',
+    'Fortaleza',
+    'Silent Luxury',
+    'Drop 01',
+    'Sistema Origo',
+  ],
   alternates: {
     canonical: './',
   },
@@ -23,26 +34,26 @@ export const metadata: Metadata = {
     apple: '/apple-icon.png',
   },
   openGraph: {
-    title: 'LaRomme • Maison de Haute Couture',
-    description: 'Moda autoral e elegância atemporal.',
+    title: 'LaRomme • Entre o Esporte e o Cotidiano',
+    description: 'Design com intenção, proporção e presença. Vestuário essencial para a transição entre o esporte e a rotina urbana. Fortaleza, Brasil.',
     url: siteUrl,
     siteName: 'LaRomme',
     locale: 'pt_BR',
     type: 'website',
     images: [
       {
-        url: '/apple-icon.png',
+        url: OG_IMAGE_URL,
         width: 1200,
         height: 630,
-        alt: 'LaRomme Maison de Haute Couture',
+        alt: 'LaRomme • Fortaleza, Brasil',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'LaRomme • Maison de Haute Couture',
-    description: 'Moda autoral e elegância atemporal.',
-    images: ['/apple-icon.png'],
+    title: 'LaRomme • Entre o Esporte e o Cotidiano',
+    description: 'Design com intenção, proporção e presença. Vestuário essencial desenvolvido entre o esporte e a cidade. Fortaleza, Brasil.',
+    images: [OG_IMAGE_URL],
   },
 };
 
