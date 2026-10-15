@@ -153,7 +153,7 @@ export async function POST(request: Request) {
 
     const { data, error } = await resend.emails.send({
       from: fromEmail,
-      reply_to: 'romannuscompany@gmail.com',
+      replyTo: 'romannuscompany@gmail.com',
       to: [email],
       subject: 'SENADO VIP // Homologação de Acesso Antecipado • Drop 01',
       html: emailHtml,
@@ -170,3 +170,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
+
