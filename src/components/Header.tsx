@@ -19,16 +19,18 @@ export default function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 w-full z-40 bg-[#080808]/90 backdrop-blur-md border-b border-zinc-900 px-6 md:px-12 py-4 flex items-center justify-between font-mono text-xs tracking-wider">
-        <div className="flex items-center space-x-6">
+      <header className="fixed top-0 left-0 w-full z-40 bg-[#080808]/90 backdrop-blur-md border-b border-zinc-900 px-6 lg:px-12 py-4 flex items-center justify-between font-mono text-xs tracking-wider">
+        {/* LOGO ISOLADO */}
+        <div className="flex items-center space-x-6 flex-shrink-0">
           <Link href="/" className="flex items-center space-x-3 group">
-            <span className="font-serif text-lg tracking-[0.2em] font-bold text-white group-hover:text-zinc-300 transition-colors uppercase">
+            <span className="font-serif text-lg tracking-[0.2em] font-bold text-white group-hover:text-zinc-300 transition-colors uppercase whitespace-nowrap">
               LAROMME
             </span>
           </Link>
         </div>
 
-        <nav className="hidden md:flex items-center space-x-8 text-[11px] uppercase tracking-[0.2em] text-zinc-400">
+        {/* NAVEGAÇÃO DESKTOP: ATIVA SOMENTE A PARTIR DE 1024PX (LG) */}
+        <nav className="hidden lg:flex items-center space-x-6 xl:space-x-8 text-[11px] uppercase tracking-[0.2em] text-zinc-400 whitespace-nowrap">
           <Link href="/#origo" className="hover:text-white transition-colors">ACERVO</Link>
           <Link href="/a-marca" className="hover:text-white transition-colors">A MARCA</Link>
           <Link href="/o-movimento" className="hover:text-white transition-colors">O MOVIMENTO</Link>
@@ -36,20 +38,22 @@ export default function Header() {
           <Link href="/senado-vip" className="hover:text-white transition-colors">SENADO VIP</Link>
         </nav>
 
-        <div className="flex items-center space-x-4">
+        {/* BOTÃO DA SACOLA & GAVETA DE MENU */}
+        <div className="flex items-center space-x-3 md:space-x-4 flex-shrink-0">
           <button
             onClick={openCart}
-            className="flex items-center space-x-2 border border-zinc-800 bg-zinc-950/60 hover:bg-zinc-900 text-zinc-300 px-3 py-1.5 transition-all text-[10px] uppercase tracking-widest"
+            className="flex items-center space-x-2 border border-zinc-800 bg-zinc-950/60 hover:bg-zinc-900 text-zinc-300 px-3 py-1.5 transition-all text-[10px] uppercase tracking-widest whitespace-nowrap"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
             <span>
-              SACOLA ({totalQuantity}){activeOrder ? ' • RESERVA ATIVA' : ''}
+              SACOLA ({totalQuantity}){activeOrder ? ' • RESERVA' : ''}
             </span>
           </button>
 
           <button
             onClick={() => setMenuMobileOpen(!menuMobileOpen)}
-            className="md:hidden text-zinc-400 hover:text-white focus:outline-none"
+            className="lg:hidden text-zinc-400 hover:text-white focus:outline-none p-1"
+            aria-label="Menu de Navegação"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               {menuMobileOpen ? (
@@ -62,8 +66,9 @@ export default function Header() {
         </div>
       </header>
 
+      {/* GAVETA DO MENU (MOBILE & TABLET ATÉ 1023PX) */}
       {menuMobileOpen && (
-        <div className="fixed inset-0 z-30 bg-black/95 backdrop-blur-xl md:hidden pt-24 px-8 flex flex-col space-y-6 font-mono text-sm uppercase tracking-widest text-zinc-300">
+        <div className="fixed inset-0 z-30 bg-black/95 backdrop-blur-xl lg:hidden pt-24 px-8 flex flex-col space-y-6 font-mono text-sm uppercase tracking-widest text-zinc-300">
           <Link href="/#origo" onClick={() => setMenuMobileOpen(false)} className="border-b border-zinc-900 pb-3">ACERVO</Link>
           <Link href="/a-marca" onClick={() => setMenuMobileOpen(false)} className="border-b border-zinc-900 pb-3">A MARCA</Link>
           <Link href="/o-movimento" onClick={() => setMenuMobileOpen(false)} className="border-b border-zinc-900 pb-3">O MOVIMENTO</Link>
@@ -72,6 +77,7 @@ export default function Header() {
         </div>
       )}
 
+      {/* MODAL LATERAL DA SACOLA */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" onClick={closeCart} />
