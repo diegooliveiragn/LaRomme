@@ -24,7 +24,6 @@ export async function POST(request: Request) {
     const fromEmail = process.env.RESEND_FROM_EMAIL || 'LaRomme <contato@laromme.com.br>';
     const codeId = patronoId || Math.floor(100 + Math.random() * 900).toString();
 
-    // Template Dark Mode blindado contra inversões forçadas do Gmail (iOS / Android)
     const emailHtml = `
 <!DOCTYPE html>
 <html lang="pt-BR" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
@@ -66,10 +65,11 @@ export async function POST(request: Request) {
         </td>
       </tr>
 
-      <!-- CABEÇALHO DA MARCA -->
+      <!-- CABEÇALHO COM EMBLEMA OFICIAL -->
       <tr>
-        <td align="center" style="padding: 44px 28px 20px 28px;">
-          <h1 style="margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 32px; letter-spacing: 10px; color: #FFFFFF; font-weight: 700; text-transform: uppercase;">
+        <td align="center" style="padding: 40px 28px 16px 28px;">
+          <img src="https://laromme.com.br/laromme-avatar.svg" alt="LaRomme" width="68" height="68" style="display: block; margin: 0 auto 16px auto; border: 0;" />
+          <h1 style="margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 30px; letter-spacing: 10px; color: #FFFFFF; font-weight: 700; text-transform: uppercase;">
             LAROMME
           </h1>
           <p style="margin: 8px 0 0 0; font-family: 'Courier New', Courier, monospace; font-size: 11px; letter-spacing: 4px; color: #D4D4D8; text-transform: uppercase;">
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
             Seu alistamento foi homologado com êxito no acervo privativo da LaRomme. Seus parâmetros anatômicos e de modalidade foram alocados para o planejamento do estoque inicial do nosso primeiro lançamento.
           </p>
 
-          <!-- CREDENCIAL TÉCNICA (BOX BLINDADO) -->
+          <!-- CREDENCIAL TÉCNICA -->
           <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 24px 0; background-color: #030303; background-image: linear-gradient(#030303, #030303); border: 1px solid #3f3f46;">
             <tr>
               <td style="padding: 22px 24px;">
@@ -135,7 +135,7 @@ export async function POST(request: Request) {
         </td>
       </tr>
 
-      <!-- RODAPÉ EDITORIAL -->
+      <!-- RODAPÉ TÉCNICO -->
       <tr>
         <td style="padding: 24px 28px; background-color: #070708; background-image: linear-gradient(#070708, #070708); border-top: 1px solid #1f1f23; text-align: center;">
           <p style="margin: 0; font-family: 'Courier New', Courier, monospace; font-size: 10px; color: #A1A1AA; line-height: 18px; letter-spacing: 1px;">
@@ -170,4 +170,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
-
