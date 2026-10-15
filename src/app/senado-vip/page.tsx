@@ -19,12 +19,70 @@ export default function SenadoVipPage() {
   const [esporte, setEsporte] = useState('BEACH TENNIS');
   const [tamanho, setTamanho] = useState('M');
   const [estado, setEstado] = useState('CE');
+  const [emailError, setEmailError] = useState<string | null>(null);
+
+  // Máscara automática de WhatsApp: (XX) X XXXX-XXXX ou (XX) XXXX-XXXX
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 11);
+    let formatted = raw;
+
+    if (raw.length > 0) {
+      formatted = `(${raw.slice(0, 2)}`;
+      if (raw.length > 2) {
+        if (raw.length > 6) {
+          if (raw.length > 10) {
+            formatted += `) ${raw.slice(2, 3)} ${raw.slice(3, 7)}-${raw.slice(7)}`;
+          } else {
+            formatted += `) ${raw.slice(2, 6)}-${raw.slice(6)}`;
+          }
+        } else {
+          formatted += `) ${raw.slice(2)}`;
+        }
+      }
+    }
+    setWhatsapp(formatted);
+  };
+
+  // Detector de erros de digitação e formato
+  const validateEmailInput = (val: string): string | null => {
+    const trimmed = val.trim().toLowerCase();
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!regex.test(trimmed)) {
+      return 'Formato de e-mail inválido. Ex: nome@dominio.com';
+    }
+    if (trimmed.endsWith('.con') || trimmed.endsWith('.cpm')) {
+      return 'Verifique a extensão do e-mail (parece ser .com).';
+    }
+    if (trimmed.includes('@gmai.') || trimmed.includes('@gamil.')) {
+      return 'Verifique o provedor (digitação comum: @gmail.com).';
+    }
+    if (trimmed.includes('@hotmial.')) {
+      return 'Verifique o provedor (digitação comum: @hotmail.com).';
+    }
+    return null;
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setEmail(val);
+    if (emailError) {
+      setEmailError(null);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !nome) return;
 
+    const err = validateEmailInput(email);
+    if (err) {
+      setEmailError(err);
+      return;
+    }
+
+    if (!email || !nome) return;
     setLoading(true);
+
+    const generatedId = Math.floor(100 + Math.random() * 900).toString();
 
     try {
       await supabase.from('senado_vip').insert([
@@ -34,13 +92,13 @@ export default function SenadoVipPage() {
           whatsapp: whatsapp.trim(),
           esporte,
           tamanho,
-          estado,
+          estado: estado.toUpperCase().trim(),
           origin: 'portal_alistamento',
           status: 'active',
         },
       ]);
-    } catch (err) {
-      console.warn('Registro no Supabase processado com avisos:', err);
+    } catch (dbErr) {
+      console.warn('Registro no Supabase processado com avisos:', dbErr);
     }
 
     try {
@@ -53,13 +111,14 @@ export default function SenadoVipPage() {
           whatsapp: whatsapp.trim(),
           esporte,
           tamanho,
-          estado,
+          estado: estado.toUpperCase().trim(),
+          patronoId: generatedId,
         }),
       });
-    } catch (err) {
-      console.warn('Notificação por e-mail em standby:', err);
+    } catch (apiErr) {
+      console.warn('Disparo do e-mail com avisos:', apiErr);
     } finally {
-      setPatronoId(Math.floor(100 + Math.random() * 900).toString());
+      setPatronoId(generatedId);
       setLoading(false);
       setSubmitted(true);
     }
@@ -81,7 +140,7 @@ export default function SenadoVipPage() {
             <div className="space-y-2 border-b border-zinc-800 pb-4">
               <h2 className="font-serif text-lg text-white font-bold uppercase tracking-wider">CADASTRO DE PREFERÊNCIAS</h2>
               <p className="text-xs text-zinc-400 leading-relaxed font-light">
-                Preencha seus dados para receber o link de compra com 24 horas de antecedência ao lançamento oficial.
+                Preencha seus dados para homologar seu acesso prioritário e receber o link de compra com 24 horas de antecedência ao lançamento oficial.
               </p>
             </div>
 
@@ -104,10 +163,17 @@ export default function SenadoVipPage() {
                   type="email"
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={handleEmailChange}
                   placeholder="seuemail@exemplo.com.br"
-                  className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3.5 text-white focus:outline-none focus:border-white transition-all"
+                  className={`w-full bg-zinc-950 border px-4 py-3.5 text-white focus:outline-none transition-all ${
+                    emailError ? 'border-rose-500 focus:border-rose-400' : 'border-zinc-800 focus:border-white'
+                  }`}
                 />
+                {emailError && (
+                  <span className="text-[10px] text-rose-400 mt-1.5 block tracking-tight">
+                    {emailError}
+                  </span>
+                )}
               </div>
 
               <div>
@@ -115,9 +181,9 @@ export default function SenadoVipPage() {
                 <input
                   type="tel"
                   value={whatsapp}
-                  onChange={(e) => setWhatsapp(e.target.value)}
-                  placeholder="(85) 90000-0000"
-                  className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3.5 text-white focus:outline-none focus:border-white transition-all"
+                  onChange={handlePhoneChange}
+                  placeholder="(85) 9 0000-0000"
+                  className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3.5 text-white focus:outline-none focus:border-white transition-all font-mono"
                 />
               </div>
 
@@ -129,10 +195,11 @@ export default function SenadoVipPage() {
                   className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3.5 text-white focus:outline-none focus:border-white transition-all appearance-none cursor-pointer"
                 >
                   <option value="BEACH TENNIS">BEACH TENNIS</option>
-                  <option value="CORRIDA DE RUA">CORRIDA DE RUA</option>
+                  <option value="VÔLEI DE PRAIA">VÔLEI DE PRAIA</option>
                   <option value="FUTEVÔLEI">FUTEVÔLEI</option>
+                  <option value="CORRIDA DE RUA">CORRIDA DE RUA</option>
                   <option value="TREINO FUNCIONAL / MUSCULAÇÃO">TREINO FUNCIONAL / MUSCULAÇÃO</option>
-                  <option value="LIFESTYLE">LIFESTYLE / COTIDIANO</option>
+                  <option value="LIFESTYLE / COTIDIANO">LIFESTYLE / COTIDIANO</option>
                 </select>
               </div>
 
@@ -155,10 +222,10 @@ export default function SenadoVipPage() {
                   <input
                     type="text"
                     value={estado}
-                    onChange={(e) => setEstado(e.target.value)}
+                    onChange={(e) => setEstado(e.target.value.toUpperCase())}
                     maxLength={2}
                     placeholder="CE"
-                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3.5 text-white focus:outline-none focus:border-white transition-all text-center uppercase"
+                    className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3.5 text-white focus:outline-none focus:border-white transition-all text-center uppercase font-mono"
                   />
                 </div>
               </div>
@@ -169,7 +236,7 @@ export default function SenadoVipPage() {
               disabled={loading}
               className="w-full bg-white text-black font-bold text-xs tracking-[0.3em] uppercase py-4 mt-4 hover:bg-zinc-200 transition-all font-sans shadow-xl disabled:opacity-50"
             >
-              {loading ? 'REGISTRANDO PREFERÊNCIAS...' : 'CONFIRMAR ACESSO ANTECIPADO.'}
+              {loading ? 'HOMOLOGANDO CADASTRO...' : 'CONFIRMAR ACESSO ANTECIPADO.'}
             </button>
           </form>
         </FadeIn>
@@ -206,7 +273,7 @@ export default function SenadoVipPage() {
             </div>
 
             <p className="text-[11px] text-zinc-400 leading-relaxed font-sans font-light text-center">
-              Enviamos a confirmação para <strong className="text-white">{email}</strong>. O link do primeiro lançamento chegará na sua caixa de entrada 24 horas antes da abertura geral.
+              Enviamos sua credencial oficial para <strong className="text-white">{email}</strong>. O link exclusivo de compra chegará com 24 horas de antecedência ao público geral.
             </p>
           </div>
         </FadeIn>
@@ -215,12 +282,12 @@ export default function SenadoVipPage() {
       <FadeIn delay={250}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-mono text-xs">
           <div className="bg-zinc-950 border border-zinc-900 p-6 space-y-2">
-            <span className="text-white font-bold uppercase block tracking-widest">01 // ACESSO DE 24 HORAS</span>
+            <span className="text-white font-bold uppercase block tracking-widest">01 // JANELA DE 24 HORAS</span>
             <p className="text-zinc-500 text-[11px]">Garantia de escolha da numeração ideal no Drop 01 antes do público geral.</p>
           </div>
           <div className="bg-zinc-950 border border-zinc-900 p-6 space-y-2">
             <span className="text-white font-bold uppercase block tracking-widest">02 // CANAL DIRETO</span>
-            <p className="text-zinc-500 text-[11px]">Comunicação transparente sobre novos desenvolvimentos, matérias-primas e entregas.</p>
+            <p className="text-zinc-500 text-[11px]">Comunicação técnica e transparente sobre matérias-primas, lotes e entregas.</p>
           </div>
         </div>
       </FadeIn>
