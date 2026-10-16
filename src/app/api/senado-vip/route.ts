@@ -23,111 +23,116 @@ export async function POST(request: Request) {
 
     const fromEmail = process.env.RESEND_FROM_EMAIL || 'LaRomme <contato@laromme.com.br>';
     const codeId = patronoId || Math.floor(100 + Math.random() * 900).toString();
+    const firstName = nome ? nome.trim().split(' ')[0] : 'Atleta';
 
+    // Versão Texto Puro (Critério essencial para não cair em Spam)
+    const textPlain = `LaRomme — Acesso Antecipado ao Drop 01
+
+Olá, ${firstName}.
+
+Seu cadastro no Senado VIP foi confirmado.
+
+Registramos sua preferência de modalidade (${esporte || 'Prática Esportiva'}) e tamanho (${tamanho || 'M'}). Essas informações nos ajudam a calibrar o estoque do nosso primeiro lançamento.
+
+Identificação: Membro #${codeId}
+Acesso prioritário: 24 horas antes da abertura geral
+Código de acesso: ORIGO24H
+
+Quando o Drop 01 estiver pronto, você receberá o link privativo diretamente neste e-mail.
+
+Conhecer a LaRomme: https://laromme.com.br
+
+LaRomme — Entre a prática e o cotidiano.
+Fortaleza, Ceará.
+`;
+
+    // Template HTML 100% Tipográfico com Libre Baskerville
     const emailHtml = `
 <!DOCTYPE html>
-<html lang="pt-BR" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<html lang="pt-BR">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="color-scheme" content="dark only">
-  <meta name="supported-color-schemes" content="dark only">
-  <title>LaRomme // Senado VIP</title>
-  <style>
-    :root {
-      color-scheme: dark only;
-      supported-color-schemes: dark only;
-    }
-    body, table, td, div, p, a {
-      -webkit-font-smoothing: antialiased;
-      text-size-adjust: 100%;
-      -ms-text-size-adjust: 100%;
-    }
-  </style>
+  <title>LaRomme — Acesso Antecipado</title>
 </head>
-<body style="margin: 0; padding: 0; width: 100% !important; background-color: #040405; background-image: linear-gradient(#040405, #040405); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #FFFFFF;">
-  <div style="background-color: #040405; background-image: linear-gradient(#040405, #040405); padding: 40px 12px;">
-    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 600px; margin: 0 auto; background-color: #09090b; background-image: linear-gradient(#09090b, #09090b); border: 1px solid #27272a; border-radius: 4px; overflow: hidden;">
+<body style="margin: 0; padding: 0; background-color: #0c0c0e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #ededed; -webkit-font-smoothing: antialiased;">
+  <div style="background-color: #0c0c0e; padding: 48px 16px;">
+    <table align="center" border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 560px; margin: 0 auto; background-color: #121215; border: 1px solid #222226; border-radius: 2px;">
       
-      <!-- TOPO TÉCNICO // COORDENADAS -->
+      <!-- IDENTIFICAÇÃO SUPERIOR -->
       <tr>
-        <td style="padding: 18px 28px; background-color: #070708; background-image: linear-gradient(#070708, #070708); border-bottom: 1px solid #1f1f23;">
+        <td style="padding: 24px 32px; border-bottom: 1px solid #1c1c21;">
           <table width="100%" border="0" cellspacing="0" cellpadding="0">
             <tr>
-              <td align="left" style="font-family: 'Courier New', Courier, monospace; font-size: 11px; color: #D4D4D8; letter-spacing: 2px;">
-                03°43'16"S 38°32'41"W
+              <td align="left" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; letter-spacing: 2px; color: #71717a; text-transform: uppercase;">
+                SENADO VIP // DROP 01
               </td>
-              <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 11px; color: #FFFFFF; font-weight: bold; letter-spacing: 2px;">
-                SENADO VIP • DROP 01
+              <td align="right" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; letter-spacing: 1px; color: #a1a1aa;">
+                MEMBRO #${codeId}
               </td>
             </tr>
           </table>
         </td>
       </tr>
 
-      <!-- CABEÇALHO COM EMBLEMA OFICIAL -->
+      <!-- CABEÇALHO TIPOGRÁFICO OFICIAL -->
       <tr>
-        <td align="center" style="padding: 40px 28px 16px 28px;">
-          <img src="https://laromme.com.br/laromme-avatar.svg" alt="LaRomme" width="68" height="68" style="display: block; margin: 0 auto 16px auto; border: 0;" />
-          <h1 style="margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: 30px; letter-spacing: 10px; color: #FFFFFF; font-weight: 700; text-transform: uppercase;">
+        <td align="center" style="padding: 48px 32px 32px 32px;">
+          <h1 style="margin: 0; font-family: 'Libre Baskerville', Georgia, 'Times New Roman', serif; font-size: 32px; letter-spacing: 8px; color: #ffffff; font-weight: 400; text-transform: uppercase;">
             LAROMME
           </h1>
-          <p style="margin: 8px 0 0 0; font-family: 'Courier New', Courier, monospace; font-size: 11px; letter-spacing: 4px; color: #D4D4D8; text-transform: uppercase;">
-            SISTEMA ORIGO // CONVOCAÇÃO OFICIAL
+          <p style="margin: 12px 0 0 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; letter-spacing: 3px; color: #82828c; text-transform: uppercase;">
+            ENTRE A PRÁTICA E O COTIDIANO
           </p>
         </td>
       </tr>
 
-      <!-- MENSAGEM PRINCIPAL -->
+      <!-- CONTEÚDO PRINCIPAL -->
       <tr>
-        <td style="padding: 20px 32px 32px 32px;">
-          <p style="font-size: 15px; line-height: 24px; color: #FFFFFF; margin: 0 0 16px 0; font-weight: 600;">
-            Prezado(a) ${nome},
+        <td style="padding: 16px 36px 36px 36px;">
+          <p style="font-size: 15px; line-height: 24px; color: #f4f4f5; margin: 0 0 16px 0; font-weight: 500;">
+            Olá, ${firstName}.
           </p>
-          <p style="font-size: 13px; line-height: 22px; color: #E4E4E7; margin: 0 0 24px 0; font-weight: 300;">
-            Seu alistamento foi homologado com êxito no acervo privativo da LaRomme. Seus parâmetros anatômicos e de modalidade foram alocados para o planejamento do estoque inicial do nosso primeiro lançamento.
+          <p style="font-size: 14px; line-height: 24px; color: #a1a1aa; margin: 0 0 28px 0; font-weight: 400;">
+            Seu cadastro no Senado VIP foi confirmado. Registramos sua preferência de modalidade e tamanho para calibrar a produção do nosso primeiro lançamento.
           </p>
 
-          <!-- CREDENCIAL TÉCNICA -->
-          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 24px 0; background-color: #030303; background-image: linear-gradient(#030303, #030303); border: 1px solid #3f3f46;">
+          <!-- CARTÃO TÉCNICO DE PREFERÊNCIA -->
+          <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin: 0 0 28px 0; background-color: #0a0a0c; border: 1px solid #1f1f24; border-radius: 2px;">
             <tr>
-              <td style="padding: 22px 24px;">
+              <td style="padding: 20px 24px;">
                 <table width="100%" border="0" cellspacing="0" cellpadding="8">
                   <tr>
-                    <td style="font-family: 'Courier New', Courier, monospace; font-size: 11px; color: #A1A1AA; text-transform: uppercase;">STATUS:</td>
-                    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 11px; color: #34D399; font-weight: bold; letter-spacing: 1px;">HOMOLOGADO // 24H PRIVATIVO</td>
+                    <td style="font-size: 11px; color: #71717a; text-transform: uppercase; letter-spacing: 1px;">MODALIDADE:</td>
+                    <td align="right" style="font-size: 12px; color: #ffffff; font-weight: 500;">${esporte || 'BEACH TENNIS'}</td>
                   </tr>
                   <tr>
-                    <td style="font-family: 'Courier New', Courier, monospace; font-size: 11px; color: #A1A1AA; text-transform: uppercase;">IDENTIFICAÇÃO:</td>
-                    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 12px; color: #FFFFFF; font-weight: bold;">MEMBRO #${codeId}</td>
+                    <td style="font-size: 11px; color: #71717a; text-transform: uppercase; letter-spacing: 1px;">GRADE PREFERENCIAL:</td>
+                    <td align="right" style="font-size: 12px; color: #ffffff; font-weight: 500;">TAMANHO ${tamanho || 'M'}</td>
                   </tr>
                   <tr>
-                    <td style="font-family: 'Courier New', Courier, monospace; font-size: 11px; color: #A1A1AA; text-transform: uppercase;">PASSE DO DROP 01:</td>
-                    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 13px; color: #FFFFFF; font-weight: bold; letter-spacing: 2px;">ORIGO24H</td>
+                    <td style="font-size: 11px; color: #71717a; text-transform: uppercase; letter-spacing: 1px;">ACESSO:</td>
+                    <td align="right" style="font-size: 12px; color: #ffffff; font-weight: 500;">24H DE ANTECEDÊNCIA</td>
                   </tr>
                   <tr>
-                    <td style="font-family: 'Courier New', Courier, monospace; font-size: 11px; color: #A1A1AA; text-transform: uppercase;">GRADE ALOCADA:</td>
-                    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 11px; color: #FFFFFF; font-weight: bold;">TAMANHO ${tamanho || 'M'}</td>
-                  </tr>
-                  <tr>
-                    <td style="font-family: 'Courier New', Courier, monospace; font-size: 11px; color: #A1A1AA; text-transform: uppercase;">MODALIDADE:</td>
-                    <td align="right" style="font-family: 'Courier New', Courier, monospace; font-size: 11px; color: #FFFFFF; font-weight: bold;">${esporte || 'BEACH TENNIS'}</td>
+                    <td style="font-size: 11px; color: #71717a; text-transform: uppercase; letter-spacing: 1px;">CÓDIGO DE RESERVA:</td>
+                    <td align="right" style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace; font-size: 12px; color: #ffffff; font-weight: 600; letter-spacing: 1px;">ORIGO24H</td>
                   </tr>
                 </table>
               </td>
             </tr>
           </table>
 
-          <p style="font-size: 13px; line-height: 22px; color: #E4E4E7; margin: 24px 0 32px 0; font-weight: 300;">
-            A vitrine do Drop 01 será liberada aos patronos cadastrados 24 horas antes da abertura geral. Você poderá acessar diretamente com este endereço de e-mail ou aplicando o passe mestre acima.
+          <p style="font-size: 14px; line-height: 24px; color: #a1a1aa; margin: 0 0 36px 0; font-weight: 400;">
+            Quando o Drop 01 for aberto, você receberá o link de compra com 24 horas de antecedência ao público geral. Se precisar falar conosco ou atualizar algum dado, basta responder diretamente a esta mensagem.
           </p>
 
-          <!-- BOTÃO DE EXPLORAÇÃO -->
+          <!-- CTA OBJETIVO -->
           <table width="100%" border="0" cellspacing="0" cellpadding="0">
             <tr>
               <td align="center">
-                <a href="https://laromme.com.br/#origo" target="_blank" style="display: inline-block; background-color: #FFFFFF; color: #000000; font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 11px; font-weight: bold; letter-spacing: 3px; text-transform: uppercase; padding: 15px 36px; text-decoration: none; border-radius: 2px;">
-                  INSPECIONAR O ACERVO
+                <a href="https://laromme.com.br" target="_blank" style="display: inline-block; background-color: #ededed; color: #0c0c0e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; font-size: 11px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; padding: 14px 32px; text-decoration: none; border-radius: 2px;">
+                  Conhecer a LaRomme
                 </a>
               </td>
             </tr>
@@ -135,12 +140,12 @@ export async function POST(request: Request) {
         </td>
       </tr>
 
-      <!-- RODAPÉ TÉCNICO -->
+      <!-- RODAPÉ INSTITUCIONAL -->
       <tr>
-        <td style="padding: 24px 28px; background-color: #070708; background-image: linear-gradient(#070708, #070708); border-top: 1px solid #1f1f23; text-align: center;">
-          <p style="margin: 0; font-family: 'Courier New', Courier, monospace; font-size: 10px; color: #A1A1AA; line-height: 18px; letter-spacing: 1px;">
-            LAROMME SPORTING ARCHITECTURE • FORTALEZA, BRASIL<br>
-            COMUNICAÇÃO EXCLUSIVA E PRIVATIVA DIRIGIDA AO PATRONO.
+        <td style="padding: 24px 32px; border-top: 1px solid #1c1c21; text-align: center;">
+          <p style="margin: 0; font-size: 11px; color: #52525b; line-height: 20px; letter-spacing: 0.5px;">
+            LaRomme • Fortaleza, Ceará.<br>
+            Comunicação transacional enviada para membros cadastrados.
           </p>
         </td>
       </tr>
@@ -155,7 +160,8 @@ export async function POST(request: Request) {
       from: fromEmail,
       replyTo: 'romannuscompany@gmail.com',
       to: [email],
-      subject: 'SENADO VIP // Homologação de Acesso Antecipado • Drop 01',
+      subject: 'LaRomme — Acesso antecipado confirmado',
+      text: textPlain,
       html: emailHtml,
     });
 
