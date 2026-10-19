@@ -7,25 +7,14 @@ import { CartProvider } from '@/context/CartContext';
 import './globals.css';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.laromme.com.br';
-const OG_IMAGE_URL = 'https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/logo%20branca.png';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'LaRomme • Entre o Esporte e o Cotidiano',
+    default: 'LaRomme • Arquitetura de Vestuário',
     template: '%s • LaRomme',
   },
-  description: 'Design com intenção, proporção e presença. Vestuário essencial desenvolvido para a transição entre a prática esportiva e a cidade. Fortaleza, Brasil.',
-  keywords: [
-    'LaRomme',
-    'Vestuário Esportivo',
-    'Beach Tennis',
-    'Lifestyle',
-    'Fortaleza',
-    'Silent Luxury',
-    'Drop 01',
-    'Sistema Origo',
-  ],
+  description: 'Entre a prática esportiva e o cotidiano. Estilo, Performance e Pertencimento em Fortaleza, Brasil.',
   alternates: {
     canonical: './',
   },
@@ -34,26 +23,26 @@ export const metadata: Metadata = {
     apple: '/apple-icon.png',
   },
   openGraph: {
-    title: 'LaRomme • Entre o Esporte e o Cotidiano',
-    description: 'Design com intenção, proporção e presença. Vestuário essencial para a transição entre o esporte e a rotina urbana. Fortaleza, Brasil.',
+    title: 'LaRomme • Arquitetura de Vestuário',
+    description: 'A força de Roma. O movimento de Fortaleza.',
     url: siteUrl,
     siteName: 'LaRomme',
     locale: 'pt_BR',
     type: 'website',
     images: [
       {
-        url: OG_IMAGE_URL,
+        url: '/apple-icon.png',
         width: 1200,
         height: 630,
-        alt: 'LaRomme • Fortaleza, Brasil',
+        alt: 'LaRomme',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'LaRomme • Entre o Esporte e o Cotidiano',
-    description: 'Design com intenção, proporção e presença. Vestuário essencial desenvolvido entre o esporte e a cidade. Fortaleza, Brasil.',
-    images: [OG_IMAGE_URL],
+    title: 'LaRomme • Arquitetura de Vestuário',
+    description: 'A força de Roma. O movimento de Fortaleza.',
+    images: ['/apple-icon.png'],
   },
 };
 
