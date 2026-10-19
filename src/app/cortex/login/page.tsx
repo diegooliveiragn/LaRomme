@@ -100,7 +100,7 @@ export default function CortexLoginPage() {
 
         <div className="border-t border-zinc-900 pt-4 text-center">
           <span className="text-[8px] text-zinc-700 uppercase tracking-widest block">
-            LAROMME MAISON • ALL RIGHTS RESERVED
+            LAROMME • TODOS OS DIREITOS RESERVADOS
           </span>
         </div>
       </div>

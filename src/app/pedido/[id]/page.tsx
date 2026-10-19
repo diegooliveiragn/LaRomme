@@ -12,7 +12,6 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
   const [loading, setLoading] = useState(true);
   const [pixData, setPixData] = useState<any>(null);
   const [copiedPix, setCopiedPix] = useState(false);
-  const [showRawKey, setShowRawKey] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -56,60 +55,15 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
   }, [orderId, order?.status]);
 
   const copyToClipboard = (text: string) => {
-    let success = false;
-
-    // Tentativa 1: API Moderna Clipboard
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(() => {
-        triggerSuccessFeedback();
-      }).catch(() => {
-        fallbackCopy(text);
-      });
-      return;
-    }
-
-    // Tentativa 2: Fallback para WebViews (Instagram/WhatsApp)
-    fallbackCopy(text);
-  };
-
-  const fallbackCopy = (text: string) => {
-    try {
-      const textArea = document.createElement('textarea');
-      textArea.value = text;
-      textArea.style.position = 'fixed';
-      textArea.style.left = '-9999px';
-      textArea.style.top = '0';
-      textArea.setAttribute('readonly', '');
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-      const res = document.execCommand('copy');
-      document.body.removeChild(textArea);
-      if (res) {
-        triggerSuccessFeedback();
-      } else {
-        setShowRawKey(true);
-      }
-    } catch (err) {
-      setShowRawKey(true);
-    }
-  };
-
-  const triggerSuccessFeedback = () => {
-    // Feedback háptico tátil no mobile se disponível
-    if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-      try {
-        navigator.vibrate([40, 30, 40]);
-      } catch (e) {}
-    }
+    navigator.clipboard.writeText(text);
     setCopiedPix(true);
-    setTimeout(() => setCopiedPix(false), 4500);
+    setTimeout(() => setCopiedPix(false), 3000);
   };
 
   if (loading && !order) {
     return (
       <div className="pt-36 pb-24 text-center min-h-[70vh] flex items-center justify-center font-mono text-xs text-zinc-500">
-        CONSULTANDO DETALHES DO PEDIDO...
+        CARREGANDO REGISTRO DE ENCOMENDA...
       </div>
     );
   }
@@ -117,8 +71,8 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
   if (!order && !loading) {
     return (
       <div className="pt-36 pb-24 px-6 max-w-2xl mx-auto text-center space-y-6 font-sans">
-        <h1 className="font-serif text-2xl text-white font-bold tracking-wider uppercase">PEDIDO NÃO LOCALIZADO.</h1>
-        <p className="text-xs text-zinc-400 font-mono">Verifique o link acessado ou entre em contato com nosso atendimento.</p>
+        <h1 className="font-serif text-2xl text-white font-bold tracking-wider uppercase">ENCOMENDA NÃO ENCONTRADA.</h1>
+        <p className="text-xs text-zinc-400 font-mono">Verifique o código acessado ou entre em contato com o suporte LaRomme.</p>
         <Link href="/" className="inline-block bg-white text-black font-bold text-xs tracking-widest px-8 py-4 uppercase">
           RETORNAR AO INÍCIO
         </Link>
@@ -136,7 +90,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
       <FadeIn>
         <div className="border-b border-zinc-900 pb-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
           <div>
-            <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase block mb-1">ACOMPANHAMENTO DO PEDIDO</span>
+            <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase block mb-1">STATUS DE ENCOMENDA</span>
             <h1 className="font-serif text-2xl md:text-3xl tracking-[0.2em] text-white uppercase font-bold">
               PEDIDO #{order?.short_id || '---'}
             </h1>
@@ -150,15 +104,13 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
       </FadeIn>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* ÁREA PRINCIPAL: PIX OU CONFIRMAÇÃO */}
         <div className="lg:col-span-7 space-y-6">
           {/* PAINEL PIX SE PENDENTE */}
           {isPending && order?.payment_method === 'pix' && pixData && (
             <div className="bg-[#080808] border border-amber-900/50 p-6 md:p-8 space-y-6 text-center">
               <span className="text-[10px] font-mono tracking-[0.3em] text-amber-400 uppercase block">PAGAMENTO VIA PIX</span>
-              
-              <p className="text-xs text-zinc-300 font-mono leading-relaxed">
-                Toque no botão abaixo para copiar o código ou escaneie o QR Code no seu aplicativo bancário.
+              <p className="text-xs text-zinc-300 font-mono">
+                Escaneie o QR Code abaixo no app do seu banco para concluir o pedido.
               </p>
 
               {pixData.qrCodeBase64 && (
@@ -175,55 +127,15 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                 <div className="space-y-3 font-mono text-xs">
                   <button
                     onClick={() => copyToClipboard(pixData.qrCode)}
-                    className={`w-full font-bold py-4 tracking-widest uppercase transition-all shadow-xl active:scale-[0.99] ${
-                      copiedPix
-                        ? 'bg-emerald-500 text-black border border-emerald-400 animate-pulse'
-                        : 'bg-white text-black hover:bg-zinc-200'
-                    }`}
+                    className="w-full bg-white text-black font-bold py-4 tracking-widest uppercase hover:bg-zinc-200 transition-all"
                   >
-                    {copiedPix ? '✓ CÓDIGO COPIADO! ABRA SEU BANCO' : 'COPIAR CÓDIGO PIX (COPIA E COLA)'}
+                    {copiedPix ? '✓ CÓDIGO PIX COPIADO!' : 'COPIAR CÓDIGO PIX'}
                   </button>
-
-                  {/* INSTRUÇÕES PASSO A PASSO MOBILE */}
-                  <div className="grid grid-cols-3 gap-2 pt-3 text-[10px] text-zinc-400 text-left border-t border-zinc-900">
-                    <div className="p-2 border border-zinc-900 bg-zinc-950/60 rounded">
-                      <strong className="block text-white mb-0.5">1. COPIE</strong>
-                      Toque no botão acima.
-                    </div>
-                    <div className="p-2 border border-zinc-900 bg-zinc-950/60 rounded">
-                      <strong className="block text-white mb-0.5">2. ABRA</strong>
-                      Acesse o app do seu banco.
-                    </div>
-                    <div className="p-2 border border-zinc-900 bg-zinc-950/60 rounded">
-                      <strong className="block text-white mb-0.5">3. PAGUE</strong>
-                      Selecione Pix Copia e Cola.
-                    </div>
-                  </div>
-
-                  {/* CONTINGÊNCIA: CÓDIGO TEXTUAL VISÍVEL */}
-                  <div className="pt-2 text-right">
-                    <button
-                      type="button"
-                      onClick={() => setShowRawKey(!showRawKey)}
-                      className="text-[10px] text-zinc-500 underline hover:text-zinc-300"
-                    >
-                      {showRawKey ? 'Ocultar chave textual' : 'Problemas para copiar? Ver chave completa'}
-                    </button>
-                    {showRawKey && (
-                      <textarea
-                        readOnly
-                        value={pixData.qrCode}
-                        className="w-full mt-2 p-3 bg-zinc-950 border border-zinc-800 text-[10px] text-zinc-400 font-mono select-all focus:outline-none"
-                        rows={3}
-                        onClick={(e) => (e.target as HTMLTextAreaElement).select()}
-                      />
-                    )}
-                  </div>
                 </div>
               )}
 
               <p className="text-[10px] font-mono text-zinc-500 pt-2 border-t border-zinc-900">
-                Esta tela atualiza automaticamente assim que a transferência for confirmada pelo banco.
+                Esta tela atualiza automaticamente assim que a transferência for confirmada.
               </p>
             </div>
           )}
@@ -236,7 +148,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                 <h2 className="font-serif text-lg font-bold tracking-wider uppercase">PAGAMENTO APROVADO.</h2>
               </div>
               <p className="text-xs text-zinc-300 font-mono leading-relaxed">
-                Seu pagamento foi confirmado com sucesso. Nossos produtos são despachados de Fortaleza e já iniciamos a separação e conferência das suas peças.
+                A sua encomenda foi registrada com sucesso. Nossa equipe já iniciou a preparação e o despacho do seu pedido.
               </p>
               <p className="text-[10px] text-zinc-500 font-mono">
                 Você receberá o código de rastreamento do envio diretamente no seu e-mail ({order?.customer_email}).
@@ -247,7 +159,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
           {/* ENDEREÇO DE ENTREGA */}
           <div className="bg-[#080808] border border-zinc-900 p-6 space-y-3 font-mono text-xs">
             <h3 className="font-serif text-sm text-white font-bold uppercase border-b border-zinc-800 pb-2">
-              DESTINO DE ENTREGA
+              DESTINO DE ENTREGA.
             </h3>
             <div className="text-zinc-400 space-y-1">
               <p className="text-white font-bold">{order?.customer_name}</p>
@@ -258,11 +170,11 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
           </div>
         </div>
 
-        {/* COLUNA DIREITA: RESUMO DO PEDIDO */}
+        {/* COLUNA DIREITA: RESUMO */}
         <div className="lg:col-span-5 space-y-6">
           <div className="bg-[#080808] border border-zinc-900 p-6 space-y-6">
             <h2 className="font-serif text-base text-white font-bold tracking-wider uppercase border-b border-zinc-800 pb-3">
-              RESUMO DO PEDIDO
+              ITENS DA ENCOMENDA.
             </h2>
             <div className="space-y-4">
               {order?.order_items?.map((item: any) => (
@@ -296,7 +208,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
           </div>
 
           <div className="text-center font-mono text-[10px] text-zinc-500">
-            Dúvidas sobre o pedido? Entre em contato via contato@laromme.com.br
+            Dúvidas sobre o pedido? Entre em contato via suporte@laromme.com.br
           </div>
         </div>
       </div>

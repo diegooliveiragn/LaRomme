@@ -7,16 +7,16 @@ export default function PoliticasPage() {
       <FadeIn>
         <div className="border-b border-zinc-900 pb-6 mb-12">
           <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase block mb-1">TRANSPARÊNCIA E GARANTIA</span>
-          <h1 className="font-serif text-2xl md:text-4xl tracking-[0.2em] uppercase font-bold">POLÍTICAS DA MAISON.</h1>
+          <h1 className="font-serif text-2xl md:text-4xl tracking-[0.2em] uppercase font-bold">POLÍTICAS // GARANTIA & TERMOS.</h1>
         </div>
 
         <div className="space-y-12">
           <section className="space-y-4">
             <h2 className="font-serif text-lg tracking-widest uppercase border-b border-zinc-900 pb-2">TROCAS E DEVOLUÇÕES</h2>
             <div className="font-mono text-xs text-zinc-400 space-y-4 leading-relaxed">
-              <p>A LaRomme preza pela excelência em cada detalhe. Caso seu artefato não atenda às suas expectativas, você possui o direito de solicitar a devolução ou troca dentro do prazo de <strong>7 (sete) dias corridos</strong> após o recebimento, conforme o Art. 49 do Código de Defesa do Consumidor.</p>
-              <p><strong>CONDIÇÕES PARA TROCA:</strong> A peça deve retornar intacta, sem indícios de uso, lavagem, odores ou alterações, mantendo todas as tags e a embalagem original. Peças reprovadas em nosso controle de qualidade serão devolvidas ao cliente.</p>
-              <p>Para iniciar o processo, entre em contato através do e-mail <strong>suporte@laromme.com.br</strong> com o número do seu pedido.</p>
+              <p>A LaRomme preza pela funcionalidade e integridade em cada detalhe. Caso seu artefato não atenda às suas expectativas, você possui o direito de solicitar a devolução ou troca dentro do prazo de <strong>7 (sete) dias corridos</strong> após o recebimento, conforme o Art. 49 do Código de Defesa do Consumidor.</p>
+              <p><strong>CONDIÇÕES PARA TROCA:</strong> A peça deve retornar intacta, sem indícios de uso em treino, lavagem, odores ou alterações, mantendo todas as tags e a embalagem original. Peças reprovadas no controle de qualidade serão devolvidas ao cliente.</p>
+              <p>Para iniciar o processo, entre em contato através do e-mail <strong>suporte@laromme.com.br</strong> informando o número do seu pedido.</p>
             </div>
           </section>
 
@@ -24,7 +24,7 @@ export default function PoliticasPage() {
             <h2 className="font-serif text-lg tracking-widest uppercase border-b border-zinc-900 pb-2">PRIVACIDADE E DADOS (LGPD)</h2>
             <div className="font-mono text-xs text-zinc-400 space-y-4 leading-relaxed">
               <p>Asseguramos o sigilo total de suas informações. Os dados fornecidos (nome, CPF, endereço, e-mail) são utilizados exclusivamente para o processamento, faturamento e envio de seus pedidos.</p>
-              <p><strong>PAGAMENTOS:</strong> Não armazenamos dados de cartão de crédito em nossos servidores. Toda transação financeira é tokenizada e processada através do ambiente blindado e criptografado do Mercado Pago, garantindo conformidade com padrões de segurança internacionais (PCI Compliance).</p>
+              <p><strong>PAGAMENTOS:</strong> Não armazenamos dados bancários ou de cartão em nossos servidores. As transações PIX são processadas diretamente no ambiente blindado e criptografado do Mercado Pago, garantindo segurança ponta a ponta.</p>
             </div>
           </section>
         </div>
