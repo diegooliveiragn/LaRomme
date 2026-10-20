@@ -6,21 +6,42 @@ export default function TermosPage() {
     <div className="pt-32 pb-24 px-6 md:px-12 max-w-4xl mx-auto font-sans text-white">
       <FadeIn>
         <div className="border-b border-zinc-900 pb-6 mb-12">
-          <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase block mb-1">DIREITOS E DEVERES</span>
+          <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase block mb-1">CONDIÇÕES DE USO & NAVEGAÇÃO</span>
           <h1 className="font-serif text-2xl md:text-4xl tracking-[0.2em] uppercase font-bold">TERMOS DE SERVIÇO.</h1>
         </div>
 
         <div className="space-y-8 font-mono text-xs text-zinc-400 leading-relaxed">
-          <p>Ao navegar e adquirir produtos no e-commerce da LaRomme, você concorda com os termos aqui dispostos.</p>
-          
-          <h3 className="text-white font-bold uppercase mt-6">1. Propriedade Intelectual</h3>
-          <p>Todo o conteúdo deste site — incluindo, mas não se limitando a fotografias, logotipos, textos, design e identidade visual — é de propriedade exclusiva da LaRomme. A reprodução, cópia ou uso comercial não autorizado está sujeito a medidas legais cabíveis.</p>
+          <p>
+            Ao navegar pelo ecossistema digital da LaRomme e adquirir nossos artefatos, você concorda com as diretrizes e termos estabelecidos abaixo, formulados com transparência e respeito mútuo.
+          </p>
 
-          <h3 className="text-white font-bold uppercase mt-6">2. Disponibilidade e Precificação</h3>
-          <p>Nossos artefatos são produzidos em lotes controlados. A adição de uma peça ao carrinho não garante sua reserva ou preço. A compra só é efetivada e garantida após a confirmação do pagamento e baixa no estoque.</p>
+          <section className="space-y-2">
+            <h3 className="text-white font-bold uppercase text-sm font-serif">1. Disponibilidade de Lotes & Reservas</h3>
+            <p>
+              Nossas produções seguem tiragens técnicas limitadas. A inclusão de um artefato na sacola assegura reserva temporária durante o fluxo de checkout. A conclusão formal da compra ocorre mediante a confirmação da liquidação do PIX.
+            </p>
+          </section>
 
-          <h3 className="text-white font-bold uppercase mt-6">3. Responsabilidade de Dados</h3>
-          <p>O cliente é inteiramente responsável pela exatidão dos dados fornecidos no momento do checkout (CPF e Endereço de Entrega). A LaRomme não se responsabiliza por envios extraviados devido a endereços incompletos ou incorretos fornecidos pelo comprador.</p>
+          <section className="space-y-2">
+            <h3 className="text-white font-bold uppercase text-sm font-serif">2. Precisão de Dados de Destino</h3>
+            <p>
+              O cliente é responsável pelo preenchimento exato dos dados de entrega (CEP, logradouro e numeração). Envios com dados divergentes ou incompletos poderão sofrer retenção pelo operador logístico até a retificação cadastral.
+            </p>
+          </section>
+
+          <section className="space-y-2">
+            <h3 className="text-white font-bold uppercase text-sm font-serif">3. Propriedade Intelectual & Identidade</h3>
+            <p>
+              Todos os símbolos, inscrições, tipografias, fotografias e códigos visuais presentes neste ambiente pertencem exclusivamente à LaRomme. É vedada qualquer reprodução, distribuição ou apropriação sem autorização formal expressa.
+            </p>
+          </section>
+
+          <section className="space-y-2">
+            <h3 className="text-white font-bold uppercase text-sm font-serif">4. Atendimento & Contato Oficial</h3>
+            <p>
+              Quaisquer solicitações sobre pedidos, trocas ou termos devem ser encaminhadas ao canal oficial: <strong className="text-white">suporte@laromme.com.br</strong>.
+            </p>
+          </section>
         </div>
       </FadeIn>
     </div>
