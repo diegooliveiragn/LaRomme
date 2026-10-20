@@ -14,14 +14,15 @@ export default function Footer() {
           <span className="text-white font-bold uppercase block tracking-widest font-sans">CANAIS OFICIAIS</span>
           <p className="text-zinc-400">INSTAGRAM: <a href="https://instagram.com/uselaromme" target="_blank" rel="noreferrer" className="text-white hover:underline">@uselaromme</a></p>
           <p className="text-zinc-400">TIKTOK: <a href="https://tiktok.com/@laromme" target="_blank" rel="noreferrer" className="text-white hover:underline">@laromme</a></p>
-          <p className="text-zinc-400">CONTATO: <a href="mailto:rommanuscompany@gmail.com" className="text-white hover:underline">rommanuscompany@gmail.com</a></p>
+          <p className="text-zinc-400">SPOTIFY: <a href="https://open.spotify.com/user/31voi2u5nwaugj46lxf2pectkcha" target="_blank" rel="noreferrer" className="text-white hover:underline">LaRomme Sound</a></p>
+          <p className="text-zinc-400">CONTATO: <a href="mailto:suporte@laromme.com.br" className="text-white hover:underline">suporte@laromme.com.br</a></p>
         </div>
 
         <div className="space-y-3">
           <span className="text-white font-bold uppercase block tracking-widest font-sans">SUPORTE & TERMOS</span>
           <div className="flex flex-col space-y-1.5 text-zinc-400 font-sans">
             <Link href="/faq" className="hover:text-white">FAQ / DÚVIDAS FREQUENTES.</Link>
-            <Link href="/politicas" className="hover:text-white">TROCAS & PRIVACIDADE.</Link>
+            <Link href="/politicas" className="hover:text-white">POLÍTICAS // GARANTIA & TERMOS.</Link>
             <Link href="/termos" className="hover:text-white">TERMOS DE SERVIÇO.</Link>
           </div>
         </div>

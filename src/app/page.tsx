@@ -8,8 +8,8 @@ import FadeIn from '@/components/FadeIn';
 import ProductCard from '@/components/ProductCard';
 import { createClient } from '@supabase/supabase-js';
 
-const HELMET_LOGO_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/logo%20branca.png";
-const WORDMARK_LOGO_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/fcfc607a-ba81-4ff7-998e-2df1f0697b81-removebg-preview.png";
+const HELMET_LOGO_URL = "/logo-branca.png";
+const WORDMARK_LOGO_URL = "/laromme-wordmark.png";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
