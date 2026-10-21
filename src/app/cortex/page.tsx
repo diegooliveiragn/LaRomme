@@ -1,226 +1,209 @@
 ﻿'use client';
 
-import React from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect } from 'react';
+import { 
+  TrendingUp, TrendingDown, DollarSign, ShoppingBag, 
+  CreditCard, Activity, AlertTriangle, Download 
+} from 'lucide-react';
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar
+} from 'recharts';
 
-export default function CortexDashboard() {
+// Simulando dados de banco para alimentar o gráfico
+const REVENUE_DATA = [
+  { date: '01/10', receita: 450 }, { date: '05/10', receita: 1200 },
+  { date: '10/10', receita: 3100 }, { date: '15/10', receita: 2800 },
+  { date: '20/10', receita: 5400 }, { date: '25/10', receita: 8900 },
+  { date: 'Hoje', receita: 12450 },
+];
+
+const GEO_DATA = [
+  { estado: 'SP', vendas: 45 },
+  { estado: 'CE', vendas: 32 },
+  { estado: 'RJ', vendas: 18 },
+  { estado: 'MG', vendas: 12 },
+  { estado: 'SC', vendas: 8 },
+];
+
+export default function CockpitPage() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const formatBRL = (val: number) => 
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+  if (!mounted) return null; // Previne hidratação incorreta dos gráficos no SSR
+
   return (
-    <div className="space-y-6 font-sans">
+    <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
       
-      {/* CABEÇALHO DO DASHBOARD */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-zinc-200 pb-5">
+      {/* CABEÇALHO C-LEVEL */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-5">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 font-serif tracking-wide">COCKPIT DE COMANDO</h1>
+          <h1 className="text-2xl font-bold text-zinc-900 font-serif tracking-wide uppercase">Cockpit de Comando</h1>
           <p className="text-xs text-zinc-500 font-mono mt-1">Visão Geral da Operação • Últimos 30 dias</p>
         </div>
-        <div className="flex gap-2">
-          <button className="px-3 py-1.5 text-xs font-medium text-zinc-600 bg-white border border-zinc-300 rounded hover:bg-zinc-50 transition-colors">
-            Exportar Relatório
-          </button>
-          <button className="px-3 py-1.5 text-xs font-bold text-white bg-zinc-900 rounded hover:bg-zinc-800 transition-colors">
-            Nova Campanha
-          </button>
-        </div>
+        <button className="px-3 py-1.5 text-xs font-medium text-zinc-600 bg-white border border-zinc-300 rounded hover:bg-zinc-50 transition-colors flex items-center gap-1.5 shadow-sm">
+          <Download className="w-3.5 h-3.5" /> Exportar DRE Executivo
+        </button>
       </div>
 
-      {/* 1. TERMÔMETRO FINANCEIRO (KPIs) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* KPI 1 */}
-        <div className="bg-white p-5 rounded-lg border border-zinc-200 shadow-sm flex flex-col gap-3">
-          <div className="flex justify-between items-center">
-            <span className="text-[10px] font-mono tracking-widest uppercase text-zinc-500 font-bold">RECEITA BRUTA (MÊS)</span>
-            <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-[10px] font-bold">+12.4%</span>
-          </div>
-          <div className="flex items-baseline gap-1">
-            <span className="text-sm font-medium text-zinc-500">R$</span>
-            <span className="text-3xl font-bold text-zinc-900 tracking-tight">18.450</span>
-            <span className="text-sm font-medium text-zinc-500">,00</span>
-          </div>
-        </div>
-
-        {/* KPI 2 */}
-        <div className="bg-white p-5 rounded-lg border border-zinc-200 shadow-sm flex flex-col gap-3">
-          <div className="flex justify-between items-center">
-            <span className="text-[10px] font-mono tracking-widest uppercase text-zinc-500 font-bold">TICKET MÉDIO (AOV)</span>
-            <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-[10px] font-bold">+R$ 45</span>
-          </div>
-          <div className="flex items-baseline gap-1">
-            <span className="text-sm font-medium text-zinc-500">R$</span>
-            <span className="text-3xl font-bold text-zinc-900 tracking-tight">324</span>
-            <span className="text-sm font-medium text-zinc-500">,80</span>
-          </div>
-          <p className="text-[10px] text-zinc-400 mt-[-4px]">Impulsionado pelo Bundle "Sistema ORIGO"</p>
-        </div>
-
-        {/* KPI 3 */}
-        <div className="bg-white p-5 rounded-lg border border-zinc-200 shadow-sm flex flex-col gap-3">
-          <div className="flex justify-between items-center">
-            <span className="text-[10px] font-mono tracking-widest uppercase text-zinc-500 font-bold">CONVERSÃO PIX</span>
-            <span className="text-rose-600 bg-rose-50 px-2 py-0.5 rounded text-[10px] font-bold">-2.1%</span>
-          </div>
-          <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-bold text-zinc-900 tracking-tight">78</span>
-            <span className="text-lg font-medium text-zinc-500">%</span>
-          </div>
-          <p className="text-[10px] text-zinc-400 mt-[-4px]">12 boletos/pix expirados esta semana</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4">
+      {/* KPI CARDS (Indicadores Chave) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         
-        {/* COLUNA ESQUERDA (Maior) - Funil e Decisões */}
-        <div className="lg:col-span-2 space-y-6">
-          
-          {/* PAINEL DE GARGALOS E AVISOS (O "Sócio Digital") */}
-          <div className="bg-white rounded-lg border border-zinc-200 shadow-sm">
-            <div className="px-5 py-4 border-b border-zinc-100 flex justify-between items-center">
-              <h2 className="text-sm font-bold text-zinc-900 tracking-wide uppercase">RADAR DE OPERAÇÃO</h2>
-            </div>
-            <div className="p-5 space-y-4">
-              
-              <div className="flex items-start gap-4 p-4 rounded-md border border-amber-200 bg-amber-50">
-                <div className="mt-0.5 w-2 h-2 rounded-full bg-amber-500 shrink-0" />
-                <div className="flex-1">
-                  <h3 className="text-xs font-bold text-amber-900 uppercase">3 PIXs aguardando liquidação</h3>
-                  <p className="text-[11px] text-amber-800 mt-1">R$ 1.150,00 retidos em reservas. 1 deles vence em 5 minutos.</p>
-                </div>
-                <Link href="/cortex/pedidos" className="text-[10px] font-bold bg-amber-200 text-amber-900 px-3 py-1.5 rounded hover:bg-amber-300">
-                  GERIR
-                </Link>
-              </div>
-
-              <div className="flex items-start gap-4 p-4 rounded-md border border-rose-200 bg-rose-50">
-                <div className="mt-0.5 w-2 h-2 rounded-full bg-rose-500 shrink-0" />
-                <div className="flex-1">
-                  <h3 className="text-xs font-bold text-rose-900 uppercase">Ruptura de Estoque Iminente</h3>
-                  <p className="text-[11px] text-rose-800 mt-1">Camiseta TENAX (M) possui apenas 2 unidades. Média de saída: 4/semana.</p>
-                </div>
-                <Link href="/cortex/supply" className="text-[10px] font-bold bg-rose-200 text-rose-900 px-3 py-1.5 rounded hover:bg-rose-300">
-                  REPOR
-                </Link>
-              </div>
-
+        <div className="bg-white p-5 rounded-lg border border-zinc-200 shadow-sm flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-4">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500">Receita Bruta</span>
+            <div className="bg-zinc-50 p-1.5 rounded border border-zinc-100">
+              <DollarSign className="w-4 h-4 text-zinc-600" />
             </div>
           </div>
-
-          {/* FUNIL DE TRÁFEGO */}
-          <div className="bg-white rounded-lg border border-zinc-200 shadow-sm">
-            <div className="px-5 py-4 border-b border-zinc-100">
-              <h2 className="text-sm font-bold text-zinc-900 tracking-wide uppercase">EFICIÊNCIA DO FUNIL</h2>
-            </div>
-            <div className="p-5">
-              <div className="space-y-4 font-mono text-xs">
-                
-                {/* Estágio 1 */}
-                <div>
-                  <div className="flex justify-between mb-1 text-zinc-600">
-                    <span>1. VISITANTES ÚNICOS</span>
-                    <span className="font-bold text-zinc-900">4.250</span>
-                  </div>
-                  <div className="w-full bg-zinc-100 rounded-sm h-6 overflow-hidden">
-                    <div className="bg-zinc-800 h-full" style={{ width: '100%' }}></div>
-                  </div>
-                </div>
-
-                {/* Estágio 2 */}
-                <div>
-                  <div className="flex justify-between mb-1 text-zinc-600">
-                    <span>2. ADIÇÕES À SACOLA</span>
-                    <span className="font-bold text-zinc-900">318 <span className="text-zinc-400 font-normal">(7.4%)</span></span>
-                  </div>
-                  <div className="w-full bg-zinc-100 rounded-sm h-6 overflow-hidden">
-                    <div className="bg-zinc-700 h-full" style={{ width: '35%' }}></div>
-                  </div>
-                </div>
-
-                {/* Estágio 3 */}
-                <div>
-                  <div className="flex justify-between mb-1 text-zinc-600">
-                    <span>3. VENDAS LIQUIDADAS</span>
-                    <span className="font-bold text-zinc-900">54 <span className="text-zinc-400 font-normal">(1.2%)</span></span>
-                  </div>
-                  <div className="w-full bg-zinc-100 rounded-sm h-6 overflow-hidden">
-                    <div className="bg-zinc-600 h-full" style={{ width: '8%' }}></div>
-                  </div>
-                </div>
-
-              </div>
+          <div>
+            <span className="text-2xl font-bold text-zinc-900 tracking-tight">{formatBRL(18450)}</span>
+            <div className="flex items-center gap-1 mt-2 text-[10px] font-mono">
+              <span className="flex items-center gap-0.5 text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded">
+                <TrendingUp className="w-3 h-3" /> +12.4%
+              </span>
+              <span className="text-zinc-400">vs. mês anterior</span>
             </div>
           </div>
-
         </div>
 
-        {/* COLUNA DIREITA (Menor) - Top 5 Geográfico */}
-        <div className="lg:col-span-1 space-y-6">
+        <div className="bg-white p-5 rounded-lg border border-zinc-200 shadow-sm flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-4">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500">Ticket Médio (AOV)</span>
+            <div className="bg-zinc-50 p-1.5 rounded border border-zinc-100">
+              <ShoppingBag className="w-4 h-4 text-zinc-600" />
+            </div>
+          </div>
+          <div>
+            <span className="text-2xl font-bold text-zinc-900 tracking-tight">{formatBRL(324.80)}</span>
+            <div className="flex items-center gap-1 mt-2 text-[10px] font-mono">
+              <span className="flex items-center gap-0.5 text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded">
+                <TrendingUp className="w-3 h-3" /> +R$ 45
+              </span>
+              <span className="text-zinc-400">Puxado por kit Sistema ORIGO</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-lg border border-zinc-200 shadow-sm flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-4">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500">Conversão Global</span>
+            <div className="bg-zinc-50 p-1.5 rounded border border-zinc-100">
+              <Activity className="w-4 h-4 text-zinc-600" />
+            </div>
+          </div>
+          <div>
+            <span className="text-2xl font-bold text-zinc-900 tracking-tight">3.2%</span>
+            <div className="flex items-center gap-1 mt-2 text-[10px] font-mono">
+              <span className="flex items-center gap-0.5 text-rose-600 font-bold bg-rose-50 px-1.5 py-0.5 rounded">
+                <TrendingDown className="w-3 h-3" /> -0.4%
+              </span>
+              <span className="text-zinc-400">Atenção ao checkout</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-5 rounded-lg border border-zinc-200 shadow-sm flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-4">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500">Aprovação PIX</span>
+            <div className="bg-zinc-50 p-1.5 rounded border border-zinc-100">
+              <CreditCard className="w-4 h-4 text-zinc-600" />
+            </div>
+          </div>
+          <div>
+            <span className="text-2xl font-bold text-zinc-900 tracking-tight">78%</span>
+            <div className="flex items-center gap-1 mt-2 text-[10px] font-mono text-zinc-500">
+              12 pedidos expirados esta semana
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* ÁREA DOS GRÁFICOS */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* GRÁFICO PRINCIPAL: LINHA DO TEMPO */}
+        <div className="lg:col-span-2 bg-white rounded-lg border border-zinc-200 shadow-sm p-5">
+          <div className="mb-6 flex justify-between items-end">
+            <div>
+              <h2 className="text-xs font-bold text-zinc-900 tracking-widest uppercase">Evolução de Receita</h2>
+              <p className="text-[10px] font-mono text-zinc-400 mt-1">Crescimento Acumulado Mensal</p>
+            </div>
+            <span className="text-[10px] font-mono bg-zinc-100 text-zinc-600 px-2 py-1 rounded">Mês Atual</span>
+          </div>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={REVENUE_DATA} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorReceita" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#18181b" stopOpacity={0.15}/>
+                    <stop offset="95%" stopColor="#18181b" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e4e4e7" />
+                <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#a1a1aa' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#a1a1aa' }} tickFormatter={(val) => `R$ ${val/1000}k`} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#18181b', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px' }}
+                  itemStyle={{ color: '#fff' }}
+                  formatter={(value: number) => [formatBRL(value), 'Receita']}
+                />
+                <Area type="monotone" dataKey="receita" stroke="#18181b" strokeWidth={2} fillOpacity={1} fill="url(#colorReceita)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* COLUNA DIREITA: TOP ESTADOS E ALERTAS */}
+        <div className="space-y-6">
           
-          <div className="bg-white rounded-lg border border-zinc-200 shadow-sm h-full flex flex-col">
-            <div className="px-5 py-4 border-b border-zinc-100">
-              <h2 className="text-sm font-bold text-zinc-900 tracking-wide uppercase">TOP 5 ESTADOS</h2>
-              <p className="text-[10px] text-zinc-500 font-mono mt-1">Concentração de demanda (%)</p>
+          {/* RADAR GEOGRÁFICO */}
+          <div className="bg-white rounded-lg border border-zinc-200 shadow-sm p-5">
+            <h2 className="text-xs font-bold text-zinc-900 tracking-widest uppercase mb-6">Top 5 Praças (Estados)</h2>
+            <div className="h-40 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={GEO_DATA} layout="vertical" margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#e4e4e7" />
+                  <XAxis type="number" hide />
+                  <YAxis dataKey="estado" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: '#52525b', fontWeight: 'bold' }} />
+                  <Tooltip 
+                    cursor={{fill: '#f4f4f5'}}
+                    contentStyle={{ backgroundColor: '#18181b', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '10px' }}
+                  />
+                  <Bar dataKey="vendas" fill="#27272a" radius={[0, 4, 4, 0]} barSize={16} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-            
-            <div className="p-5 flex-1 flex flex-col justify-center space-y-5 font-mono text-xs">
-              
-              {/* Barra 1 */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-zinc-700">
-                  <span className="font-bold">CEARÁ (Base)</span>
-                  <span>48%</span>
-                </div>
-                <div className="w-full bg-zinc-100 rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-emerald-600 h-full rounded-full" style={{ width: '48%' }}></div>
-                </div>
-              </div>
+          </div>
 
-              {/* Barra 2 */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-zinc-700">
-                  <span className="font-bold">SÃO PAULO</span>
-                  <span>22%</span>
-                </div>
-                <div className="w-full bg-zinc-100 rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-zinc-800 h-full rounded-full" style={{ width: '22%' }}></div>
-                </div>
-              </div>
-
-              {/* Barra 3 */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-zinc-700">
-                  <span className="font-bold">RIO DE JANEIRO</span>
-                  <span>12%</span>
-                </div>
-                <div className="w-full bg-zinc-100 rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-zinc-700 h-full rounded-full" style={{ width: '12%' }}></div>
-                </div>
-              </div>
-
-              {/* Barra 4 */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-zinc-700">
-                  <span className="font-bold">BAHIA</span>
-                  <span>10%</span>
-                </div>
-                <div className="w-full bg-zinc-100 rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-zinc-600 h-full rounded-full" style={{ width: '10%' }}></div>
-                </div>
-              </div>
-
-              {/* Barra 5 */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-zinc-700">
-                  <span className="font-bold">MINAS GERAIS</span>
-                  <span>8%</span>
-                </div>
-                <div className="w-full bg-zinc-100 rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-zinc-500 h-full rounded-full" style={{ width: '8%' }}></div>
-                </div>
-              </div>
-
-            </div>
+          {/* PAINEL DE AVISOS DO SISTEMA */}
+          <div className="bg-white rounded-lg border border-zinc-200 shadow-sm p-5">
+             <h2 className="text-xs font-bold text-zinc-900 tracking-widest uppercase mb-4 flex items-center gap-2">
+               <AlertTriangle className="w-4 h-4 text-amber-500" />
+               Alertas Críticos
+             </h2>
+             <div className="space-y-3">
+               <div className="bg-rose-50 border border-rose-100 p-3 rounded text-rose-900">
+                 <p className="text-[10px] font-bold uppercase tracking-wider mb-1">Ruptura Iminente</p>
+                 <p className="text-[10px] font-mono opacity-80 leading-relaxed">A peça 'Camiseta TENAX (M)' possui apenas 2 unidades disponíveis na prateleira física.</p>
+               </div>
+               <div className="bg-amber-50 border border-amber-100 p-3 rounded text-amber-900">
+                 <p className="text-[10px] font-bold uppercase tracking-wider mb-1">Trava Financeira</p>
+                 <p className="text-[10px] font-mono opacity-80 leading-relaxed">Existem 3 pedidos com PIX aguardando expiração e retendo estoque válido.</p>
+               </div>
+             </div>
           </div>
 
         </div>
       </div>
+
     </div>
   );
 }
