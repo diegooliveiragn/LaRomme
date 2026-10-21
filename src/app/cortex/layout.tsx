@@ -1,219 +1,315 @@
 ﻿'use client';
 
-import React, { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import { useRouter, usePathname } from 'next/navigation';
+import React, { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+interface NotificationItem {
+  id: string;
+  type: 'urgente' | 'operacional' | 'estrategico';
+  title: string;
+  description: string;
+  time: string;
+  actionLabel: string;
+  actionHref: string;
+  read: boolean;
+}
 
 export default function CortexLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
   const pathname = usePathname();
-  const [authorized, setAuthorized] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('laromme_cortex_theme') as 'dark' | 'light';
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-  }, []);
-
-  const toggleTheme = () => {
-    const nextTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(nextTheme);
-    localStorage.setItem('laromme_cortex_theme', nextTheme);
-  };
-
-  useEffect(() => {
-    if (pathname === '/cortex/login') {
-      setAuthorized(true);
-      setLoading(false);
-      return;
-    }
-
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        router.push('/cortex/login');
-      } else {
-        setAuthorized(true);
-      }
-      setLoading(false);
-    };
-
-    checkAuth();
-  }, [pathname, router]);
-
-  const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/cortex/login');
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#090a0f] text-slate-400 font-sans text-xs flex items-center justify-center font-medium tracking-wide">
-        <div className="flex items-center space-x-3 bg-slate-900/80 px-5 py-3 rounded-lg border border-slate-800 shadow-xl">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-          <span>Carregando ambiente executivo Cortex OS...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (!authorized && pathname !== '/cortex/login') return null;
-
+  // Isolamento da tela de login para não renderizar a navegação administrativa
   if (pathname === '/cortex/login') {
-    return <div className="min-h-screen bg-[#08090d]">{children}</div>;
+    return <>{children}</>;
   }
 
-  const menuItems = [
-    { name: 'Olho de Hórus', path: '/cortex', icon: 'M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z' },
-    { name: 'Fulfillment & Pedidos', path: '/cortex/pedidos', icon: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4' },
-    { name: 'WMS & Estoque', path: '/cortex/estoque', icon: 'M4 6h16M4 10h16M4 14h16M4 18h16' },
-    { name: 'Catálogo & Product Studio', path: '/cortex/catalogo', icon: 'M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01' },
-    { name: 'Supply Chain & Facções', path: '/cortex/supply', icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
-    { name: 'Tesouraria & DRE', path: '/cortex/financeiro', icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z' },
-    { name: 'Patronos (CRM RFM)', path: '/cortex/crm', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' },
-    { name: 'Parcerias & Seeding', path: '/cortex/embaixadores', icon: 'M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z' },
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([
+    {
+      id: '1',
+      type: 'urgente',
+      title: 'Estoque Crítico: TENAX (M)',
+      description: 'Restam apenas 2 unidades no WMS. Sugerido acionar reposição de grade.',
+      time: 'Há 12 min',
+      actionLabel: 'Ver no Supply',
+      actionHref: '/cortex/supply',
+      read: false,
+    },
+    {
+      id: '2',
+      type: 'operacional',
+      title: '2 Pedidos Prontos para Despacho',
+      description: 'Pagamentos PIX liquidados aguardando conferência e etiqueta.',
+      time: 'Há 45 min',
+      actionLabel: 'Ir para Pedidos',
+      actionHref: '/cortex/pedidos',
+      read: false,
+    },
+    {
+      id: '3',
+      type: 'estrategico',
+      title: 'Reserva Expirada de Lote',
+      description: '1 pedido PIX excedeu o tempo limite de 30 minutos sem confirmação.',
+      time: 'Há 1h',
+      actionLabel: 'Liberar Estoque',
+      actionHref: '/cortex/pedidos',
+      read: false,
+    },
+    {
+      id: '4',
+      type: 'operacional',
+      title: 'Novo Membro: Senado VIP',
+      description: 'Novo cadastro registrado no portal aguardando recepção Concierge.',
+      time: 'Há 2h',
+      actionLabel: 'Abrir CRM',
+      actionHref: '/cortex/crm',
+      read: true,
+    },
+  ]);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const markAllAsRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
+
+  const NAV_SECTIONS = [
+    {
+      category: 'ESTRATÉGIA & VISÃO',
+      items: [
+        { label: 'Cockpit do Fundador', href: '/cortex', icon: '📊' },
+        { label: 'Financeiro & Pricing', href: '/cortex/financeiro', icon: '💳' },
+      ],
+    },
+    {
+      category: 'OPERAÇÃO & ESTOQUE',
+      items: [
+        { label: 'Esteira de Pedidos', href: '/cortex/pedidos', icon: '📦' },
+        { label: 'Acervo & Produtos', href: '/cortex/catalogo', icon: '🏷️' },
+        { label: 'Supply & Private Label', href: '/cortex/supply', icon: '🏭' },
+      ],
+    },
+    {
+      category: 'RELACIONAMENTO',
+      items: [
+        { label: 'CRM & Concierge', href: '/cortex/crm', icon: '👑' },
+      ],
+    },
   ];
 
-  const isDark = theme === 'dark';
-
   return (
-    <div className={`flex min-h-screen font-sans antialiased transition-colors duration-200 ${
-      isDark ? 'bg-[#0a0b10] text-slate-100' : 'bg-slate-100 text-slate-900'
-    }`}>
-      {/* SIDEBAR ERGONÔMICA */}
-      <aside className={`hidden lg:flex flex-col w-64 border-r transition-colors duration-200 ${
-        isDark ? 'bg-[#10121a] border-slate-800/80' : 'bg-white border-slate-200'
-      }`}>
-        <div className={`h-16 flex items-center px-6 border-b justify-between ${
-          isDark ? 'border-slate-800/80' : 'border-slate-200'
-        }`}>
-          <Link href="/cortex" className="font-serif text-lg tracking-[0.2em] font-bold uppercase">
-            CORTEX<span className={isDark ? 'text-amber-500' : 'text-amber-600'}>OS</span>
-          </Link>
-          <span className={`text-[9px] font-mono px-2 py-0.5 rounded font-semibold ${
-            isDark ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' : 'bg-amber-50 text-amber-700 border border-amber-200'
-          }`}>
-            v2.0
-          </span>
+    <div className="min-h-screen bg-[#f8fafc] text-zinc-900 flex font-sans antialiased selection:bg-zinc-900 selection:text-white">
+      
+      {/* 1. BARRA LATERAL (SIDEBAR CLARA & CONTRASTADA) */}
+      <aside className="w-64 bg-white border-r border-zinc-200 flex flex-col justify-between shrink-0 hidden md:flex z-20">
+        <div>
+          {/* Topo da Marca no Cortex */}
+          <div className="h-16 px-6 border-b border-zinc-200 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 bg-zinc-900 text-white rounded flex items-center justify-center font-bold text-xs font-mono">
+                C
+              </div>
+              <div>
+                <span className="font-bold text-sm tracking-wider text-zinc-900 block font-serif">CORTEX OS</span>
+                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest block">OPERATIONS CORE</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Menus de Navegação por Área */}
+          <nav className="p-4 space-y-6">
+            {NAV_SECTIONS.map((section, idx) => (
+              <div key={idx} className="space-y-1.5">
+                <span className="text-[10px] font-mono tracking-widest text-zinc-600 font-bold uppercase px-3 block">
+                  {section.category}
+                </span>
+                <div className="space-y-0.5">
+                  {section.items.map((item) => {
+                    const isActive = pathname === item.href;
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-md text-xs font-medium transition-all ${
+                          isActive
+                            ? 'bg-zinc-900 text-white font-semibold shadow-sm'
+                            : 'text-zinc-600 hover:text-zinc-950 hover:bg-zinc-100'
+                        }`}
+                      >
+                        <span className="text-sm">{item.icon}</span>
+                        <span>{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </nav>
         </div>
 
-        <nav className="flex-1 py-4 px-3 space-y-1">
-          {menuItems.map((item) => {
-            const isActive = pathname === item.path;
-            return (
-              <Link
-                key={item.name}
-                href={item.path}
-                className={`flex items-center space-x-3 px-3 py-2.5 text-xs font-medium rounded-lg transition-all ${
-                  isActive 
-                    ? isDark 
-                      ? 'bg-amber-500 text-slate-950 font-semibold shadow-md shadow-amber-500/10' 
-                      : 'bg-slate-900 text-white font-semibold shadow-md shadow-slate-900/10'
-                    : isDark 
-                      ? 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60' 
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                }`}
-              >
-                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={1.75}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
-                </svg>
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* CONTROLES DA BASE DA SIDEBAR */}
-        <div className={`p-4 border-t space-y-3 ${
-          isDark ? 'border-slate-800/80' : 'border-slate-200'
-        }`}>
-          {/* TOGGLE TEMA LIGHT / DARK */}
-          <button
-            onClick={toggleTheme}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-              isDark 
-                ? 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800' 
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
-            }`}
-          >
-            <span className="flex items-center space-x-2">
-              {isDark ? (
-                <>
-                  <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
-                  <span>Modo Escuro</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" /></svg>
-                  <span>Modo Claro</span>
-                </>
-              )}
-            </span>
-            <span className="text-[10px] font-mono opacity-60">ALTERAR</span>
-          </button>
-
-          <button
-            onClick={handleLogout}
-            className={`w-full text-left px-3 py-2 rounded-lg text-xs font-medium transition-colors flex items-center space-x-2 ${
-              isDark ? 'text-slate-400 hover:text-rose-400 hover:bg-rose-500/10' : 'text-slate-600 hover:text-rose-600 hover:bg-rose-50'
-            }`}
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
-            <span>Encerrar Sessão</span>
-          </button>
+        {/* Rodapé da Sidebar: Status & Versão */}
+        <div className="p-4 border-t border-zinc-200 bg-zinc-50/70">
+          <div className="flex items-center justify-between text-xs">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[11px] font-mono text-zinc-600 font-medium">FORTALEZA / BR</span>
+            </div>
+            <Link href="/" target="_blank" className="text-[11px] font-mono text-zinc-500 hover:text-zinc-900 hover:underline">
+              Loja ↗
+            </Link>
+          </div>
         </div>
       </aside>
 
-      {/* TELA DE AVISO PARA DISPOSITIVOS MÓVEIS */}
-      <div className="lg:hidden flex-1 flex flex-col items-center justify-center p-6 text-center bg-slate-900 text-white">
-        <span className="font-serif text-xl tracking-widest font-bold mb-2">CORTEX OS</span>
-        <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
-          A suíte executiva requer resolução de Tela Cheia em Desktop ou Tablet para exibição das tabelas contábeis.
-        </p>
-        <button onClick={handleLogout} className="mt-6 text-xs text-amber-400 underline underline-offset-4">
-          Sair do Sistema
-        </button>
-      </div>
-
-      {/* ÁREA PRINCIPAL EM TELA CHEIA */}
-      <main className="hidden lg:flex flex-1 flex-col h-screen overflow-hidden">
-        {/* CABEÇALHO SUPERIOR */}
-        <header className={`h-16 flex items-center justify-between px-8 border-b transition-colors duration-200 ${
-          isDark ? 'bg-[#10121a] border-slate-800/80' : 'bg-white border-slate-200'
-        }`}>
-          <div className="flex items-center space-x-2 text-xs font-medium">
-            <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Cortex OS</span>
-            <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>/</span>
-            <span className={`font-semibold ${isDark ? 'text-slate-100' : 'text-slate-900'}`}>
-              {menuItems.find(m => m.path === pathname)?.name || 'Módulo'}
-            </span>
+      {/* 2. ÁREA PRINCIPAL DE CONTEÚDO */}
+      <div className="flex-1 flex flex-col min-w-0">
+        
+        {/* BARRA SUPERIOR (TOPBAR EXECUTIVO) */}
+        <header className="h-16 bg-white border-b border-zinc-200 px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
+          <div className="flex items-center gap-4">
+            <div className="md:hidden flex items-center gap-2">
+              <div className="w-7 h-7 bg-zinc-900 text-white rounded flex items-center justify-center font-bold text-xs font-mono">
+                C
+              </div>
+              <span className="font-bold text-sm font-serif">CORTEX</span>
+            </div>
+            <div className="hidden md:block font-mono text-xs text-zinc-500">
+              TERMINAL // <span className="text-zinc-800 font-bold uppercase">{pathname.replace('/cortex', '') || 'COCKPIT GERAL'}</span>
+            </div>
           </div>
 
-          <div className="flex items-center space-x-4">
-            <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium ${
-              isDark ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-            }`}>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span>Conexão Supabase Direct</span>
+          {/* SINO DE NOTIFICAÇÕES (ESTILO MENSAGERIA) */}
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setNotificationsOpen(true)}
+              className="relative p-2 rounded-full hover:bg-zinc-100 text-zinc-700 transition-colors focus:outline-none"
+              title="Central de Alertas Operacionais"
+              aria-label="Abrir Notificações"
+            >
+              {/* Ícone Sino SVG */}
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="1.8"
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
+              
+              {/* Badge Contador Vermelho */}
+              {unreadCount > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 bg-rose-600 text-white text-[10px] font-bold rounded-full h-5 min-w-[20px] px-1 flex items-center justify-center border-2 border-white shadow-xs">
+                  {unreadCount}
+                </span>
+              )}
+            </button>
+
+            <div className="h-6 w-[1px] bg-zinc-200" />
+
+            {/* Perfil Fundador */}
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-xs">
+                LR
+              </div>
+              <div className="hidden sm:block text-left">
+                <span className="text-xs font-bold text-zinc-800 block leading-tight">DIRETORIA</span>
+                <span className="text-[10px] font-mono text-zinc-600 block">LaRomme Core</span>
+              </div>
             </div>
           </div>
         </header>
 
-        {/* CONTAINER DINÂMICO DAS PÁGINAS */}
-        <div className="flex-1 overflow-auto p-8">
+        {/* CONTAINER DO CONTEÚDO (FUNDO OFF-WHITE CONFORTÁVEL) */}
+        <main className="flex-1 p-6 md:p-8 bg-[#f8fafc] overflow-y-auto">
           {children}
+        </main>
+      </div>
+
+      {/* 3. GAVETA LATERAL DE NOTIFICAÇÕES (SLIDE-OVER) */}
+      {notificationsOpen && (
+        <div className="fixed inset-0 z-50 overflow-hidden bg-black/40 backdrop-blur-xs flex justify-end animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col justify-between border-l border-zinc-200">
+            
+            {/* Header da Gaveta */}
+            <div className="p-6 border-b border-zinc-200 flex items-center justify-between bg-zinc-50">
+              <div className="flex items-center gap-2">
+                <span className="text-base font-bold text-zinc-900 font-serif">CENTRAL DE ALERTAS</span>
+                {unreadCount > 0 && (
+                  <span className="bg-rose-100 text-rose-700 text-[10px] font-bold font-mono px-2 py-0.5 rounded-full">
+                    {unreadCount} PENDENTES
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={() => setNotificationsOpen(false)}
+                className="text-zinc-600 hover:text-zinc-900 p-1.5 rounded-md hover:bg-zinc-200 font-mono text-xs"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Lista de Notificações */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {notifications.map((item) => (
+                <div
+                  key={item.id}
+                  className={`p-4 rounded-lg border transition-all ${
+                    !item.read
+                      ? 'bg-white border-zinc-300 shadow-xs'
+                      : 'bg-zinc-50/70 border-zinc-200 opacity-75'
+                  }`}
+                >
+                  <div className="flex justify-between items-start gap-2 mb-1.5">
+                    <span
+                      className={`text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded ${
+                        item.type === 'urgente'
+                          ? 'bg-rose-100 text-rose-700'
+                          : item.type === 'operacional'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-amber-100 text-amber-800'
+                      }`}
+                    >
+                      {item.type}
+                    </span>
+                    <span className="text-[10px] font-mono text-zinc-600">{item.time}</span>
+                  </div>
+
+                  <h4 className="text-xs font-bold text-zinc-900 mb-1">{item.title}</h4>
+                  <p className="text-[11px] text-zinc-600 leading-relaxed mb-3">{item.description}</p>
+
+                  <div className="flex justify-end">
+                    <Link
+                      href={item.actionHref}
+                      onClick={() => setNotificationsOpen(false)}
+                      className="inline-flex items-center gap-1.5 bg-zinc-900 text-white text-[10px] font-bold tracking-wider uppercase px-3 py-1.5 rounded hover:bg-zinc-800 transition-colors"
+                    >
+                      <span>{item.actionLabel}</span>
+                      <span>→</span>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Footer da Gaveta */}
+            <div className="p-4 border-t border-zinc-200 bg-zinc-50 flex justify-between items-center text-xs">
+              <button
+                onClick={markAllAsRead}
+                className="text-zinc-600 hover:text-zinc-900 font-medium text-[11px] underline underline-offset-4"
+              >
+                Marcar todas como lidas
+              </button>
+              <button
+                onClick={() => setNotificationsOpen(false)}
+                className="bg-white border border-zinc-300 text-zinc-700 px-3 py-1.5 rounded font-medium text-xs hover:bg-zinc-100"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
         </div>
-      </main>
+      )}
+
     </div>
   );
 }
