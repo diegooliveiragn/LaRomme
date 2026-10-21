@@ -23,15 +23,18 @@ export default function ProductCard({ product }: ProductCardProps) {
     addItem(product, defaultSize);
   };
 
+  // Ajuste de escala específico para itens que parecem pequenos
+  const isSmallItem = product.id === 'UMBRA-303' || product.id === 'VEST-202';
+
   return (
     <div 
-      className="group flex flex-col relative font-sans"
+      className="group flex flex-col relative font-sans w-full"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       
-      {/* Container de Imagem com Proporção Fixa (aspect-square garante quadros exatos) */}
-      <Link href={`/produto/${product.id}`} className="block relative w-full aspect-square bg-[#0a0a0a] overflow-hidden p-6 md:p-10 flex items-center justify-center border border-zinc-900 group-hover:border-zinc-800 transition-colors">
+      {/* Contêiner rigoroso: Altura e largura cravadas. Sem paddings que esmaguem a imagem. */}
+      <Link href={`/produto/${product.id}`} className="block relative w-full aspect-[4/5] bg-[#0a0a0a] overflow-hidden border border-zinc-900 group-hover:border-zinc-800 transition-colors">
         
         {/* TAG SUPERIOR */}
         <div className="absolute top-4 left-4 z-20">
@@ -41,25 +44,29 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* IMAGEM PRIMÁRIA */}
-        <div className={`absolute inset-8 md:inset-12 transition-opacity duration-700 ease-in-out ${isHovered ? 'opacity-0' : 'opacity-100 z-10'}`}>
-          <Image
-            src={product.imagePrimary}
-            alt={product.name}
-            fill
-            className="object-contain filter contrast-125"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-          />
+        <div className={`absolute inset-0 transition-opacity duration-700 ease-in-out flex items-center justify-center ${isHovered ? 'opacity-0' : 'opacity-100 z-10'}`}>
+          <div className={`relative w-full h-full ${isSmallItem ? 'scale-125' : 'scale-100'}`}>
+            <Image
+              src={product.imagePrimary}
+              alt={product.name}
+              fill
+              className="object-cover md:object-contain object-center filter contrast-125 mix-blend-screen"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+            />
+          </div>
         </div>
 
         {/* IMAGEM SECUNDÁRIA (HOVER) */}
-        <div className={`absolute inset-8 md:inset-12 transition-opacity duration-700 ease-in-out ${isHovered ? 'opacity-100 z-10' : 'opacity-0'}`}>
-          <Image
-            src={product.imageSecondary}
-            alt={product.name}
-            fill
-            className="object-contain filter contrast-125"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
-          />
+        <div className={`absolute inset-0 transition-opacity duration-700 ease-in-out flex items-center justify-center ${isHovered ? 'opacity-100 z-10' : 'opacity-0'}`}>
+          <div className={`relative w-full h-full ${isSmallItem ? 'scale-125' : 'scale-100'}`}>
+            <Image
+              src={product.imageSecondary}
+              alt={product.name}
+              fill
+              className="object-cover md:object-contain object-center filter contrast-125 mix-blend-screen"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+            />
+          </div>
         </div>
         
         {/* QUICK ADD BUTTON */}
@@ -81,7 +88,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           </Link>
           <span className="text-[11px] font-mono text-zinc-300 font-bold tracking-wider">{formatPrice(product.price)}</span>
         </div>
-        <p className="text-[11px] text-zinc-500 font-light leading-relaxed max-w-[90%] font-sans">
+        <p className="text-[11px] text-zinc-500 font-light leading-relaxed font-sans">
           {product.description}
         </p>
       </div>
