@@ -1,252 +1,226 @@
 ﻿'use client';
 
-import React, { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import React from 'react';
+import Link from 'next/link';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-interface DailyMetrics {
-  grossRevenueToday: number;
-  paidOrdersToday: number;
-  pendingPixToday: number;
-  criticalStockCount: number;
-  latestLogs: { title: string; desc: string; time: string; color: string }[];
-}
-
-export default function CortexDashboardPage() {
-  const [metrics, setMetrics] = useState<DailyMetrics>({
-    grossRevenueToday: 0,
-    paidOrdersToday: 0,
-    pendingPixToday: 0,
-    criticalStockCount: 0,
-    latestLogs: [],
-  });
-  const [loading, setLoading] = useState(true);
-
-  const fetchLiveTelemetry = async () => {
-    setLoading(true);
-    try {
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const todayIso = todayStart.toISOString();
-
-      // 1. Pedidos Pagos Hoje
-      const { data: paidOrders } = await supabase
-        .from('orders')
-        .select('total_amount, subtotal')
-        .eq('status', 'paid')
-        .gte('created_at', todayIso);
-
-      const revenueToday = (paidOrders || []).reduce(
-        (sum, o) => sum + Number(o.total_amount || o.subtotal || 0),
-        0
-      );
-      const paidCount = (paidOrders || []).length;
-
-      // 2. Pix Pendentes / Abandonos Hoje
-      const { data: pendingOrders } = await supabase
-        .from('orders')
-        .select('id')
-        .eq('status', 'pending')
-        .gte('created_at', todayIso);
-
-      const pendingCount = (pendingOrders || []).length;
-
-      // 3. SKUs em Estoque Crítico (Disponível <= 3 unidades)
-      const { data: criticalVariants } = await supabase
-        .from('inventory_variants')
-        .select('id')
-        .lte('stock_available', 3);
-
-      const criticalCount = (criticalVariants || []).length;
-
-      // 4. Montagem de Log de Sistema Vivo
-      const logs = [
-        {
-          title: 'Telemetria do Banco Conectada',
-          desc: 'Dados consultados diretamente das tabelas vivas do Supabase.',
-          time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-          color: 'bg-emerald-400',
-        },
-      ];
-
-      if (criticalCount > 0) {
-        logs.push({
-          title: 'Alerta de Estoque WMS',
-          desc: `${criticalCount} SKU(s) com 3 ou menos unidades disponíveis.`,
-          time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-          color: 'bg-rose-400',
-        });
-      }
-
-      setMetrics({
-        grossRevenueToday: revenueToday,
-        paidOrdersToday: paidCount,
-        pendingPixToday: pendingCount,
-        criticalStockCount: criticalCount,
-        latestLogs: logs,
-      });
-    } catch (err) {
-      console.error('Erro na telemetria do Olho de Hórus:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchLiveTelemetry();
-  }, []);
-
+export default function CortexDashboard() {
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
-      {/* TÍTULO EXECUTIVO */}
-      <div className="flex justify-between items-end border-b border-slate-800/40 pb-5">
+    <div className="space-y-6 font-sans">
+      
+      {/* CABEÇALHO DO DASHBOARD */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-zinc-200 pb-5">
         <div>
-          <h1 className="font-serif text-2xl font-bold tracking-wide uppercase">Olho de Hórus</h1>
-          <p className="text-xs text-slate-400 mt-1">Cockpit de Telemetria Operacional & Saúde Financeira</p>
+          <h1 className="text-2xl font-bold text-zinc-900 font-serif tracking-wide">COCKPIT DE COMANDO</h1>
+          <p className="text-xs text-zinc-500 font-mono mt-1">Visão Geral da Operação • Últimos 30 dias</p>
         </div>
-        <div className="text-right">
-          <span className="text-[10px] uppercase font-mono tracking-widest text-slate-500 block">Status da Apuração</span>
-          <span className="text-xs font-semibold text-emerald-400 flex items-center justify-end gap-1.5 mt-0.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Consolidado em Tempo Real
-          </span>
-        </div>
-      </div>
-
-      {/* CARDS DE KPIS VIVOS */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
-        
-        {/* Card 1 */}
-        <div className="p-5 rounded-xl border bg-slate-900/40 border-slate-800/80 shadow-sm space-y-3">
-          <div className="flex justify-between items-center text-xs text-slate-400 font-medium">
-            <span>Faturamento Bruto (Hoje)</span>
-            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-          </div>
-          <div className="text-2xl font-bold tracking-tight text-slate-100">
-            {loading ? 'R$ ...' : `R$ ${metrics.grossRevenueToday.toFixed(2).replace('.', ',')}`}
-          </div>
-          <div className="text-[11px] text-slate-500 border-t border-slate-800/60 pt-2 flex justify-between">
-            <span>Apuração Diária</span>
-            <span className="font-semibold text-emerald-400">Ao Vivo</span>
-          </div>
-        </div>
-
-        {/* Card 2 */}
-        <div className="p-5 rounded-xl border bg-slate-900/40 border-slate-800/80 shadow-sm space-y-3">
-          <div className="flex justify-between items-center text-xs text-slate-400 font-medium">
-            <span>Vendas Concluídas (Hoje)</span>
-            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
-          </div>
-          <div className="text-2xl font-bold tracking-tight text-slate-100">
-            {loading ? '...' : metrics.paidOrdersToday} <span className="text-xs font-normal text-slate-400">pedido(s)</span>
-          </div>
-          <div className="text-[11px] text-slate-500 border-t border-slate-800/60 pt-2">
-            Status: <span className="font-semibold text-emerald-400">Aprovados via Checkout</span>
-          </div>
-        </div>
-
-        {/* Card 3 */}
-        <div className="p-5 rounded-xl border bg-amber-500/5 border-amber-500/20 shadow-sm space-y-3">
-          <div className="flex justify-between items-center text-xs text-amber-400 font-medium">
-            <span>Pix Pendentes (Hoje)</span>
-            <svg className="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-          </div>
-          <div className="text-2xl font-bold tracking-tight text-amber-400">
-            {loading ? '...' : metrics.pendingPixToday}
-          </div>
-          <div className="text-[11px] text-amber-400/80 border-t border-amber-500/20 pt-2">
-            Aguardando pagamento no banco
-          </div>
-        </div>
-
-        {/* Card 4 */}
-        <div className="p-5 rounded-xl border bg-slate-900/40 border-slate-800/80 shadow-sm space-y-3">
-          <div className="flex justify-between items-center text-xs text-slate-400 font-medium">
-            <span>Alertas de Estoque (WMS)</span>
-            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-          </div>
-          <div className="text-2xl font-bold tracking-tight text-slate-100">
-            {loading ? '...' : metrics.criticalStockCount} <span className="text-xs font-normal text-slate-400">SKUs</span>
-          </div>
-          <div className={`text-[11px] border-t border-slate-800/60 pt-2 ${
-            metrics.criticalStockCount > 0 ? 'text-rose-400 font-bold' : 'text-emerald-400'
-          }`}>
-            {metrics.criticalStockCount > 0 ? 'Atenção: Estoque Crítico' : 'Estoque Físico Regular'}
-          </div>
+        <div className="flex gap-2">
+          <button className="px-3 py-1.5 text-xs font-medium text-zinc-600 bg-white border border-zinc-300 rounded hover:bg-zinc-50 transition-colors">
+            Exportar Relatório
+          </button>
+          <button className="px-3 py-1.5 text-xs font-bold text-white bg-zinc-900 rounded hover:bg-zinc-800 transition-colors">
+            Nova Campanha
+          </button>
         </div>
       </div>
 
-      {/* ÁREA PRINCIPAL */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Painel Central */}
-        <div className="lg:col-span-2 p-6 rounded-xl border bg-slate-900/40 border-slate-800/80 flex flex-col h-96 justify-between">
-          <div className="flex justify-between items-center pb-4 border-b border-slate-800/60">
-            <h2 className="text-sm font-semibold tracking-wide">Saúde da Operação LaRomme</h2>
-            <button
-              onClick={fetchLiveTelemetry}
-              className="text-[10px] px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-mono transition-colors"
-            >
-              Reconsultar Banco
-            </button>
+      {/* 1. TERMÔMETRO FINANCEIRO (KPIs) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* KPI 1 */}
+        <div className="bg-white p-5 rounded-lg border border-zinc-200 shadow-sm flex flex-col gap-3">
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-mono tracking-widest uppercase text-zinc-500 font-bold">RECEITA BRUTA (MÊS)</span>
+            <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-[10px] font-bold">+12.4%</span>
           </div>
-
-          <div className="space-y-4 py-4">
-            <div className="p-4 rounded-lg bg-slate-950/60 border border-slate-800/80 flex items-center justify-between">
-              <div>
-                <span className="text-xs font-bold text-slate-200 block">Esteira Logística & Fulfillment</span>
-                <span className="text-[11px] text-slate-400">Controle de despachos e códigos de rastreamento.</span>
-              </div>
-              <a href="/cortex/pedidos" className="text-xs text-amber-400 hover:underline">Acessar Esteira →</a>
-            </div>
-
-            <div className="p-4 rounded-lg bg-slate-950/60 border border-slate-800/80 flex items-center justify-between">
-              <div>
-                <span className="text-xs font-bold text-slate-200 block">Product Studio & WMS</span>
-                <span className="text-[11px] text-slate-400">Edição de catálogo público e entradas de estoque.</span>
-              </div>
-              <a href="/cortex/catalogo" className="text-xs text-amber-400 hover:underline">Gerenciar Catalogo →</a>
-            </div>
-
-            <div className="p-4 rounded-lg bg-slate-950/60 border border-slate-800/80 flex items-center justify-between">
-              <div>
-                <span className="text-xs font-bold text-slate-200 block">Tesouraria & DRE Sintético</span>
-                <span className="text-[11px] text-slate-400">Apuração de Margem Líquida e Despesas.</span>
-              </div>
-              <a href="/cortex/financeiro" className="text-xs text-amber-400 hover:underline">Ver Financeiro →</a>
-            </div>
-          </div>
-
-          <div className="text-[10px] text-slate-500 font-mono border-t border-slate-800/60 pt-3 flex justify-between">
-            <span>MOTOR DE BUSCA: SUPABASE REST API</span>
-            <span>AMORTIZAÇÃO E DRE: ATIVO</span>
+          <div className="flex items-baseline gap-1">
+            <span className="text-sm font-medium text-zinc-500">R$</span>
+            <span className="text-3xl font-bold text-zinc-900 tracking-tight">18.450</span>
+            <span className="text-sm font-medium text-zinc-500">,00</span>
           </div>
         </div>
 
-        {/* Auditoria / Log de Eventos Reais */}
-        <div className="p-6 rounded-xl border bg-slate-900/40 border-slate-800/80 flex flex-col h-96">
-          <h2 className="text-sm font-semibold tracking-wide pb-4 border-b border-slate-800/60 mb-4">Log Teleférico do Sistema</h2>
-          <div className="space-y-4 flex-1 overflow-y-auto">
-            {metrics.latestLogs.map((log, idx) => (
-              <div key={idx} className="flex space-x-3 items-start text-xs">
-                <span className={`w-2 h-2 rounded-full ${log.color} mt-1 shrink-0`} />
+        {/* KPI 2 */}
+        <div className="bg-white p-5 rounded-lg border border-zinc-200 shadow-sm flex flex-col gap-3">
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-mono tracking-widest uppercase text-zinc-500 font-bold">TICKET MÉDIO (AOV)</span>
+            <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded text-[10px] font-bold">+R$ 45</span>
+          </div>
+          <div className="flex items-baseline gap-1">
+            <span className="text-sm font-medium text-zinc-500">R$</span>
+            <span className="text-3xl font-bold text-zinc-900 tracking-tight">324</span>
+            <span className="text-sm font-medium text-zinc-500">,80</span>
+          </div>
+          <p className="text-[10px] text-zinc-400 mt-[-4px]">Impulsionado pelo Bundle "Sistema ORIGO"</p>
+        </div>
+
+        {/* KPI 3 */}
+        <div className="bg-white p-5 rounded-lg border border-zinc-200 shadow-sm flex flex-col gap-3">
+          <div className="flex justify-between items-center">
+            <span className="text-[10px] font-mono tracking-widest uppercase text-zinc-500 font-bold">CONVERSÃO PIX</span>
+            <span className="text-rose-600 bg-rose-50 px-2 py-0.5 rounded text-[10px] font-bold">-2.1%</span>
+          </div>
+          <div className="flex items-baseline gap-1">
+            <span className="text-3xl font-bold text-zinc-900 tracking-tight">78</span>
+            <span className="text-lg font-medium text-zinc-500">%</span>
+          </div>
+          <p className="text-[10px] text-zinc-400 mt-[-4px]">12 boletos/pix expirados esta semana</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-4">
+        
+        {/* COLUNA ESQUERDA (Maior) - Funil e Decisões */}
+        <div className="lg:col-span-2 space-y-6">
+          
+          {/* PAINEL DE GARGALOS E AVISOS (O "Sócio Digital") */}
+          <div className="bg-white rounded-lg border border-zinc-200 shadow-sm">
+            <div className="px-5 py-4 border-b border-zinc-100 flex justify-between items-center">
+              <h2 className="text-sm font-bold text-zinc-900 tracking-wide uppercase">RADAR DE OPERAÇÃO</h2>
+            </div>
+            <div className="p-5 space-y-4">
+              
+              <div className="flex items-start gap-4 p-4 rounded-md border border-amber-200 bg-amber-50">
+                <div className="mt-0.5 w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                <div className="flex-1">
+                  <h3 className="text-xs font-bold text-amber-900 uppercase">3 PIXs aguardando liquidação</h3>
+                  <p className="text-[11px] text-amber-800 mt-1">R$ 1.150,00 retidos em reservas. 1 deles vence em 5 minutos.</p>
+                </div>
+                <Link href="/cortex/pedidos" className="text-[10px] font-bold bg-amber-200 text-amber-900 px-3 py-1.5 rounded hover:bg-amber-300">
+                  GERIR
+                </Link>
+              </div>
+
+              <div className="flex items-start gap-4 p-4 rounded-md border border-rose-200 bg-rose-50">
+                <div className="mt-0.5 w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+                <div className="flex-1">
+                  <h3 className="text-xs font-bold text-rose-900 uppercase">Ruptura de Estoque Iminente</h3>
+                  <p className="text-[11px] text-rose-800 mt-1">Camiseta TENAX (M) possui apenas 2 unidades. Média de saída: 4/semana.</p>
+                </div>
+                <Link href="/cortex/supply" className="text-[10px] font-bold bg-rose-200 text-rose-900 px-3 py-1.5 rounded hover:bg-rose-300">
+                  REPOR
+                </Link>
+              </div>
+
+            </div>
+          </div>
+
+          {/* FUNIL DE TRÁFEGO */}
+          <div className="bg-white rounded-lg border border-zinc-200 shadow-sm">
+            <div className="px-5 py-4 border-b border-zinc-100">
+              <h2 className="text-sm font-bold text-zinc-900 tracking-wide uppercase">EFICIÊNCIA DO FUNIL</h2>
+            </div>
+            <div className="p-5">
+              <div className="space-y-4 font-mono text-xs">
+                
+                {/* Estágio 1 */}
                 <div>
-                  <div className="flex items-center space-x-2">
-                    <p className="font-semibold text-slate-200">{log.title}</p>
-                    <span className="text-[9px] font-mono text-slate-500">{log.time}</span>
+                  <div className="flex justify-between mb-1 text-zinc-600">
+                    <span>1. VISITANTES ÚNICOS</span>
+                    <span className="font-bold text-zinc-900">4.250</span>
                   </div>
-                  <p className="text-slate-400 text-[11px] mt-0.5">{log.desc}</p>
+                  <div className="w-full bg-zinc-100 rounded-sm h-6 overflow-hidden">
+                    <div className="bg-zinc-800 h-full" style={{ width: '100%' }}></div>
+                  </div>
+                </div>
+
+                {/* Estágio 2 */}
+                <div>
+                  <div className="flex justify-between mb-1 text-zinc-600">
+                    <span>2. ADIÇÕES À SACOLA</span>
+                    <span className="font-bold text-zinc-900">318 <span className="text-zinc-400 font-normal">(7.4%)</span></span>
+                  </div>
+                  <div className="w-full bg-zinc-100 rounded-sm h-6 overflow-hidden">
+                    <div className="bg-zinc-700 h-full" style={{ width: '35%' }}></div>
+                  </div>
+                </div>
+
+                {/* Estágio 3 */}
+                <div>
+                  <div className="flex justify-between mb-1 text-zinc-600">
+                    <span>3. VENDAS LIQUIDADAS</span>
+                    <span className="font-bold text-zinc-900">54 <span className="text-zinc-400 font-normal">(1.2%)</span></span>
+                  </div>
+                  <div className="w-full bg-zinc-100 rounded-sm h-6 overflow-hidden">
+                    <div className="bg-zinc-600 h-full" style={{ width: '8%' }}></div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* COLUNA DIREITA (Menor) - Top 5 Geográfico */}
+        <div className="lg:col-span-1 space-y-6">
+          
+          <div className="bg-white rounded-lg border border-zinc-200 shadow-sm h-full flex flex-col">
+            <div className="px-5 py-4 border-b border-zinc-100">
+              <h2 className="text-sm font-bold text-zinc-900 tracking-wide uppercase">TOP 5 ESTADOS</h2>
+              <p className="text-[10px] text-zinc-500 font-mono mt-1">Concentração de demanda (%)</p>
+            </div>
+            
+            <div className="p-5 flex-1 flex flex-col justify-center space-y-5 font-mono text-xs">
+              
+              {/* Barra 1 */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-zinc-700">
+                  <span className="font-bold">CEARÁ (Base)</span>
+                  <span>48%</span>
+                </div>
+                <div className="w-full bg-zinc-100 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-emerald-600 h-full rounded-full" style={{ width: '48%' }}></div>
                 </div>
               </div>
-            ))}
+
+              {/* Barra 2 */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-zinc-700">
+                  <span className="font-bold">SÃO PAULO</span>
+                  <span>22%</span>
+                </div>
+                <div className="w-full bg-zinc-100 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-zinc-800 h-full rounded-full" style={{ width: '22%' }}></div>
+                </div>
+              </div>
+
+              {/* Barra 3 */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-zinc-700">
+                  <span className="font-bold">RIO DE JANEIRO</span>
+                  <span>12%</span>
+                </div>
+                <div className="w-full bg-zinc-100 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-zinc-700 h-full rounded-full" style={{ width: '12%' }}></div>
+                </div>
+              </div>
+
+              {/* Barra 4 */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-zinc-700">
+                  <span className="font-bold">BAHIA</span>
+                  <span>10%</span>
+                </div>
+                <div className="w-full bg-zinc-100 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-zinc-600 h-full rounded-full" style={{ width: '10%' }}></div>
+                </div>
+              </div>
+
+              {/* Barra 5 */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-zinc-700">
+                  <span className="font-bold">MINAS GERAIS</span>
+                  <span>8%</span>
+                </div>
+                <div className="w-full bg-zinc-100 rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-zinc-500 h-full rounded-full" style={{ width: '8%' }}></div>
+                </div>
+              </div>
+
+            </div>
           </div>
+
         </div>
-
       </div>
-
     </div>
   );
 }
