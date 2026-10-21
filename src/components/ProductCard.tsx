@@ -1,100 +1,91 @@
 ﻿'use client';
 
-import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Product } from '@/data/products';
+import { useCart } from '@/context/CartContext';
+import { useState } from 'react';
 
-export default function ProductCard({ product }: { product: Product }) {
-  const [activeColorIndex, setActiveColorIndex] = useState(0);
+interface ProductCardProps {
+  product: Product;
+}
 
-  const imagesSet = product.colors.length > 0 
-    ? product.colors[activeColorIndex].images 
-    : product.defaultImages;
-    
-  const frontImage = imagesSet[0];
-  const backImage = imagesSet.length > 1 ? imagesSet[1] : frontImage;
+export default function ProductCard({ product }: ProductCardProps) {
+  const { addItem } = useCart();
+  const [isHovered, setIsHovered] = useState(false);
+
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price);
+  };
+
+  const handleQuickAdd = () => {
+    const defaultSize = product.sizes.find((s) => s.available)?.size || product.sizes[0].size;
+    addItem(product, defaultSize);
+  };
 
   return (
-    <div className="group flex flex-col justify-between transition-all duration-500 h-full relative">
-      <div className="space-y-6">
-        <Link href={`/produto/${product.id}`} className="block relative">
-          
-          {/* Efeito Spotlight e Moldura Ampla */}
-          <div className="relative aspect-[3/4] w-full overflow-hidden rounded-sm transition-all duration-500
-                          bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.04)_0%,rgba(0,0,0,0)_75%)] 
-                          group-hover:bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.09)_0%,rgba(0,0,0,0)_85%)]">
-            
-            {/* Tag Categoria */}
-            <div className="absolute top-4 left-4 z-20 pointer-events-none">
-              <span className="bg-black/60 backdrop-blur-md px-3 py-1.5 border border-white/5 text-[9px] font-mono tracking-widest text-zinc-400 uppercase">
-                {product.category}
-              </span>
-            </div>
-
-            {/* Imagem Frontal (Ampla e com Fade no Hover) */}
-            <div className="absolute inset-0 p-3 sm:p-4 flex items-center justify-center transition-all duration-500 ease-in-out group-hover:opacity-0 group-hover:scale-105">
-              <div className="relative w-full h-full">
-                <Image 
-                  src={frontImage} 
-                  alt={`${product.name} Frente`} 
-                  fill 
-                  className="object-contain drop-shadow-[0_20px_25px_rgba(0,0,0,0.85)]"
-                />
-              </div>
-            </div>
-
-            {/* Imagem Costas (Surge no Hover) */}
-            <div className="absolute inset-0 p-3 sm:p-4 flex items-center justify-center opacity-0 transition-all duration-500 ease-in-out group-hover:opacity-100 group-hover:scale-105">
-              <div className="relative w-full h-full">
-                <Image 
-                  src={backImage} 
-                  alt={`${product.name} Costas`} 
-                  fill 
-                  className="object-contain drop-shadow-[0_25px_30px_rgba(0,0,0,0.95)]"
-                />
-              </div>
-            </div>
-          </div>
-        </Link>
-
-        {/* Informações Textuais */}
-        <div className="px-1">
-          <div className="flex justify-between items-baseline gap-4 border-b border-zinc-900 pb-3">
-            <h3 className="font-serif text-lg tracking-widest text-white font-bold">{product.name}</h3>
-            <span className="text-[11px] md:text-xs font-mono text-zinc-300 font-bold whitespace-nowrap">{product.price}</span>
-          </div>
-          <p className="text-[11px] text-zinc-500 tracking-wider mt-3 line-clamp-2 font-sans leading-relaxed">
-            {product.description}
-          </p>
+    <div 
+      className="group flex flex-col relative font-sans"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      
+      {/* Container de Imagem com Proporção Fixa (aspect-square garante quadros exatos) */}
+      <Link href={`/produto/${product.id}`} className="block relative w-full aspect-square bg-[#0a0a0a] overflow-hidden p-6 md:p-10 flex items-center justify-center border border-zinc-900 group-hover:border-zinc-800 transition-colors">
+        
+        {/* TAG SUPERIOR */}
+        <div className="absolute top-4 left-4 z-20">
+          <span className="text-[9px] font-mono tracking-[0.2em] text-zinc-500 uppercase border border-zinc-800 px-2 py-1 bg-black/80 backdrop-blur-sm">
+            {product.category}
+          </span>
         </div>
-      </div>
 
-      <div className="pt-6 mt-6 font-sans px-1 flex justify-between items-center border-t border-zinc-900/60">
-        <div className="flex items-center gap-3">
-          <span className="text-[9px] font-mono text-zinc-500 uppercase">COR:</span>
-          <div className="flex gap-2">
-            {product.colors.map((c, i) => (
-              <button 
-                key={i} 
-                onMouseEnter={() => setActiveColorIndex(i)}
-                className={`w-3.5 h-3.5 rounded-full border transition-all ${activeColorIndex === i ? 'border-white scale-125' : 'border-zinc-800 hover:border-zinc-500'}`} 
-                style={{ backgroundColor: c.hex }} 
-                title={c.name} 
-                aria-label={`Cor ${c.name}`}
-              />
-            ))}
-          </div>
-          <span className="text-[9px] font-mono text-zinc-600 uppercase">{product.colors[activeColorIndex]?.name}</span>
+        {/* IMAGEM PRIMÁRIA */}
+        <div className={`absolute inset-8 md:inset-12 transition-opacity duration-700 ease-in-out ${isHovered ? 'opacity-0' : 'opacity-100 z-10'}`}>
+          <Image
+            src={product.imagePrimary}
+            alt={product.name}
+            fill
+            className="object-contain filter contrast-125"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+          />
+        </div>
+
+        {/* IMAGEM SECUNDÁRIA (HOVER) */}
+        <div className={`absolute inset-8 md:inset-12 transition-opacity duration-700 ease-in-out ${isHovered ? 'opacity-100 z-10' : 'opacity-0'}`}>
+          <Image
+            src={product.imageSecondary}
+            alt={product.name}
+            fill
+            className="object-contain filter contrast-125"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+          />
         </div>
         
-        <Link
-          href={`/produto/${product.id}`}
-          className="text-[9px] md:text-[10px] font-bold tracking-[0.25em] text-zinc-400 uppercase hover:text-white border-b border-transparent hover:border-white transition-all duration-300 pb-0.5"
-        >
-          VER ARTEFATO
-        </Link>
+        {/* QUICK ADD BUTTON */}
+        <div className={`absolute bottom-0 left-0 w-full p-4 z-30 transition-all duration-300 ${isHovered ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'}`}>
+           <button 
+             onClick={(e) => { e.preventDefault(); handleQuickAdd(); }}
+             className="w-full bg-white text-black font-bold text-[10px] tracking-[0.2em] uppercase py-3 shadow-xl hover:bg-zinc-200 transition-colors"
+           >
+             Quick Add +
+           </button>
+        </div>
+      </Link>
+
+      {/* INFORMAÇÕES DO PRODUTO */}
+      <div className="pt-5 space-y-3">
+        <div className="flex justify-between items-baseline gap-2 border-b border-zinc-900 pb-3">
+          <Link href={`/produto/${product.id}`} className="group-hover:text-zinc-300 transition-colors">
+            <h3 className="font-serif text-lg tracking-widest uppercase font-bold text-white">{product.name}.</h3>
+          </Link>
+          <span className="text-[11px] font-mono text-zinc-300 font-bold tracking-wider">{formatPrice(product.price)}</span>
+        </div>
+        <p className="text-[11px] text-zinc-500 font-light leading-relaxed max-w-[90%] font-sans">
+          {product.description}
+        </p>
       </div>
+
     </div>
   );
 }
