@@ -137,7 +137,7 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
     <div className="flex min-h-screen bg-zinc-50 font-sans text-zinc-900 selection:bg-zinc-200">
       
       {/* SIDEBAR (MENU LATERAL) */}
-      <aside className="hidden lg:flex flex-col w-72 bg-white border-r border-zinc-200 shadow-sm z-10">
+      <aside className="hidden lg:flex flex-col w-72 bg-white border-r border-zinc-200 shadow-sm z-10 sticky top-0 h-screen overflow-y-auto">
         
         {/* LOGO AREA */}
         <div className="h-20 flex items-center px-8 border-b border-zinc-100">
@@ -214,10 +214,10 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
       </aside>
 
       {/* ÁREA PRINCIPAL DE CONTEÚDO */}
-      <main className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+      <main className="flex-1 flex flex-col min-w-0">
         
         {/* HEADER DO CONTEÚDO */}
-        <header className="h-20 bg-white border-b border-zinc-200 px-8 flex items-center justify-between shrink-0">
+        <header className="h-20 bg-white border-b border-zinc-200 px-8 flex items-center justify-between sticky top-0 z-10">
           <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
             <span>Terminal</span>
             <span className="text-zinc-300">/</span>
@@ -243,7 +243,7 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
         </header>
 
         {/* CONTAINER DINÂMICO DOS MÓDULOS */}
-        <div className="flex-1 overflow-auto bg-zinc-50/50 p-8">
+        <div className="flex-1 bg-zinc-50/50 p-8">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
