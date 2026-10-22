@@ -23,8 +23,14 @@ export default function ProductCard({ product }: ProductCardProps) {
     addItem(product, defaultSize);
   };
 
-  // Ajuste de escala específico para itens que parecem pequenos
-  const isSmallItem = product.id === 'UMBRA-303' || product.id === 'VEST-202';
+  // Identificação das peças problemáticas
+  const isCap = product.id === 'UMBRA-303';
+  const isBoxy = product.id === 'VEST-202';
+
+  // Configuração Extrema de Escala (Scale)
+  let scaleClass = 'scale-100';
+  if (isCap) scaleClass = 'scale-175 origin-center'; // Boné cresce 75% a mais a partir do centro
+  if (isBoxy) scaleClass = 'scale-[1.40] origin-center'; // Boxy cresce 40% a mais a partir do centro
 
   return (
     <div 
@@ -33,7 +39,7 @@ export default function ProductCard({ product }: ProductCardProps) {
       onMouseLeave={() => setIsHovered(false)}
     >
       
-      {/* Contêiner rigoroso: Altura e largura cravadas. Sem paddings que esmaguem a imagem. */}
+      {/* Contêiner cravado em 4/5 */}
       <Link href={`/produto/${product.id}`} className="block relative w-full aspect-[4/5] bg-[#0a0a0a] overflow-hidden border border-zinc-900 group-hover:border-zinc-800 transition-colors">
         
         {/* TAG SUPERIOR */}
@@ -45,12 +51,12 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* IMAGEM PRIMÁRIA */}
         <div className={`absolute inset-0 transition-opacity duration-700 ease-in-out flex items-center justify-center ${isHovered ? 'opacity-0' : 'opacity-100 z-10'}`}>
-          <div className={`relative w-full h-full ${isSmallItem ? 'scale-125' : 'scale-100'}`}>
+          <div className={`relative w-full h-full transition-transform duration-500 ${scaleClass}`}>
             <Image
               src={product.imagePrimary}
               alt={product.name}
               fill
-              className="object-cover md:object-contain object-center filter contrast-125 mix-blend-screen"
+              className="object-contain filter contrast-125 mix-blend-screen"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
             />
           </div>
@@ -58,12 +64,12 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* IMAGEM SECUNDÁRIA (HOVER) */}
         <div className={`absolute inset-0 transition-opacity duration-700 ease-in-out flex items-center justify-center ${isHovered ? 'opacity-100 z-10' : 'opacity-0'}`}>
-          <div className={`relative w-full h-full ${isSmallItem ? 'scale-125' : 'scale-100'}`}>
+          <div className={`relative w-full h-full transition-transform duration-500 ${scaleClass}`}>
             <Image
               src={product.imageSecondary}
               alt={product.name}
               fill
-              className="object-cover md:object-contain object-center filter contrast-125 mix-blend-screen"
+              className="object-contain filter contrast-125 mix-blend-screen"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
             />
           </div>

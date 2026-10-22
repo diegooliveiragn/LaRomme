@@ -7,8 +7,8 @@ import { usePathname } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import CartDrawer from './CartDrawer';
 
-// Usando o favicon (capacete puro) para garantir que a palavra LaRomme não apareça
-const ICON_ONLY_URL = "/icon.png"; 
+// Voltando para a logo original, mas usando CSS para cortar o texto
+const HELMET_LOGO_URL = "/logo-branca.png";
 
 export default function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -17,7 +17,6 @@ export default function Header() {
   const { items } = useCart();
 
   const isCortexRoute = pathname?.startsWith('/cortex');
-
   const cartItemsCount = items.reduce((total, item) => total + item.quantity, 0);
 
   useEffect(() => {
@@ -39,10 +38,16 @@ export default function Header() {
       >
         <div className="max-w-7xl mx-auto px-6 md:px-12 flex items-center justify-between">
           
-          {/* LOGO (Forçando apenas o ícone quadrado) */}
-          <Link href="/" className="flex items-center group">
-            <div className={`relative transition-all duration-300 filter brightness-0 invert group-hover:opacity-70 ${isScrolled ? 'w-8 h-8' : 'w-10 h-10'}`}>
-              <Image src={ICON_ONLY_URL} alt="LaRomme" fill className="object-contain" priority />
+          {/* LOGO CORTADA (Apenas a metade esquerda da imagem onde está o capacete) */}
+          <Link href="/" className="flex items-center group overflow-hidden w-8 h-8 md:w-10 md:h-10 relative">
+            <div className={`absolute top-0 left-0 w-[250%] h-full transition-all duration-300 filter brightness-0 invert group-hover:opacity-70`}>
+              <Image 
+                src={HELMET_LOGO_URL} 
+                alt="LaRomme" 
+                fill 
+                className="object-cover object-left" 
+                priority 
+              />
             </div>
           </Link>
 
