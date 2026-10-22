@@ -153,7 +153,7 @@ export default function CockpitPage() {
                 <Tooltip 
                   contentStyle={{ backgroundColor: '#18181b', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '12px' }}
                   itemStyle={{ color: '#fff' }}
-                  formatter={(value: number) => [formatBRL(value), 'Receita']}
+                  formatter={(value: any) => [formatBRL(Number(value) || 0), "Receita"]}
                 />
                 <Area type="monotone" dataKey="receita" stroke="#18181b" strokeWidth={2} fillOpacity={1} fill="url(#colorReceita)" />
               </AreaChart>
