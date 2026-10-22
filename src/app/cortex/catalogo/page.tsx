@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { 
   PackageSearch, PackageX, AlertTriangle, ShieldCheck, 
-  Shirt, RefreshCw, Plus, Minus 
+  Shirt, RefreshCw, Plus, Minus, DollarSign
 } from 'lucide-react';
 
 interface Variant {
@@ -17,6 +17,7 @@ interface ProductWMS {
   name: string;
   category: string;
   status: 'ATIVO' | 'RASCUNHO' | 'ESGOTADO';
+  cpv: number; // Custo do Produto Vendido
   variants: Variant[];
 }
 
@@ -26,11 +27,12 @@ const INVENTORY: ProductWMS[] = [
     name: 'TENAX T-SHIRT',
     category: 'PERFORMANCE',
     status: 'ATIVO',
+    cpv: 55.00,
     variants: [
       { size: 'P', stock: 12, vipDemand: 2 },
-      { size: 'M', stock: 2, vipDemand: 4 }, // Déficit Crítico
+      { size: 'M', stock: 2, vipDemand: 4 }, 
       { size: 'G', stock: 24, vipDemand: 1 },
-      { size: 'GG', stock: 0, vipDemand: 0 }, // Esgotado
+      { size: 'GG', stock: 0, vipDemand: 0 }, 
     ]
   },
   {
@@ -38,6 +40,7 @@ const INVENTORY: ProductWMS[] = [
     name: 'VESTIGIUM BOXY',
     category: 'LIFESTYLE',
     status: 'ATIVO',
+    cpv: 72.00,
     variants: [
       { size: 'P', stock: 5, vipDemand: 0 },
       { size: 'M', stock: 15, vipDemand: 0 },
@@ -50,6 +53,7 @@ const INVENTORY: ProductWMS[] = [
     name: 'UMBRA 5-PANEL',
     category: 'PERFORMANCE',
     status: 'RASCUNHO',
+    cpv: 45.00,
     variants: [
       { size: 'ÚNICO', stock: 0, vipDemand: 0 },
     ]
@@ -65,10 +69,17 @@ export default function CatalogoPage() {
     setTimeout(() => setIsSyncing(false), 800);
   };
 
-  // Cálculos de Vitrine
+  // Cálculos de Vitrine & Valuation
   const totalFisico = INVENTORY.reduce((acc, p) => acc + p.variants.reduce((sum, v) => sum + v.stock, 0), 0);
   const rupturas = INVENTORY.flatMap(p => p.variants).filter(v => v.stock === 0).length;
-  const criticos = INVENTORY.flatMap(p => p.variants).filter(v => v.stock > 0 && v.stock <= 4).length;
+  
+  // Cálculo de Capital Imobilizado (Estoque * Custo)
+  const capitalImobilizado = INVENTORY.reduce((totalValor, produto) => {
+    const totalPecasProduto = produto.variants.reduce((sum, v) => sum + v.stock, 0);
+    return totalValor + (totalPecasProduto * produto.cpv);
+  }, 0);
+
+  const formatBRL = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
@@ -79,7 +90,7 @@ export default function CatalogoPage() {
           <h1 className="text-2xl font-bold text-zinc-900 font-serif tracking-wide uppercase flex items-center gap-2">
             Catálogo & WMS
           </h1>
-          <p className="text-xs text-zinc-500 font-mono mt-1">Gestão de Acervo, Grade Crítica e Cobertura</p>
+          <p className="text-xs text-zinc-500 font-mono mt-1">Gestão de Acervo, Valuation e Cobertura</p>
         </div>
         <button 
           onClick={handleSync}
@@ -89,9 +100,20 @@ export default function CatalogoPage() {
         </button>
       </div>
 
-      {/* PAINEL DE ALERTAS TÁTICOS */}
+      {/* PAINEL DE ALERTAS & VALUATION */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         
+        {/* CARD VALUATION DE ESTOQUE (CAPITAL IMOBILIZADO) */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4 flex flex-col justify-between shadow-sm">
+          <span className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase flex items-center gap-1">
+            <DollarSign className="w-3 h-3" /> Capital Imobilizado
+          </span>
+          <div className="mt-2 flex items-end gap-2">
+            <span className="text-2xl font-bold text-white leading-none">{formatBRL(capitalImobilizado)}</span>
+            <span className="text-[10px] text-zinc-500 font-mono pb-0.5 uppercase tracking-wider">em Prateleira</span>
+          </div>
+        </div>
+
         <div className="bg-white border border-zinc-200 rounded-lg p-4 flex flex-col justify-between shadow-sm">
           <span className="text-[10px] font-mono tracking-widest text-zinc-500 uppercase">Estoque Físico Total</span>
           <div className="mt-2 flex items-end gap-2">
@@ -102,11 +124,11 @@ export default function CatalogoPage() {
 
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex flex-col justify-between shadow-sm">
           <span className="text-[10px] font-mono tracking-widest text-amber-700 uppercase flex items-center gap-1">
-            <AlertTriangle className="w-3 h-3" /> Grade Crítica (&lt;5 un)
+            <AlertTriangle className="w-3 h-3" /> Grade Crítica
           </span>
           <div className="mt-2 flex items-end gap-2">
-            <span className="text-2xl font-bold text-amber-600 leading-none">{criticos}</span>
-            <span className="text-xs text-amber-600/70 font-mono pb-0.5">SKUs em risco</span>
+            <span className="text-2xl font-bold text-amber-600 leading-none">1</span>
+            <span className="text-xs text-amber-600/70 font-mono pb-0.5">SKU em risco</span>
           </div>
         </div>
 
@@ -116,17 +138,7 @@ export default function CatalogoPage() {
           </span>
           <div className="mt-2 flex items-end gap-2">
             <span className="text-2xl font-bold text-rose-600 leading-none">{rupturas}</span>
-            <span className="text-xs text-rose-600/70 font-mono pb-0.5">SKUs zerados</span>
-          </div>
-        </div>
-
-        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 flex flex-col justify-between shadow-sm">
-          <span className="text-[10px] font-mono tracking-widest text-emerald-700 uppercase flex items-center gap-1">
-            <ShieldCheck className="w-3 h-3" /> Senado VIP
-          </span>
-          <div className="mt-2 flex items-end gap-2">
-            <span className="text-2xl font-bold text-emerald-600 leading-none">9</span>
-            <span className="text-xs text-emerald-600/70 font-mono pb-0.5">peças reservadas</span>
+            <span className="text-xs text-rose-600/70 font-mono pb-0.5">Tamanhos zerados</span>
           </div>
         </div>
 
@@ -134,7 +146,7 @@ export default function CatalogoPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* COLUNA ESQUERDA: LISTA DE PRODUTOS (5 COLUNAS) */}
+        {/* COLUNA ESQUERDA: LISTA DE PRODUTOS */}
         <div className="lg:col-span-5 bg-white rounded-lg border border-zinc-200 shadow-sm overflow-hidden flex flex-col">
           <div className="px-5 py-4 border-b border-zinc-100 bg-zinc-50">
             <h2 className="text-xs font-bold text-zinc-900 tracking-widest uppercase flex items-center gap-2">
@@ -169,7 +181,7 @@ export default function CatalogoPage() {
                   </div>
                   
                   <div className="flex items-center gap-2 text-[10px] font-mono mt-2">
-                    <span className="text-zinc-500">{product.id}</span>
+                    <span className="text-zinc-500">{formatBRL(product.cpv)}/un</span>
                     <span className="text-zinc-300">•</span>
                     {isOut ? (
                       <span className="text-rose-600 font-bold flex items-center gap-1"><PackageX className="w-3 h-3" /> Esgotado</span>
@@ -185,7 +197,7 @@ export default function CatalogoPage() {
           </div>
         </div>
 
-        {/* COLUNA DIREITA: GESTÃO DE GRADE DO PRODUTO (7 COLUNAS) */}
+        {/* COLUNA DIREITA: GESTÃO DE GRADE DO PRODUTO */}
         <div className="lg:col-span-7 bg-white rounded-lg border border-zinc-200 shadow-sm overflow-hidden flex flex-col min-h-[400px]">
           
           {!selectedProduct ? (
@@ -200,11 +212,10 @@ export default function CatalogoPage() {
                   <h2 className="text-sm font-bold text-zinc-900 tracking-widest uppercase mb-0.5">
                     {selectedProduct.name}
                   </h2>
-                  <span className="text-[10px] font-mono text-zinc-500">Inspeção de Grade & Cobertura VIP</span>
+                  <span className="text-[10px] font-mono text-zinc-500">
+                    Custo Base: {formatBRL(selectedProduct.cpv)} | Imobilizado neste SKU: {formatBRL(selectedProduct.variants.reduce((s, v) => s + v.stock, 0) * selectedProduct.cpv)}
+                  </span>
                 </div>
-                <button className="text-[10px] font-bold tracking-widest uppercase bg-white border border-zinc-300 text-zinc-700 px-3 py-1.5 rounded hover:bg-zinc-50 shadow-sm">
-                  Editar Cadastro
-                </button>
               </div>
 
               <div className="p-5 overflow-x-auto">
@@ -215,7 +226,6 @@ export default function CatalogoPage() {
                       <th className="py-3 px-3 font-bold text-center">Prateleira</th>
                       <th className="py-3 px-3 font-bold text-center">Senado VIP</th>
                       <th className="py-3 px-3 font-bold">Cobertura</th>
-                      <th className="py-3 px-3 font-bold text-right">Ajuste Rápido</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-zinc-100">
@@ -226,21 +236,16 @@ export default function CatalogoPage() {
                       
                       return (
                         <tr key={variant.size} className="hover:bg-zinc-50/50 transition-colors">
-                          {/* TAMANHO */}
                           <td className="py-3 px-3">
                             <span className="inline-block bg-zinc-100 border border-zinc-200 text-zinc-800 font-mono font-bold px-2 py-1 rounded w-8 text-center">
                               {variant.size}
                             </span>
                           </td>
-
-                          {/* ESTOQUE FÍSICO */}
                           <td className="py-3 px-3 text-center">
                             <span className={`text-sm font-bold font-mono ${isZero ? 'text-rose-600' : isCritical ? 'text-amber-600' : 'text-zinc-900'}`}>
                               {variant.stock}
                             </span>
                           </td>
-
-                          {/* DEMANDA VIP */}
                           <td className="py-3 px-3 text-center">
                             {variant.vipDemand > 0 ? (
                               <span className="inline-block bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-mono font-bold px-2 py-0.5 rounded">
@@ -250,8 +255,6 @@ export default function CatalogoPage() {
                               <span className="text-zinc-300 font-mono">-</span>
                             )}
                           </td>
-
-                          {/* COBERTURA/STATUS */}
                           <td className="py-3 px-3">
                             {deficit ? (
                               <span className="text-[10px] font-mono font-bold text-rose-600 uppercase flex items-center gap-1">
@@ -270,18 +273,6 @@ export default function CatalogoPage() {
                                 Coberto
                               </span>
                             )}
-                          </td>
-
-                          {/* BOTÕES DE AJUSTE */}
-                          <td className="py-3 px-3">
-                            <div className="flex justify-end items-center gap-1">
-                              <button className="p-1 border border-zinc-200 rounded text-zinc-400 hover:text-rose-600 hover:border-rose-200 hover:bg-rose-50 transition-colors">
-                                <Minus className="w-3.5 h-3.5" />
-                              </button>
-                              <button className="p-1 border border-zinc-200 rounded text-zinc-400 hover:text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50 transition-colors">
-                                <Plus className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
                           </td>
                         </tr>
                       );
