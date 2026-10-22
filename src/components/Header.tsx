@@ -4,6 +4,9 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
+import Image from 'next/image';
+
+const HELMET_LOGO_URL = "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/logo%20branca.png";
 
 export default function Header() {
   const pathname = usePathname();
@@ -21,10 +24,10 @@ export default function Header() {
     <>
       <header className="fixed top-0 left-0 w-full z-40 bg-[#080808]/90 backdrop-blur-md border-b border-zinc-900 px-6 md:px-12 py-4 flex items-center justify-between font-mono text-xs tracking-wider">
         <div className="flex items-center space-x-6">
-          {/* Logo do Capacete com corte absoluto */}
-          <Link href="/" className="flex items-center group overflow-hidden w-8 h-8 md:w-9 md:h-9 relative">
-            <div className="absolute top-0 left-0 w-[250%] h-full filter brightness-0 invert group-hover:opacity-70 transition-opacity duration-300">
-              <img src="https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Assets/logo%20branca.png" alt="LaRomme" className="w-full h-full object-cover object-left" />
+          <Link href="/" className="flex items-center space-x-3 group">
+            {/* Logo Original Estável, mas sem a tipografia lateral */}
+            <div className="relative w-8 h-8 md:w-9 md:h-9 filter brightness-0 invert group-hover:opacity-70 transition-opacity duration-300">
+              <Image src={HELMET_LOGO_URL} alt="LaRomme" fill className="object-contain" priority />
             </div>
           </Link>
         </div>
@@ -80,7 +83,7 @@ export default function Header() {
           <div className="relative w-full max-w-md bg-[#090909] border-l border-zinc-800 text-white h-full flex flex-col justify-between p-6 md:p-8 z-10 font-mono shadow-2xl">
             <div>
               <div className="flex justify-between items-center border-b border-zinc-900 pb-4 mb-6">
-                <span className="text-xs uppercase tracking-[0.25em] text-zinc-400 font-serif">SUA SACOLA</span>
+                <span className="text-xs uppercase tracking-[0.25em] text-zinc-400 font-serif">SACOLA DE ARTEFATOS</span>
                 <button onClick={closeCart} className="text-zinc-500 hover:text-white text-xs uppercase tracking-widest">
                   [ FECHAR ]
                 </button>
@@ -123,7 +126,7 @@ export default function Header() {
               {items.length === 0 ? (
                 <div className="py-12 text-center text-xs text-zinc-600 uppercase tracking-widest space-y-2">
                   <p>Sua sacola está vazia.</p>
-                  <p className="text-[10px] text-zinc-700">Selecione uma peça no acervo.</p>
+                  <p className="text-[10px] text-zinc-700">Selecione um artefato no catálogo.</p>
                 </div>
               ) : (
                 <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
