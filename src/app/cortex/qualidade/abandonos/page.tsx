@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import React from 'react';
-import { ShoppingCart, MessageCircle, AlertCircle, RefreshCcw, ArrowRight } from 'lucide-react';
+import { ShoppingCart, MessageCircle, AlertCircle, RefreshCcw } from 'lucide-react';
 
 const ABANDONED_CARTS = [
   { id: '1049', customer: 'Thiago Mendes', email: 'thiago.mendes@gmail.com', value: 189.90, item: '1x TENAX T-SHIRT (G)', time: 'Há 22 min', risk: 'high', reason: 'Abandono no Frete' },
