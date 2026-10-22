@@ -271,7 +271,7 @@ export default function CockpitPage() {
                    Gargalo de Retenção
                  </p>
                  <p className="text-xs font-mono font-medium opacity-90 leading-relaxed border-b border-amber-200/50 pb-2 mb-2">
-                   3 clientes (AOV > R$ 400) abandonaram o carrinho por conta do valor do frete para SC.
+                   3 clientes (AOV &gt; R$ 400) abandonaram o carrinho por conta do valor do frete para SC.
                  </p>
                  <button className="text-[10px] font-bold uppercase tracking-wider text-amber-700 hover:text-amber-900">
                    Sondar via WhatsApp &rarr;
