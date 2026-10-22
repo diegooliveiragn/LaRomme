@@ -16,23 +16,33 @@ export function ProductCard({ product }: ProductCardProps) {
   const firstImg = hasImage ? product.images[0] : null;
   const imgSrc = firstImg ? (typeof firstImg === 'string' ? firstImg : (firstImg as any)?.src) : '';
 
+  // LOGICA DE SCALE PARA IGUALAR A PROPORCAO VISUAL
+  const isCap = product.slug?.includes('umbra');
+  const isBoxy = product.slug?.includes('vestigium');
+  
+  let scaleStyle = 'scale(1)';
+  if (isCap) scaleStyle = 'scale(1.7)';
+  if (isBoxy) scaleStyle = 'scale(1.35)';
+
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: DURATIONS.slow, ease: EASINGS.cinematic }}
       className="group flex flex-col justify-between h-full bg-white p-4 transition-all duration-700 hover:shadow-2xl hover:shadow-brand-black/5"
     >
-      <Link href={`/produto/${product.slug}`} className="block relative overflow-hidden aspect-[3/4] bg-zinc-900 mb-6">
+      <Link href={`/produto/${product.slug}`} className="block relative overflow-hidden aspect-[4/5] bg-zinc-950 mb-6 flex items-center justify-center">
         {hasImage ? (
-          <Image
-            src={imgSrc}
-            alt={product.name}
-            fill
-            className="object-cover object-center group-hover:scale-105 transition-transform duration-1000 ease-out"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
+          <div className="absolute inset-0 transition-transform duration-1000 ease-out group-hover:scale-105" style={{ transform: scaleStyle }}>
+            <Image
+              src={imgSrc}
+              alt={product.name}
+              fill
+              className="object-contain object-center filter contrast-125"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+          </div>
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 border border-zinc-800 transition-colors duration-500 group-hover:bg-brand-black">
              <span className="font-serif text-3xl text-zinc-800 opacity-40">LR</span>
@@ -64,7 +74,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         <div className="flex items-center gap-3 pt-4 border-t border-zinc-100">
-          <span className="font-mono text-[9px] text-zinc-400 uppercase tracking-widest">Cores disponÃ­veis:</span>
+          <span className="font-mono text-[9px] text-zinc-400 uppercase tracking-widest">Cores disponiveis:</span>
           <div className="flex gap-2">
             {product.availableColors.map((color) => (
               <span
