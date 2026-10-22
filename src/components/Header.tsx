@@ -22,7 +22,7 @@ export default function Header() {
 
   return (
     <>
-      <header className="fixed top-0 left-0 w-full z-40 bg-[#080808]/90 backdrop-blur-md border-b border-zinc-900 px-6 md:px-12 py-4 flex items-center justify-between font-mono text-xs tracking-wider">
+      <header className="fixed top-0 left-0 w-full z-40 bg-black/30 backdrop-blur-xl border-b border-white/5 px-6 md:px-12 py-4 flex items-center justify-between font-mono text-xs tracking-wider">
         <div className="flex items-center space-x-6">
           <Link href="/" className="flex items-center space-x-3 group">
             {/* Logo Original Estável, mas sem a tipografia lateral */}
