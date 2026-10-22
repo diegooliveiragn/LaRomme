@@ -1,6 +1,6 @@
 ﻿import type { Metadata } from 'next';
 import Script from 'next/script';
-import Header from '@/components/Header';
+import { Header } from '@/components/layout/Header';
 import Footer from '@/components/Footer';
 import SmoothScroll from '@/components/SmoothScroll';
 import { CartProvider } from '@/context/CartContext';

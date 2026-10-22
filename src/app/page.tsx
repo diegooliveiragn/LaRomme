@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { PRODUCTS, Product } from '@/data/products';
 import FadeIn from '@/components/FadeIn';
-import ProductCard from '@/components/ProductCard';
+import { ProductCard } from '@/components/product/ProductCard';
 import { createClient } from '@supabase/supabase-js';
 
 const HELMET_LOGO_URL = "/logo-branca.png";
