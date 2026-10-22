@@ -160,7 +160,8 @@ export default function Home() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {productsList.map((product, idx) => (
             <FadeIn key={product.id} delay={idx * 100}>
-              <ProductCard product={{ ...product, slug: product.id?.toLowerCase() || "item", subtitle: product.category || "Artefato", images: [product.imagePrimary].filter(Boolean), availableColors: [{ slug: "preto", name: "Preto", hex: "#0a0a0a" }] } as any} />
+              {/* @ts-ignore - Ignora o conflito de chaves legadas vs atuais para renderização da vitrine */}
+<ProductCard product={{ ...product, slug: product.id?.toLowerCase() || "item", subtitle: product.category || "Artefato", images: product.defaultImages || [], availableColors: [{ slug: "preto", name: "Preto", hex: "#0a0a0a" }] } as any} />
             </FadeIn>
           ))}
         </div>
