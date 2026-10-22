@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 
@@ -7,7 +7,7 @@ export function Header() {
     <header className="fixed top-0 left-0 w-full z-50 bg-gradient-to-b from-black/90 via-black/60 to-transparent backdrop-blur-md transition-all duration-300">
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         
-        {/* BRANDING: LOGO E WORDMARK COM TRAVA RÍGIDA DE TAMANHO */}
+        {/* BRANDING: LOGO E WORDMARK COM TRAVA RÃGIDA DE TAMANHO */}
         <Link href="/" className="flex items-center gap-3.5 group cursor-pointer select-none">
           <img 
             src="/logo-branca.png" 
@@ -23,14 +23,14 @@ export function Header() {
           />
         </Link>
 
-        {/* NAVEGAÇÃO DESKTOP */}
+        {/* NAVEGAÃ‡ÃƒO DESKTOP */}
         <nav className="hidden md:flex items-center gap-8 font-mono text-[10px] uppercase tracking-[0.2em]">
           <Link href="/colecao/origo" className="text-zinc-400 hover:text-white transition-colors">ORIGO</Link>
           <Link href="/journal" className="text-zinc-400 hover:text-white transition-colors">JOURNAL</Link>
           <Link href="/sobre" className="text-zinc-400 hover:text-white transition-colors">MANIFESTO</Link>
         </nav>
 
-        {/* BOTÃO SENADO VIP */}
+        {/* BOTÃƒO SENADO VIP */}
         <div className="flex items-center gap-4">
           <Link 
             href="/acesso" 

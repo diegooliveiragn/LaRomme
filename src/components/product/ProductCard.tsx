@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
@@ -64,7 +64,7 @@ export function ProductCard({ product }: ProductCardProps) {
         </div>
 
         <div className="flex items-center gap-3 pt-4 border-t border-zinc-100">
-          <span className="font-mono text-[9px] text-zinc-400 uppercase tracking-widest">Cores disponíveis:</span>
+          <span className="font-mono text-[9px] text-zinc-400 uppercase tracking-widest">Cores disponÃ­veis:</span>
           <div className="flex gap-2">
             {product.availableColors.map((color) => (
               <span
