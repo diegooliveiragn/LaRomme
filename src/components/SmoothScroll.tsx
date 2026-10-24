@@ -7,13 +7,13 @@ import 'lenis/dist/lenis.css';
 export default function SmoothScroll({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const lenis = new Lenis({
-      duration: 1.8,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      duration: 2.2,
+      easing: (t) => 1 - Math.pow(1 - t, 4),
       orientation: 'vertical',
       gestureOrientation: 'vertical',
       smoothWheel: true,
-      wheelMultiplier: 0.8,
-      touchMultiplier: 1.5,
+      wheelMultiplier: 0.6,
+      touchMultiplier: 1.2,
     });
 
     let rafId: number;

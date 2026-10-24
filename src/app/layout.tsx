@@ -1,5 +1,4 @@
 ﻿import type { Metadata } from 'next';
-import Script from 'next/script';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SmoothScroll from '@/components/SmoothScroll';
@@ -11,10 +10,10 @@ const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.laromme.com.br'
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: 'LaRomme • Maison de Haute Couture',
+    default: 'LaRomme • Força em Movimento',
     template: '%s • LaRomme',
   },
-  description: 'Moda autoral e elegância atemporal.',
+  description: 'Marca brasileira de esporte e lifestyle contemporâneo. Disciplina, estética e movimento.',
 };
 
 export default function RootLayout({
