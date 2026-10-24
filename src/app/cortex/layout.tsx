@@ -139,7 +139,7 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
     <div className="flex min-h-screen bg-zinc-50 font-sans text-zinc-900 selection:bg-zinc-200">
       
       {/* SIDEBAR (MENU LATERAL) */}
-      <aside className="hidden lg:flex flex-col w-72 bg-white border-r border-zinc-200 shadow-sm z-10 sticky top-0 h-screen overflow-y-auto">
+      <aside className="hidden lg:flex flex-col w-72 bg-white border-r border-zinc-200 shadow-sm z-10 sticky top-0 h-screen">
         
         {/* LOGO AREA */}
         <div className="h-20 flex items-center px-8 border-b border-zinc-100">
@@ -155,7 +155,7 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
         </div>
 
         {/* NAVIGATION ACCORDION */}
-        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
+        <nav className="flex-1 overflow-y-auto overscroll-contain py-6 px-4 space-y-2 custom-scrollbar">
           {MENU_STRUCTURE.map((section) => {
             const isOpen = openSections.includes(section.title);
             const Icon = section.icon;
