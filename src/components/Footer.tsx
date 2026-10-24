@@ -2,8 +2,11 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 
 export default function Footer() {
+  const pathname = usePathname();
+  if (pathname?.startsWith('/cortex')) return null;
   return (
     <footer className="bg-zinc-950 pt-24 pb-12 border-t border-zinc-900 font-sans text-zinc-400">
       <div className="max-w-[1400px] mx-auto px-6 lg:px-12">
