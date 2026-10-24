@@ -92,12 +92,20 @@ export default function CatalogoPage() {
           </h1>
           <p className="text-xs text-zinc-500 font-mono mt-1">Gestão de Acervo, Valuation e Cobertura</p>
         </div>
-        <button 
-          onClick={handleSync}
-          className="px-3 py-1.5 text-xs font-bold text-white bg-zinc-900 rounded hover:bg-zinc-800 transition-colors flex items-center gap-1.5 shadow-sm"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> Sincronizar PDV
-        </button>
+                <div className="flex items-center gap-3">
+          <button
+            onClick={handleSync}
+            className="px-4 py-2 text-xs font-bold text-zinc-700 bg-white border border-zinc-200 rounded hover:bg-zinc-50 transition-colors flex items-center gap-1.5 shadow-sm"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} /> PDV
+          </button>
+          <a
+            href="/cortex/catalogo/novo"
+            className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-white bg-zinc-900 border border-zinc-800 rounded hover:bg-zinc-800 transition-colors flex items-center gap-1.5 shadow-sm"
+          >
+            <Plus className="w-3.5 h-3.5" /> Novo Artefato
+          </a>
+        </div>
       </div>
 
       {/* PAINEL DE ALERTAS & VALUATION */}

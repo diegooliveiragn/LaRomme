@@ -40,7 +40,8 @@ const MENU_STRUCTURE: MenuSection[] = [
       { name: 'Esteira de Pedidos', path: '/cortex/pedidos' },
       { name: 'Logística Reversa', path: '/cortex/qualidade/reversa' },
       { name: 'WMS & Estoque', path: '/cortex/estoque' },
-      { name: 'Catálogo de Produtos', path: '/cortex/catalogo' },
+          { name: 'Catálogo de Produtos', path: '/cortex/catalogo' },
+      { name: 'Motor PIM (Novo)', path: '/cortex/catalogo/novo' },
     ]
   },
   {
