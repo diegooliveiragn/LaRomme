@@ -59,6 +59,7 @@ const MENU_STRUCTURE: MenuSection[] = [
     items: [
       { name: 'Base de Patronos', path: '/cortex/crm' },
       { name: 'Senado VIP', path: '/cortex/crm/senado' },
+      { name: 'Growth & Analytics', path: '/cortex/growth' },
       { name: 'Gargalos & Abandonos', path: '/cortex/qualidade/abandonos' },
     ]
   }
