@@ -1,0 +1,8 @@
+﻿{
+  "crons": [
+    {
+      "path": "/api/crm/aniversario",
+      "schedule": "0 11 * * *"
+    }
+  ]
+}
