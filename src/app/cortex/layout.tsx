@@ -8,14 +8,14 @@ import Image from 'next/image';
 import {
   Briefcase, Box, Factory, Users,
   ChevronDown, ChevronRight, Bell, LogOut, Loader2,
-  X, AlertCircle, ArrowRight, CheckCircle2
+  X, CheckCircle2, ArrowRight
 } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-const HELMET_LOGO_URL = "/logo-branca.png";
+const HELMET_LOGO_URL = "/logo-preta.png";
 
 type MenuSection = {
   title: string;
@@ -84,12 +84,10 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
   const [isAlertDrawerOpen, setIsAlertDrawerOpen] = useState(false);
   const [alerts, setAlerts] = useState<OperationalAlert[]>([]);
 
-  // Monitoramento Operacional em Tempo Real
   const fetchAlerts = async () => {
     try {
       const list: OperationalAlert[] = [];
 
-      // 1. Pedidos pagos aguardando despacho
       const { data: paidOrders } = await supabase
         .from('orders')
         .select('id, short_id, customer_name')
@@ -106,7 +104,6 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
         });
       });
 
-      // 2. Carrinhos pendentes (reservas Pix)
       const { data: pendingOrders } = await supabase
         .from('orders')
         .select('id, short_id, total_amount')
@@ -123,7 +120,6 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
         });
       });
 
-      // 3. Ruptura de Estoque
       const { data: prods } = await supabase
         .from('products')
         .select('id, name, stock_p, stock_m, stock_g, stock_gg, stock_tu')
@@ -141,16 +137,8 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
           list.push({
             id: `stk-${item.id}`,
             type: 'ESTOQUE',
-            title: `Estoque esgotado: ${item.name}`,
+            title: `Estoque zerado: ${item.name}`,
             description: 'Saldo zerado no galpão. Reposição necessária.',
-            link: '/cortex/estoque'
-          });
-        } else if (pStock < 5 || mStock < 5 || gStock < 5 || ggStock < 5) {
-          list.push({
-            id: `stk-${item.id}`,
-            type: 'ESTOQUE',
-            title: `Risco de ruptura: ${item.name}`,
-            description: 'Uma ou mais grades com saldo abaixo de 5 un.',
             link: '/cortex/estoque'
           });
         }
@@ -158,7 +146,7 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
 
       setAlerts(list);
     } catch (err) {
-      console.error('Erro ao consultar alertas operacionais:', err);
+      console.error('Erro ao consultar alertas:', err);
     }
   };
 
@@ -166,7 +154,6 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
     fetchAlerts();
   }, []);
 
-  // Verifica Autenticação
   useEffect(() => {
     if (pathname === '/cortex/login') {
       setAuthorized(true);
@@ -187,7 +174,6 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
     checkAuth();
   }, [pathname, router]);
 
-  // Abre automaticamente a seção que contém a rota atual
   useEffect(() => {
     MENU_STRUCTURE.forEach(section => {
       if (section.items.some(item => pathname === item.path || pathname?.startsWith(item.path + '/'))) {
@@ -212,10 +198,10 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center font-sans">
+      <div className="min-h-screen bg-zinc-50 flex items-center justify-center font-sans">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="w-6 h-6 text-white animate-spin" />
-          <span className="text-xs font-mono tracking-widest uppercase text-slate-400">Conectando ao Banco de Dados...</span>
+          <Loader2 className="w-6 h-6 text-zinc-800 animate-spin" />
+          <span className="text-xs font-mono tracking-widest uppercase text-zinc-500 font-bold">Carregando Cortex...</span>
         </div>
       </div>
     );
@@ -224,27 +210,35 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
   if (!authorized && pathname !== '/cortex/login') return null;
 
   if (pathname === '/cortex/login') {
-    return <div className="min-h-screen bg-zinc-950">{children}</div>;
+    return <div className="min-h-screen bg-zinc-50">{children}</div>;
   }
 
   return (
-    <div className="flex min-h-screen bg-zinc-950 font-sans text-zinc-100 selection:bg-zinc-800">
+    <div className="flex min-h-screen bg-zinc-50 font-sans text-zinc-900 selection:bg-zinc-200">
 
-      {/* SIDEBAR */}
-      <aside data-lenis-prevent className="hidden lg:flex flex-col w-72 bg-slate-950 border-r border-slate-800/80 shadow-sm z-20 sticky top-0 h-screen">
-        <div className="h-20 flex items-center px-8 border-b border-slate-800/80">
+      {/* SIDEBAR (SCROLL TOUCHPAD DESTRAVADO COM OVERFLOW NATIVO) */}
+      <aside
+        data-lenis-prevent="true"
+        className="hidden lg:flex flex-col w-72 bg-white border-r border-zinc-200 shadow-sm z-20 sticky top-0 h-screen select-none"
+      >
+        <div className="h-20 flex items-center px-8 border-b border-zinc-200 shrink-0">
           <Link href="/cortex" className="flex items-center gap-3 group">
-            <div className="relative w-8 h-8 filter brightness-100 transition-opacity group-hover:opacity-70">
+            <div className="relative w-7 h-7">
               <Image src={HELMET_LOGO_URL} alt="LaRomme" fill className="object-contain" priority />
             </div>
             <div>
-              <h1 className="font-serif text-lg tracking-[0.15em] font-bold uppercase text-white leading-none">CORTEX</h1>
-              <span className="text-[9px] font-mono tracking-widest text-slate-400 uppercase">Operations Core</span>
+              <h1 className="font-serif text-lg tracking-[0.15em] font-black uppercase text-zinc-900 leading-none">CORTEX</h1>
+              <span className="text-[9px] font-mono tracking-widest text-zinc-500 font-bold uppercase">Operations Core</span>
             </div>
           </Link>
         </div>
 
-        <nav data-lenis-prevent className="flex-1 overflow-y-auto overscroll-contain py-6 px-4 space-y-2 custom-scrollbar">
+        {/* CONTAINER COM SCROLL TOTALMENTE INDEPENDENTE */}
+        <nav
+          data-lenis-prevent="true"
+          className="flex-1 overflow-y-auto overscroll-contain touch-pan-y py-6 px-4 space-y-2"
+          style={{ WebkitOverflowScrolling: 'touch' }}
+        >
           {MENU_STRUCTURE.map((section) => {
             const isOpen = openSections.includes(section.title);
             const Icon = section.icon;
@@ -253,31 +247,31 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
               <div key={section.title} className="flex flex-col">
                 <button
                   onClick={() => toggleSection(section.title)}
-                  className={`flex items-center justify-between w-full px-4 py-3 rounded-md transition-colors ${
-                    isOpen ? 'bg-slate-900/80' : 'hover:bg-slate-900/40'
+                  className={`flex items-center justify-between w-full px-4 py-2.5 rounded-lg transition-colors ${
+                    isOpen ? 'bg-zinc-100 text-zinc-900 font-bold' : 'hover:bg-zinc-100/60 text-zinc-600'
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Icon className={`w-4 h-4 ${isOpen ? 'text-white' : 'text-slate-400'}`} />
-                    <span className={`text-[11px] font-bold tracking-wider uppercase ${isOpen ? 'text-white' : 'text-slate-300'}`}>
+                    <Icon className={`w-4 h-4 ${isOpen ? 'text-zinc-900' : 'text-zinc-400'}`} />
+                    <span className="text-xs uppercase tracking-wider font-bold">
                       {section.title}
                     </span>
                   </div>
-                  {isOpen ? <ChevronDown className="w-3.5 h-3.5 text-slate-400" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-400" />}
+                  {isOpen ? <ChevronDown className="w-3.5 h-3.5 text-zinc-600" /> : <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />}
                 </button>
 
                 {isOpen && (
-                  <div className="mt-1 ml-4 pl-4 border-l border-slate-800 space-y-1 py-1">
+                  <div className="mt-1 ml-4 pl-4 border-l border-zinc-200 space-y-1 py-1">
                     {section.items.map((item) => {
                       const isActive = pathname === item.path;
                       return (
                         <Link
                           key={item.path}
                           href={item.path}
-                          className={`block px-3 py-2 rounded-md text-[11px] font-medium transition-all ${
+                          className={`block px-3 py-2 rounded-md text-xs font-bold transition-all ${
                             isActive
-                              ? 'bg-white text-slate-950 font-black shadow-sm'
-                              : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                              ? 'bg-zinc-900 text-white shadow-sm'
+                              : 'text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100'
                           }`}
                         >
                           {item.name}
@@ -291,10 +285,10 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
           })}
         </nav>
 
-        <div className="p-4 border-t border-slate-800/80">
+        <div className="p-4 border-t border-zinc-200 shrink-0">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 w-full px-4 py-2.5 rounded-md text-[11px] font-bold text-rose-400 hover:bg-rose-500/10 transition-colors uppercase tracking-wider"
+            className="flex items-center gap-2 w-full px-4 py-2.5 rounded-lg text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors uppercase tracking-wider"
           >
             <LogOut className="w-4 h-4" />
             <span>Encerrar Sessão</span>
@@ -303,77 +297,77 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
       </aside>
 
       {/* ÁREA PRINCIPAL */}
-      <main className="flex-1 flex flex-col min-w-0">
+      <main className="flex-1 flex flex-col min-w-0 bg-zinc-50">
         
         {/* HEADER SUPERIOR */}
-        <header className="h-20 border-b border-slate-800/80 px-8 flex items-center justify-between bg-slate-950/70 backdrop-blur sticky top-0 z-10">
+        <header className="h-20 border-b border-zinc-200 px-8 flex items-center justify-between bg-white/90 backdrop-blur sticky top-0 z-10">
           <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider">
-            <span className="text-slate-400">TERMINAL</span>
-            <span className="text-slate-600">/</span>
-            <span className="text-white font-bold">{pathname?.split('/').pop() || 'Dashboard'}</span>
+            <span className="text-zinc-400 font-bold">TERMINAL</span>
+            <span className="text-zinc-300">/</span>
+            <span className="text-zinc-900 font-black">{pathname?.split('/').pop() || 'Dashboard'}</span>
           </div>
 
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[10px] font-mono text-emerald-300">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-[10px] font-mono font-bold text-emerald-800">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span>Banco Integrado</span>
             </div>
 
             {/* BOTÃO DO SININHO INTERATIVO */}
             <button
               onClick={() => setIsAlertDrawerOpen(!isAlertDrawerOpen)}
-              className="relative p-2 text-zinc-400 hover:text-white transition-colors"
-              title="Alertas do Sistema"
+              className="relative p-2 text-zinc-500 hover:text-zinc-900 transition-colors"
+              title="Alertas da Operação"
             >
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 flex h-3 w-3 items-center justify-center rounded-full bg-rose-500 text-[8px] font-bold text-white ring-2 ring-slate-950 tabular-nums">
+              <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white ring-2 ring-white tabular-nums">
                 {alerts.length > 0 ? alerts.length : 3}
               </span>
             </button>
           </div>
         </header>
 
-        {/* CONTAINER DINÂMICO DOS MÓDULOS */}
-        <div className="flex-1 bg-slate-950 p-8">
+        {/* CONTAINER DOS MÓDULOS */}
+        <div className="flex-1 p-8">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>
         </div>
       </main>
 
-      {/* GAVETA DE ALERTAS OPERACIONAIS */}
+      {/* GAVETA DE ALERTAS */}
       {isAlertDrawerOpen && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            className="fixed inset-0 bg-black/30 backdrop-blur-xs transition-opacity"
             onClick={() => setIsAlertDrawerOpen(false)}
           />
-          <aside className="relative w-full max-w-md bg-slate-950 border-l border-slate-800 h-full flex flex-col z-10 shadow-2xl animate-in slide-in-from-right duration-300 font-sans">
-            <div className="flex items-center justify-between p-6 border-b border-slate-800 bg-slate-900/80">
+          <aside className="relative w-full max-w-md bg-white border-l border-zinc-200 h-full flex flex-col z-10 shadow-2xl animate-in slide-in-from-right duration-300 font-sans">
+            <div className="flex items-center justify-between p-6 border-b border-zinc-200 bg-zinc-50">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400">
+                <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-600">
                   <Bell className="w-5 h-5" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-bold text-white uppercase tracking-wider">Centro de Notificações</h2>
-                  <p className="text-[11px] font-mono text-slate-400 mt-0.5">
-                    {alerts.length} pendência{alerts.length === 1 ? '' : 's'} operacional{alerts.length === 1 ? '' : 'is'}
+                  <h2 className="text-sm font-black text-zinc-900 uppercase tracking-wider">Centro de Alertas</h2>
+                  <p className="text-xs font-mono text-zinc-500 font-bold mt-0.5">
+                    {alerts.length} pendências ativas
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setIsAlertDrawerOpen(false)}
-                className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="p-2 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {alerts.length === 0 ? (
-                <div className="p-12 text-center text-xs font-mono text-slate-500 flex flex-col items-center gap-3">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-500" />
-                  Nenhuma pendência crítica. Todas as esteiras em dia.
+                <div className="p-12 text-center text-xs font-mono font-bold text-zinc-500 flex flex-col items-center gap-3">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600" />
+                  Operação em dia. Nenhuma pendência crítica.
                 </div>
               ) : (
                 alerts.map((alert) => (
@@ -381,24 +375,24 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
                     key={alert.id}
                     href={alert.link}
                     onClick={() => setIsAlertDrawerOpen(false)}
-                    className="block p-4 rounded-xl bg-slate-900/70 border border-slate-800 hover:border-slate-700 hover:bg-slate-900 transition-all group"
+                    className="block p-4 rounded-xl bg-zinc-50 border border-zinc-200 hover:border-zinc-400 hover:bg-white transition-all group shadow-2xs"
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <span className={`text-[9px] font-mono font-bold uppercase tracking-widest px-2 py-0.5 rounded border ${
-                        alert.type === 'LOGISTICA' ? 'bg-amber-500/10 text-amber-300 border-amber-500/30' :
-                        alert.type === 'ABANDONO' ? 'bg-rose-500/10 text-rose-300 border-rose-500/30' :
-                        'bg-indigo-500/10 text-indigo-300 border-indigo-500/30'
+                      <span className={`text-[10px] font-mono font-black uppercase tracking-wider px-2 py-0.5 rounded border ${
+                        alert.type === 'LOGISTICA' ? 'bg-amber-50 text-amber-800 border-amber-200' :
+                        alert.type === 'ABANDONO' ? 'bg-rose-50 text-rose-800 border-rose-200' :
+                        'bg-zinc-100 text-zinc-800 border-zinc-300'
                       }`}>
                         {alert.type}
                       </span>
-                      <span className="text-[10px] text-slate-400 font-mono group-hover:text-white flex items-center gap-1">
-                        Resolver <ArrowRight className="w-3 h-3" />
+                      <span className="text-xs text-zinc-400 font-bold group-hover:text-zinc-900 flex items-center gap-1">
+                        Ver <ArrowRight className="w-3.5 h-3.5" />
                       </span>
                     </div>
-                    <h4 className="text-xs font-bold text-white mt-2 group-hover:text-amber-200 transition-colors">
+                    <h4 className="text-xs font-bold text-zinc-900 mt-2">
                       {alert.title}
                     </h4>
-                    <p className="text-[11px] text-slate-400 mt-1 font-sans">
+                    <p className="text-xs text-zinc-600 mt-1">
                       {alert.description}
                     </p>
                   </Link>
@@ -406,11 +400,11 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
               )}
             </div>
 
-            <div className="p-4 border-t border-slate-800 bg-slate-900/50 flex justify-between items-center text-[10px] font-mono text-slate-400">
+            <div className="p-4 border-t border-zinc-200 bg-zinc-50 flex justify-between items-center text-xs font-mono font-bold text-zinc-500">
               <span>LaRomme Operations Core</span>
               <button
                 onClick={fetchAlerts}
-                className="text-amber-300 hover:text-amber-200 uppercase font-bold tracking-wider"
+                className="text-zinc-900 hover:text-black uppercase tracking-wider font-black"
               >
                 Atualizar Sinais
               </button>
