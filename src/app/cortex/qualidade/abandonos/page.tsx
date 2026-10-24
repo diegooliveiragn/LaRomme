@@ -1,74 +1,354 @@
 ﻿'use client';
 
-import React from 'react';
-import { ShoppingCart, MessageCircle, AlertCircle, RefreshCcw } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import { ShoppingCart, MessageCircle, AlertCircle, RefreshCw, Send, Clock, ShieldAlert } from 'lucide-react';
 
-const ABANDONED_CARTS = [
-  { id: '1049', customer: 'Thiago Mendes', email: 'thiago.mendes@gmail.com', value: 189.90, item: '1x TENAX T-SHIRT (G)', time: 'Há 22 min', risk: 'high', reason: 'Abandono no Frete' },
-  { id: '1050', customer: 'Marina Costa', email: 'marina.cst@hotmail.com', value: 399.80, item: '1x VESTIGIUM (M), 1x UMBRA', time: 'Há 1 hora', risk: 'high', reason: 'Pix Expirado' },
-  { id: '1042', customer: 'Lucas H. Silveira', email: 'lucashs@empresa.com.br', value: 159.90, item: '1x SIGNUM DAD HAT', time: 'Há 4 horas', risk: 'medium', reason: 'Abandono no Cartão' },
-];
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+interface OrderItem {
+  id: string;
+  order_id: string;
+  product_name?: string;
+  name?: string;
+  size?: string;
+  quantity: number;
+}
+
+interface AbandonedOrder {
+  id: string;
+  short_id?: string;
+  customer_name?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  total_amount: number;
+  created_at: string;
+  status: string;
+  items?: OrderItem[];
+}
 
 export default function AbandonosPage() {
-  const formatBRL = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+  const [abandonedOrders, setAbandonedOrders] = useState<AbandonedOrder[]>([]);
+  const [totalOrdersCount, setTotalOrdersCount] = useState<number>(0);
+  const [loading, setLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingId, setProcessingId] = useState<string | null>(null);
+  const [actionStatus, setActionStatus] = useState<string | null>(null);
+
+  const formatBRL = (val: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+  const fetchAbandonedData = async () => {
+    setLoading(true);
+    try {
+      const { data: allOrders, error: ordersErr } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (ordersErr) throw ordersErr;
+
+      const total = (allOrders || []).length;
+      setTotalOrdersCount(total);
+
+      const pending = (allOrders || []).filter((o: any) => o.status === 'pending');
+
+      const { data: itemsData } = await supabase
+        .from('order_items')
+        .select('*');
+
+      const itemsMap: Record<string, OrderItem[]> = {};
+      (itemsData || []).forEach((item: any) => {
+        if (!itemsMap[item.order_id]) itemsMap[item.order_id] = [];
+        itemsMap[item.order_id].push(item);
+      });
+
+      const fullPending: AbandonedOrder[] = pending.map((ord: any) => ({
+        ...ord,
+        items: itemsMap[ord.id] || [],
+      }));
+
+      setAbandonedOrders(fullPending);
+    } catch (err: any) {
+      console.error('Erro ao buscar abandonos:', err.message);
+      setActionStatus(`Erro ao carregar dados: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAbandonedData();
+  }, []);
+
+  const getTimeElapsed = (dateStr: string) => {
+    const now = new Date();
+    const past = new Date(dateStr);
+    const diffMs = now.getTime() - past.getTime();
+    const diffMin = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMin / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    if (diffMin < 60) return `Há ${diffMin} min`;
+    if (diffHours < 24) return `Há ${diffHours} h`;
+    return `Há ${diffDays} d`;
+  };
+
+  const handleRecoverSingle = async (ord: AbandonedOrder) => {
+    setProcessingId(ord.id);
+    setActionStatus(`Enviando recuperação para ${ord.customer_email}...`);
+
+    try {
+      const res = await fetch('/api/crm/recuperacao', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: ord.id }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setActionStatus(`✓ Recuperação de reserva enviada para ${ord.customer_email}.`);
+      } else {
+        setActionStatus(`Erro: ${data.error || 'Falha ao recuperar pedido.'}`);
+      }
+    } catch (err: any) {
+      setActionStatus(`Erro de rede: ${err.message}`);
+    } finally {
+      setProcessingId(null);
+      setTimeout(() => setActionStatus(null), 5000);
+    }
+  };
+
+  const handleRecoverBatch = async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    setActionStatus('Processando recuperação em lote de reservas pendentes...');
+
+    try {
+      const res = await fetch('/api/crm/recuperacao', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setActionStatus(`✓ Concluído: ${data.processed ?? data.sent ?? 0} comunicações processadas.`);
+      } else {
+        setActionStatus(`Erro: ${data.error}`);
+      }
+    } catch (err: any) {
+      setActionStatus(`Erro de rede: ${err.message}`);
+    } finally {
+      setIsProcessing(false);
+      setTimeout(() => setActionStatus(null), 5000);
+    }
+  };
+
+  const handleOpenWhatsApp = (ord: AbandonedOrder) => {
+    if (!ord.customer_phone) {
+      alert('Nenhum telefone registrado para esta reserva.');
+      return;
+    }
+
+    const cleanPhone = ord.customer_phone.replace(/\D/g, '');
+    const primeName = (ord.customer_name || 'Patrono').split(' ')[0];
+    const shortId = ord.short_id || ord.id.slice(0, 8);
+    const text = `Olá, ${primeName}. Aqui é do Concierge LaRomme. Notamos que sua reserva #${shortId} referente ao nosso acervo está temporariamente retida. Deseja suporte prioritário para a conclusão do seu pedido?`;
+
+    const url = `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+
+  const receitaNaMesa = abandonedOrders.reduce((sum, ord) => sum + Number(ord.total_amount || 0), 0);
+  const totalAbandonos = abandonedOrders.length;
+  const taxaAtrito = totalOrdersCount > 0 ? Math.round((totalAbandonos / totalOrdersCount) * 100) : 0;
+  const ticketMedioEmRisco = totalAbandonos > 0 ? receitaNaMesa / totalAbandonos : 0;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-5">
+    <div className="space-y-8 animate-in fade-in duration-300 pb-12 font-sans">
+      
+      {/* CABEÇALHO */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4 border-b border-slate-800/60 pb-6">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 font-serif tracking-wide uppercase">Gargalos & Abandonos</h1>
-          <p className="text-xs text-zinc-500 font-mono mt-1">Recuperação Ativa de Receita • Últimas 24h</p>
+          <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-400 font-semibold block mb-1">
+            Qualidade Operacional & Retenção
+          </span>
+          <h1 className="font-serif text-3xl font-bold tracking-tight text-white uppercase">
+            Gargalos & Reservas Retidas
+          </h1>
+          <p className="text-xs text-slate-400 font-mono mt-1 font-bold">
+            Monitoramento de Atrito no Checkout e Recuperação Ativa de Receita
+          </p>
         </div>
-        <button className="px-3 py-1.5 text-xs font-medium text-zinc-600 bg-white border border-zinc-300 rounded hover:bg-zinc-50 transition-colors flex items-center gap-1.5 shadow-sm">
-          <RefreshCcw className="w-3.5 h-3.5" /> Sincronizar Gateway
-        </button>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleRecoverBatch}
+            disabled={isProcessing || abandonedOrders.length === 0}
+            className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-500/40 rounded-lg text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50"
+          >
+            Recuperar Lote (45m+)
+          </button>
+          <button
+            onClick={fetchAbandonedData}
+            disabled={loading}
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span>Atualizar Fila</span>
+          </button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <div className="bg-white p-5 rounded-lg border border-zinc-200 shadow-sm">
-          <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500 block mb-3">Receita na Mesa</span>
-          <span className="text-2xl font-bold text-zinc-900 tracking-tight">{formatBRL(749.60)}</span>
-          <p className="text-[10px] font-mono text-rose-500 mt-2 flex items-center gap-1"><AlertCircle className="w-3 h-3"/> Risco de perda em 3 carrinhos</p>
+      {/* FEEDBACK STATUS BAR */}
+      {actionStatus && (
+        <div className="p-3.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono font-bold text-white flex items-center justify-between">
+          <span>{actionStatus}</span>
+          <button onClick={() => setActionStatus(null)} className="text-slate-400 hover:text-white ml-4">✕</button>
         </div>
-        <div className="bg-white p-5 rounded-lg border border-zinc-200 shadow-sm">
-          <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500 block mb-3">Taxa de Recuperação</span>
-          <span className="text-2xl font-bold text-zinc-900 tracking-tight">18.5%</span>
-          <p className="text-[10px] font-mono text-emerald-600 mt-2 flex items-center gap-1">Acima da média do mercado (12%)</p>
+      )}
+
+      {/* KPIS DE IMPACTO */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        
+        <div className="p-5 rounded-xl border bg-rose-500/10 border-rose-500/30 shadow-sm flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-rose-300">
+              Receita na Mesa
+            </span>
+            <AlertCircle className="w-4 h-4 text-rose-400" />
+          </div>
+          <span className="text-3xl font-black text-rose-400 tabular-nums tracking-tight block font-mono">
+            {formatBRL(receitaNaMesa)}
+          </span>
+          <span className="text-[11px] font-bold text-rose-300/80 mt-2 block tabular-nums">
+            Risco de perda em {totalAbandonos} reservas
+          </span>
         </div>
+
+        <div className="p-5 rounded-xl border bg-amber-500/10 border-amber-500/30 shadow-sm flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-300">
+              Reservas Retidas
+            </span>
+            <Clock className="w-4 h-4 text-amber-400" />
+          </div>
+          <span className="text-3xl font-black text-amber-400 tabular-nums tracking-tight block">
+            {totalAbandonos}
+          </span>
+          <span className="text-[11px] font-bold text-amber-300/80 mt-2 block tabular-nums">
+            Aguardando liquidação Pix
+          </span>
+        </div>
+
+        <div className="p-5 rounded-xl border bg-slate-900/60 border-slate-800 shadow-sm flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-300">
+              Ticket Médio Retido
+            </span>
+            <ShoppingCart className="w-4 h-4 text-slate-400" />
+          </div>
+          <span className="text-3xl font-black text-white tabular-nums tracking-tight block font-mono">
+            {formatBRL(ticketMedioEmRisco)}
+          </span>
+          <span className="text-[11px] font-bold text-slate-500 mt-2 block">
+            Valor médio por carrinho retido
+          </span>
+        </div>
+
+        <div className="p-5 rounded-xl border bg-slate-900/60 border-slate-800 shadow-sm flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-300">
+              Taxa de Fuga Pix
+            </span>
+            <ShieldAlert className="w-4 h-4 text-slate-400" />
+          </div>
+          <span className="text-3xl font-black text-white tabular-nums tracking-tight block">
+            {taxaAtrito}%
+          </span>
+          <span className="text-[11px] font-bold text-slate-500 mt-2 block tabular-nums">
+            Proporção sobre o total gerado
+          </span>
+        </div>
+
       </div>
 
-      <div className="bg-white rounded-lg border border-zinc-200 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-zinc-200 flex justify-between items-center bg-zinc-50/50">
-          <h2 className="text-xs font-bold text-zinc-900 tracking-widest uppercase flex items-center gap-2">
-            <ShoppingCart className="w-4 h-4 text-zinc-500" /> Fila de Abordagem do Concierge
+      {/* FILA DE ABORDAGEM */}
+      <div className="bg-slate-950/60 rounded-xl border border-slate-800 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/80">
+          <h2 className="text-xs font-bold text-white tracking-widest uppercase flex items-center gap-2">
+            <ShoppingCart className="w-4 h-4 text-slate-400" /> Fila de Abordagem do Concierge
           </h2>
+          <span className="text-[11px] font-mono font-bold text-slate-400 tabular-nums">
+            {totalAbandonos} reservas pendentes
+          </span>
         </div>
-        <div className="divide-y divide-zinc-100">
-          {ABANDONED_CARTS.map((cart) => (
-            <div key={cart.id} className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-zinc-50 transition-colors">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-1">
-                  <span className="text-sm font-bold text-zinc-900">{cart.customer}</span>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-rose-600 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded">{cart.time}</span>
+
+        {loading ? (
+          <div className="p-12 text-center text-xs font-mono font-bold text-slate-400">
+            Mapeando atritos no checkout e reservas expiradas...
+          </div>
+        ) : abandonedOrders.length === 0 ? (
+          <div className="p-12 text-center text-xs font-mono font-bold text-slate-500">
+            Nenhuma reserva retida no momento. Operação em dia.
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-800/60">
+            {abandonedOrders.map((ord) => (
+              <div key={ord.id} className="p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:bg-slate-900/40 transition-colors">
+                
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-bold text-white">{ord.customer_name || 'Patrono'}</span>
+                    <span className="text-xs font-mono font-bold text-slate-400">
+                      #{ord.short_id || ord.id.slice(0, 8)}
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-rose-300 bg-rose-500/10 border border-rose-500/30 px-2 py-0.5 rounded">
+                      {getTimeElapsed(ord.created_at)}
+                    </span>
+                  </div>
+
+                  <p className="text-xs font-mono text-slate-400">{ord.customer_email}</p>
+
+                  <div className="flex flex-wrap items-center gap-2 pt-1 text-xs font-mono text-slate-300">
+                    <span className="font-bold text-slate-200">
+                      {ord.items && ord.items.length > 0
+                        ? ord.items.map((i) => `${i.quantity}x ${i.product_name || i.name || 'Peça'} (${i.size || 'U'})`).join(', ')
+                        : 'Itens em consolidação'}
+                    </span>
+                    <span className="text-slate-600">•</span>
+                    <span className="text-amber-400 font-bold">Aguardando Pagamento Pix</span>
+                  </div>
                 </div>
-                <p className="text-[11px] font-mono text-zinc-500">{cart.email}</p>
-                <div className="mt-3 flex items-center gap-3 text-xs font-mono text-zinc-600">
-                  <span className="font-bold text-zinc-900">{cart.item}</span>
-                  <span>&bull;</span>
-                  <span>Motivo presumido: <span className="font-bold text-amber-600">{cart.reason}</span></span>
+
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 w-full md:w-auto border-t md:border-t-0 border-slate-800 pt-4 md:pt-0">
+                  <span className="text-xl font-black font-mono text-rose-400 tabular-nums">
+                    {formatBRL(Number(ord.total_amount || 0))}
+                  </span>
+
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <button
+                      onClick={() => handleRecoverSingle(ord)}
+                      disabled={processingId === ord.id}
+                      className="px-3.5 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50"
+                    >
+                      {processingId === ord.id ? 'Enviando...' : 'E-mail Reserva'}
+                    </button>
+
+                    <button
+                      onClick={() => handleOpenWhatsApp(ord)}
+                      className="px-3.5 py-2 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 rounded text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5"
+                    >
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      <span>WhatsApp</span>
+                    </button>
+                  </div>
                 </div>
+
               </div>
-              
-              <div className="flex flex-col items-end gap-3 w-full md:w-auto border-t md:border-t-0 border-zinc-100 pt-4 md:pt-0">
-                <span className="text-lg font-bold text-zinc-900">{formatBRL(cart.value)}</span>
-                <button className="w-full md:w-auto px-4 py-2 bg-[#25D366] hover:bg-[#1DA851] text-white text-[10px] font-bold uppercase tracking-widest rounded transition-colors flex items-center justify-center gap-2 shadow-sm">
-                  <MessageCircle className="w-3.5 h-3.5" /> Chamar no WhatsApp
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
+
     </div>
   );
 }
