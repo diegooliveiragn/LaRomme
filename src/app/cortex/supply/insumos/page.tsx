@@ -1,51 +1,82 @@
 ﻿'use client';
 
-import React, { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import { Box, RefreshCw, Loader2, PackageCheck, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { Box, Plus, Edit, Trash2, X, RefreshCw } from 'lucide-react';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+interface InsumoItem {
+  id: string;
+  nome: string;
+  categoria: string;
+  custoUnit: number;
+  estoqueFisico: number;
+}
 
 export default function GestaoInsumosPage() {
-  const [loading, setLoading] = useState(true);
-  const [totalPecasEstoque, setTotalPecasEstoque] = useState(0);
+  const [insumos, setInsumos] = useState<InsumoItem[]>([
+    { id: 'INS-01', nome: 'Caixa Rígida Gaveta LaRomme', categoria: 'EMBALAGEM', custoUnit: 4.80, estoqueFisico: 0 },
+    { id: 'INS-02', nome: 'Papel de Seda Aromatizado (20g)', categoria: 'EMBALAGEM', custoUnit: 0.65, estoqueFisico: 0 },
+    { id: 'INS-03', nome: 'Tag Lacre Termocolante com Cordão', categoria: 'AVIAMENTO', custoUnit: 0.90, estoqueFisico: 0 },
+    { id: 'INS-04', nome: 'Fita Gomada Kraft Personalizada', categoria: 'LOGÍSTICA', custoUnit: 0.30, estoqueFisico: 0 },
+  ]);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [nome, setNome] = useState('');
+  const [categoria, setCategoria] = useState('EMBALAGEM');
+  const [custo, setCusto] = useState('');
+  const [saldo, setSaldo] = useState('0');
 
   const formatBRL = (val: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
-  const fetchEstoqueTotal = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('stock_p, stock_m, stock_g, stock_gg, stock_tu');
-
-      if (error) throw error;
-      let total = 0;
-      (data || []).forEach(p => {
-        total += (p.stock_p || 0) + (p.stock_m || 0) + (p.stock_g || 0) + (p.stock_gg || 0) + (p.stock_tu || 0);
-      });
-      setTotalPecasEstoque(total);
-    } catch (err: any) {
-      console.error('Erro ao calcular insumos:', err.message);
-    } finally {
-      setLoading(false);
-    }
+  const openCreateModal = () => {
+    setEditingId(null);
+    setNome('');
+    setCategoria('EMBALAGEM');
+    setCusto('');
+    setSaldo('0');
+    setIsModalOpen(true);
   };
 
-  useEffect(() => {
-    fetchEstoqueTotal();
-  }, []);
+  const openEditModal = (item: InsumoItem) => {
+    setEditingId(item.id);
+    setNome(item.nome);
+    setCategoria(item.categoria);
+    setCusto(String(item.custoUnit));
+    setSaldo(String(item.estoqueFisico));
+    setIsModalOpen(true);
+  };
 
-  // Lista Oficial de Insumos de Unboxing LaRomme vinculada à tiragem física
-  const insumos = [
-    { id: 'INS-01', nome: 'Caixa Rígida Gaveta LaRomme', categoria: 'EMBALAGEM', custoUnit: 4.80, estoqueFisico: totalPecasEstoque + 25 },
-    { id: 'INS-02', nome: 'Papel de Seda Aromatizado (20g)', categoria: 'EMBALAGEM', custoUnit: 0.65, estoqueFisico: totalPecasEstoque * 2 },
-    { id: 'INS-03', nome: 'Tag Lacre Termocolante com Cordão', categoria: 'AVIAMENTO', custoUnit: 0.90, estoqueFisico: totalPecasEstoque + 10 },
-    { id: 'INS-04', nome: 'Fita Gomada Kraft Personalizada', categoria: 'LOGÍSTICA', custoUnit: 0.30, estoqueFisico: 500 },
-  ];
+  const handleSaveInsumo = (e: React.FormEvent) => {
+    e.preventDefault();
+    const costVal = parseFloat(custo) || 0;
+    const stockVal = parseInt(saldo) || 0;
+
+    if (editingId) {
+      setInsumos(prev => prev.map(i => i.id === editingId ? {
+        ...i,
+        nome,
+        categoria,
+        custoUnit: costVal,
+        estoqueFisico: stockVal
+      } : i));
+    } else {
+      const newItem: InsumoItem = {
+        id: `INS-${String(insumos.length + 1).padStart(2, '0')}`,
+        nome,
+        categoria,
+        custoUnit: costVal,
+        estoqueFisico: stockVal
+      };
+      setInsumos(prev => [...prev, newItem]);
+    }
+    setIsModalOpen(false);
+  };
+
+  const handleDeleteInsumo = (id: string, itemNome: string) => {
+    if (!confirm(`Remover "${itemNome}" da gestão de insumos?`)) return;
+    setInsumos(prev => prev.filter(i => i.id !== id));
+  };
 
   const custoTotalUnboxing = insumos.reduce((acc, curr) => acc + curr.custoUnit, 0);
   const capitalImobilizadoInsumos = insumos.reduce((acc, curr) => acc + (curr.custoUnit * curr.estoqueFisico), 0);
@@ -61,17 +92,16 @@ export default function GestaoInsumosPage() {
             Gestão de Insumos & Unboxing
           </h1>
           <p className="text-xs text-zinc-500 font-mono mt-1 font-bold">
-            Monitoramento de Embalagens, Aviamentos e Cobertura para o Primeiro Lote
+            Monitoramento de Embalagens, Aviamentos e Cobertura de Lotes
           </p>
         </div>
 
         <button
-          onClick={fetchEstoqueTotal}
-          disabled={loading}
-          className="px-4 py-2 bg-white hover:bg-zinc-100 text-zinc-900 border border-zinc-300 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-2xs disabled:opacity-50"
+          onClick={openCreateModal}
+          className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-2xs"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>Sincronizar Suprimentos</span>
+          <Plus className="w-4 h-4" />
+          <span>Cadastrar Insumo</span>
         </button>
       </div>
 
@@ -84,7 +114,7 @@ export default function GestaoInsumosPage() {
             {formatBRL(custoTotalUnboxing)}
           </span>
           <span className="text-xs font-bold text-zinc-500 mt-2 block">
-            Caixa + Seda + Tag + Fita Kraft
+            Custo composto de embalagem por pedido
           </span>
         </div>
 
@@ -96,19 +126,19 @@ export default function GestaoInsumosPage() {
             {formatBRL(capitalImobilizadoInsumos)}
           </span>
           <span className="text-xs font-bold text-zinc-500 mt-2 block">
-            Cobertura total para {totalPecasEstoque} peças
+            Nenhum lote físico de insumos armazenado
           </span>
         </div>
 
-        <div className="p-6 rounded-xl border bg-emerald-50 border-emerald-200 shadow-2xs flex flex-col justify-between">
-          <span className="text-xs font-mono font-black uppercase tracking-wider text-emerald-800 block mb-2 flex items-center gap-1.5">
-            <PackageCheck className="w-4 h-4 text-emerald-600" /> Cobertura do Lote
+        <div className="p-6 rounded-xl border bg-white border-zinc-200 shadow-2xs flex flex-col justify-between">
+          <span className="text-xs font-mono font-black uppercase tracking-wider text-zinc-500 block mb-2">
+            Status de Suprimentos
           </span>
-          <span className="text-3xl font-black text-emerald-800 tabular-nums tracking-tight block font-mono">
-            100%
+          <span className="text-3xl font-black text-amber-600 tabular-nums tracking-tight block font-mono">
+            0 un.
           </span>
-          <span className="text-xs font-bold text-emerald-700 mt-2 block">
-            Suficiente para todos os pedidos do drop
+          <span className="text-xs font-bold text-zinc-500 mt-2 block">
+            Aguardando pedido de compra com gráfica
           </span>
         </div>
       </div>
@@ -116,11 +146,9 @@ export default function GestaoInsumosPage() {
       <div className="bg-white rounded-xl border border-zinc-200 shadow-2xs overflow-hidden">
         <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50/70 flex justify-between items-center">
           <h2 className="text-xs font-black text-zinc-900 tracking-wider uppercase">
-            Inventário Físico de Embalagens e Suprimentos
+            Inventário de Embalagens e Suprimentos
           </h2>
-          <span className="text-xs font-mono text-zinc-500 font-bold">
-            {insumos.length} itens registrados
-          </span>
+          <span className="text-xs font-mono text-zinc-500 font-bold">{insumos.length} itens</span>
         </div>
 
         <div className="divide-y divide-zinc-100 font-mono text-xs">
@@ -140,11 +168,112 @@ export default function GestaoInsumosPage() {
                   <span className="text-[10px] text-zinc-400 block uppercase">Saldo Físico</span>
                   <span className="font-black text-zinc-900 text-sm">{item.estoqueFisico} un.</span>
                 </div>
+                <div className="flex items-center gap-2 border-l border-zinc-200 pl-4">
+                  <button
+                    onClick={() => openEditModal(item)}
+                    className="p-1.5 text-zinc-500 hover:text-zinc-900 rounded-lg hover:bg-zinc-100 transition-colors"
+                    title="Editar Insumo"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteInsumo(item.id, item.nome)}
+                    className="p-1.5 text-rose-500 hover:text-rose-700 rounded-lg hover:bg-rose-50 transition-colors"
+                    title="Excluir"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
       </div>
+
+      {/* MODAL DE CRIAÇÃO / EDIÇÃO DE INSUMOS */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="bg-white border border-zinc-200 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 font-sans">
+            <div className="flex justify-between items-center border-b border-zinc-200 pb-3">
+              <h3 className="text-sm font-black text-zinc-900 uppercase tracking-wider">
+                {editingId ? 'Editar Insumo' : 'Novo Insumo / Embalagem'}
+              </h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-zinc-400 hover:text-zinc-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveInsumo} className="space-y-4 text-xs font-mono">
+              <div>
+                <label className="text-zinc-600 block mb-1 font-bold">Descrição do Insumo</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Caixa Rígida Gaveta LaRomme"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 focus:outline-none focus:border-zinc-400 font-sans"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-zinc-600 block mb-1 font-bold">Categoria</label>
+                  <select
+                    value={categoria}
+                    onChange={(e) => setCategoria(e.target.value)}
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 focus:outline-none focus:border-zinc-400 font-sans"
+                  >
+                    <option value="EMBALAGEM">Embalagem</option>
+                    <option value="AVIAMENTO">Aviamento</option>
+                    <option value="LOGÍSTICA">Logística</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-zinc-600 block mb-1 font-bold">Custo Unitário (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    placeholder="4.80"
+                    value={custo}
+                    onChange={(e) => setCusto(e.target.value)}
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 focus:outline-none focus:border-zinc-400"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-zinc-600 block mb-1 font-bold">Saldo Físico em Galpão (unidades)</label>
+                <input
+                  type="number"
+                  min="0"
+                  required
+                  value={saldo}
+                  onChange={(e) => setSaldo(e.target.value)}
+                  className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 focus:outline-none focus:border-zinc-400 font-bold"
+                />
+              </div>
+
+              <div className="pt-4 border-t border-zinc-200 flex justify-end gap-2 font-sans">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 border border-zinc-200 rounded-lg text-xs font-bold text-zinc-600 hover:bg-zinc-100"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-bold uppercase tracking-wider"
+                >
+                  Salvar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
