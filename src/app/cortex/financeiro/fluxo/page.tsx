@@ -223,7 +223,7 @@ export default function FluxoDeCaixaPage() {
 
       </div>
 
-      {/* EXTRATO ANALÍTICO / LIVRO-RAZÃO ITEM A ITEM */}
+      {/* EXTRATO ANALÍTICO ITEM A ITEM */}
       <div className="bg-white rounded-xl border border-zinc-200 shadow-2xs overflow-hidden">
         <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50/70 flex justify-between items-center">
           <div className="flex items-center gap-2">
