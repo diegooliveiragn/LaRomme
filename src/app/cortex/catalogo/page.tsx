@@ -4,34 +4,30 @@ import React, { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import {
-  Package, Search, RefreshCw, AlertCircle, CheckCircle2,
-  TrendingDown, Plus, ExternalLink, Layers, Box, DollarSign, Loader2
+  Package, Plus, RefreshCw, Loader2, Edit, Trash2, X, Check, ArrowRight
 } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-interface CatalogProduct {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  image?: string;
-  total_stock: number;
-  status: 'ATIVO' | 'ATENÇÃO' | 'ESGOTADO';
-}
-
 export default function CatalogoPage() {
-  const [products, setProducts] = useState<CatalogProduct[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [activeCategory, setActiveCategory] = useState('TODOS');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
+  
+  // Campos do Formulário
+  const [name, setName] = useState('');
+  const [sku, setSku] = useState('');
+  const [category, setCategory] = useState('Topwear');
+  const [price, setPrice] = useState('');
+  const [cost, setCost] = useState('');
 
   const formatBRL = (val: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
-  const fetchCatalogData = async () => {
+  const fetchProducts = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
@@ -40,282 +36,270 @@ export default function CatalogoPage() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-
-      const mapped: CatalogProduct[] = (data || []).map((p: any) => {
-        const pStock = p.stock_p ?? (p.variants?.P?.stock || 0);
-        const mStock = p.stock_m ?? (p.variants?.M?.stock || 0);
-        const gStock = p.stock_g ?? (p.variants?.G?.stock || 0);
-        const ggStock = p.stock_gg ?? (p.variants?.GG?.stock || 0);
-        const tuStock = p.stock_tu ?? (p.variants?.TU?.stock || 0);
-        const total = pStock + mStock + gStock + ggStock + tuStock;
-
-        let status: CatalogProduct['status'] = 'ATIVO';
-        if (total === 0) status = 'ESGOTADO';
-        else if (pStock < 5 || mStock < 5 || gStock < 5 || ggStock < 5 || tuStock < 5) status = 'ATENÇÃO';
-
-        return {
-          id: p.id,
-          name: p.name,
-          category: p.category || 'Geral',
-          price: Number(p.price || 0),
-          image: p.images?.[0] || '',
-          total_stock: total,
-          status,
-        };
-      });
-
-      setProducts(mapped);
+      setProducts(data || []);
     } catch (err: any) {
-      console.error('Erro ao consultar catálogo:', err.message);
+      console.error('Erro ao buscar catálogo:', err.message);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCatalogData();
+    fetchProducts();
   }, []);
 
-  const categories = ['TODOS', 'TOPWEAR', 'BOTTOMWEAR', 'HEADWEAR', 'ACESSORIOS'];
+  const openCreateModal = () => {
+    setEditingProduct(null);
+    setName('');
+    setSku('');
+    setCategory('Topwear');
+    setPrice('');
+    setCost('');
+    setIsModalOpen(true);
+  };
 
-  const filteredProducts = products.filter((p) => {
-    const matchesCategory = activeCategory === 'TODOS' || p.category.toUpperCase() === activeCategory;
-    const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const openEditModal = (p: any) => {
+    setEditingProduct(p);
+    setName(p.name || '');
+    setSku(p.sku_code || '');
+    setCategory(p.category || 'Topwear');
+    setPrice(String(p.price || ''));
+    setCost(String(p.cost_piece || ''));
+    setIsModalOpen(true);
+  };
 
-  const totalPecas = products.reduce((acc, p) => acc + p.total_stock, 0);
-  const totalModelos = products.length;
-  const itensRuptura = products.filter((p) => p.status !== 'ATIVO').length;
-  const valuationAcervo = products.reduce((acc, p) => acc + (p.price * p.total_stock), 0);
+  const handleSaveProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const payload = {
+        name,
+        sku_code: sku,
+        category,
+        price: parseFloat(price) || 0,
+        cost_piece: parseFloat(cost) || 0,
+        stock: 0,
+        stock_p: 0,
+        stock_m: 0,
+        stock_g: 0,
+        stock_gg: 0,
+        status: 'ATIVO'
+      };
+
+      if (editingProduct) {
+        await supabase.from('products').update(payload).eq('id', editingProduct.id);
+      } else {
+        await supabase.from('products').insert([payload]);
+      }
+
+      setIsModalOpen(false);
+      fetchProducts();
+    } catch (err: any) {
+      alert(`Erro ao salvar produto: ${err.message}`);
+    }
+  };
+
+  const handleDeleteProduct = async (id: string, prodName: string) => {
+    if (!confirm(`Deseja remover "${prodName}" do catálogo?`)) return;
+    try {
+      await supabase.from('products').delete().eq('id', id);
+      fetchProducts();
+    } catch (err: any) {
+      alert(`Erro ao excluir: ${err.message}`);
+    }
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300 pb-12 font-sans">
-      
-      {/* CABEÇALHO */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4 border-b border-slate-800/60 pb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-6">
         <div>
-          <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-400 font-semibold block mb-1">
-            Gestão de Coleções & Vitrine
+          <span className="text-xs font-mono uppercase tracking-[0.2em] text-zinc-500 font-bold block mb-1">
+            Engenharia de Acervo & SKUs Oficiais
           </span>
-          <h1 className="font-serif text-3xl font-bold tracking-tight text-white uppercase flex items-center gap-3">
-            Catálogo de Artefatos
+          <h1 className="font-serif text-3xl font-bold tracking-tight text-zinc-900 uppercase">
+            Catálogo de Produtos
           </h1>
-          <p className="text-xs text-slate-400 font-mono mt-1 font-bold">
-            Disponibilidade, Engenharia de Preços e SKUs Oficiais
+          <p className="text-xs text-zinc-500 font-mono mt-1 font-bold">
+            Gestão Direta do Catálogo Oficial LaRomme
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <Link
-            href="/cortex/catalogo/novo"
-            className="px-4 py-2 bg-white hover:bg-slate-200 text-slate-950 font-black rounded-lg text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm"
+          <button
+            onClick={openCreateModal}
+            className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-2xs"
           >
-            <Plus className="w-4 h-4" /> Novo Artefato (PIM)
-          </Link>
+            <Plus className="w-4 h-4" />
+            <span>Cadastrar Artefato</span>
+          </button>
 
           <button
-            onClick={fetchCatalogData}
+            onClick={fetchProducts}
             disabled={loading}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 disabled:opacity-50"
+            className="p-2 bg-white hover:bg-zinc-100 text-zinc-900 border border-zinc-300 rounded-lg transition-all shadow-2xs disabled:opacity-50"
+            title="Atualizar Catálogo"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            <span>Sincronizar Acervo</span>
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
         </div>
       </div>
 
-      {/* KPIS DE ACERVO */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        
-        <div className="p-5 rounded-xl border bg-slate-900/60 border-slate-800 shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
-              Total em Estoque
-            </span>
-            <Box className="w-4 h-4 text-emerald-400" />
-          </div>
-          <span className="text-3xl font-black text-white tabular-nums tracking-tight block">
-            {totalPecas}
-          </span>
-          <span className="text-[11px] font-bold text-slate-500 mt-2 block">
-            Peças físicas no galpão
-          </span>
-        </div>
-
-        <div className="p-5 rounded-xl border bg-slate-900/60 border-slate-800 shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
-              Modelos Registrados
-            </span>
-            <Layers className="w-4 h-4 text-slate-400" />
-          </div>
-          <span className="text-3xl font-black text-white tabular-nums tracking-tight block">
-            {totalModelos}
-          </span>
-          <span className="text-[11px] font-bold text-slate-500 mt-2 block">
-            SKUs pai ativos
-          </span>
-        </div>
-
-        <div className="p-5 rounded-xl border bg-rose-500/10 border-rose-500/30 shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-rose-300">
-              Rupturas / Atenção
-            </span>
-            <AlertCircle className="w-4 h-4 text-rose-400" />
-          </div>
-          <span className="text-3xl font-black text-rose-400 tabular-nums tracking-tight block">
-            {itensRuptura}
-          </span>
-          <span className="text-[11px] font-bold text-rose-300/80 mt-2 block">
-            Modelos com grade crítica
-          </span>
-        </div>
-
-        <div className="p-5 rounded-xl border bg-slate-900/60 border-slate-800 shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-300">
-              Valuation de Vitrine
-            </span>
-            <DollarSign className="w-4 h-4 text-emerald-400" />
-          </div>
-          <span className="text-3xl font-black text-emerald-400 tabular-nums tracking-tight block font-mono">
-            {formatBRL(valuationAcervo)}
-          </span>
-          <span className="text-[11px] font-bold text-slate-500 mt-2 block">
-            Potencial bruto de faturamento
-          </span>
-        </div>
-
-      </div>
-
-      {/* FILTROS E BUSCA */}
-      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider transition-all shrink-0 ${
-                activeCategory === cat
-                  ? 'bg-white text-slate-950 font-black shadow-sm'
-                  : 'text-slate-400 hover:text-white bg-slate-900 border border-slate-800'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
-
-        <div className="relative min-w-[240px]">
-          <Search className="w-4 h-4 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Buscar modelo..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-slate-600 font-sans"
-          />
-        </div>
-      </div>
-
-      {/* TABELA DE ARTEFATOS */}
-      <div className="bg-slate-950/60 rounded-xl border border-slate-800 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/80">
-          <h2 className="text-xs font-bold text-white tracking-widest uppercase flex items-center gap-2">
-            <Package className="w-4 h-4 text-slate-400" /> Acervo Oficial LaRomme
+      {/* LISTAGEM DE PRODUTOS NO TEMA CLARO */}
+      <div className="bg-white rounded-xl border border-zinc-200 shadow-2xs overflow-hidden">
+        <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50/70 flex justify-between items-center">
+          <h2 className="text-xs font-black text-zinc-900 tracking-wider uppercase">
+            Modelos Registrados no Acervo
           </h2>
-          <span className="text-[11px] font-mono text-slate-400 font-bold tabular-nums">
-            {filteredProducts.length} itens listados
+          <span className="text-xs font-mono text-zinc-500 font-bold tabular-nums">
+            {products.length} itens cadastrados
           </span>
         </div>
 
         {loading ? (
-          <div className="p-16 text-center text-xs font-mono font-bold text-slate-400 flex flex-col items-center gap-3">
-            <Loader2 className="w-6 h-6 animate-spin text-slate-500" />
-            Consultando acervo no banco de dados...
+          <div className="p-16 text-center text-xs font-mono font-bold text-zinc-500 flex flex-col items-center gap-3">
+            <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
+            Sincronizando acervo...
           </div>
-        ) : filteredProducts.length === 0 ? (
-          <div className="p-16 text-center text-xs font-mono font-bold text-slate-500">
-            Nenhum artefato localizado com os filtros aplicados.
+        ) : products.length === 0 ? (
+          <div className="p-16 text-center text-xs font-mono font-bold text-zinc-500 flex flex-col items-center gap-3">
+            <Package className="w-10 h-10 text-zinc-300" />
+            Nenhum produto cadastrado até o momento. Utilize o botão acima para adicionar.
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs font-sans">
-              <thead className="bg-slate-900/50 border-b border-slate-800 text-slate-400 uppercase tracking-widest text-[10px]">
-                <tr>
-                  <th className="px-6 py-4 font-bold">Artefato</th>
-                  <th className="px-6 py-4 font-bold">Categoria</th>
-                  <th className="px-6 py-4 font-bold text-right">Preço Oficial</th>
-                  <th className="px-6 py-4 font-bold text-center">Saldo Físico</th>
-                  <th className="px-6 py-4 font-bold text-center">Disponibilidade</th>
-                  <th className="px-6 py-4 font-bold text-right">Ação</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {filteredProducts.map((p) => (
-                  <tr key={p.id} className="hover:bg-slate-900/40 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        {p.image ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={p.image} alt={p.name} className="w-10 h-10 object-cover rounded-md border border-slate-800 bg-slate-900" />
-                        ) : (
-                          <div className="w-10 h-10 rounded-md border border-slate-800 bg-slate-900 flex items-center justify-center">
-                            <Package className="w-4 h-4 text-slate-700" />
-                          </div>
-                        )}
-                        <div>
-                          <span className="font-bold text-white block font-sans text-sm">{p.name}</span>
-                          <span className="text-[10px] font-mono text-slate-500">{p.id.slice(0, 12)}</span>
-                        </div>
-                      </div>
-                    </td>
+          <div className="divide-y divide-zinc-100 font-mono text-xs">
+            {products.map(p => (
+              <div key={p.id} className="p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-zinc-50/60 transition-colors">
+                <div>
+                  <span className="font-bold text-zinc-900 text-sm block font-sans">{p.name}</span>
+                  <span className="text-[11px] text-zinc-400 uppercase">{p.sku_code || 'SKU PENDENTE'} • {p.category}</span>
+                </div>
 
-                    <td className="px-6 py-4 font-mono font-bold text-slate-300 uppercase tracking-wider text-[11px]">
-                      {p.category}
-                    </td>
+                <div className="flex items-center gap-6">
+                  <div className="text-right">
+                    <span className="text-[10px] text-zinc-400 block uppercase">Preço Oficial</span>
+                    <span className="font-black text-zinc-900 text-sm tabular-nums">{formatBRL(p.price || 0)}</span>
+                  </div>
 
-                    <td className="px-6 py-4 text-right font-black font-mono text-white tabular-nums text-sm">
-                      {formatBRL(p.price)}
-                    </td>
-
-                    <td className="px-6 py-4 text-center font-black font-mono text-white tabular-nums text-sm">
-                      {p.total_stock} un.
-                    </td>
-
-                    <td className="px-6 py-4 text-center">
-                      <div className="flex justify-center">
-                        <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded flex items-center gap-1 border ${
-                          p.status === 'ATIVO' ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30' :
-                          p.status === 'ATENÇÃO' ? 'bg-amber-500/10 text-amber-300 border-amber-500/30' :
-                          'bg-rose-500/10 text-rose-300 border-rose-500/30'
-                        }`}>
-                          {p.status === 'ATIVO' && <CheckCircle2 className="w-2.5 h-2.5" />}
-                          {p.status === 'ATENÇÃO' && <AlertCircle className="w-2.5 h-2.5" />}
-                          {p.status === 'ESGOTADO' && <TrendingDown className="w-2.5 h-2.5" />}
-                          {p.status}
-                        </span>
-                      </div>
-                    </td>
-
-                    <td className="px-6 py-4 text-right">
-                      <Link
-                        href="/cortex/estoque"
-                        className="text-[11px] font-bold text-slate-400 hover:text-white uppercase tracking-wider inline-flex items-center gap-1"
-                      >
-                        Ver WMS <ExternalLink className="w-3 h-3" />
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                  <div className="flex items-center gap-2 border-l border-zinc-200 pl-4">
+                    <button
+                      onClick={() => openEditModal(p)}
+                      className="p-1.5 text-zinc-500 hover:text-zinc-900 rounded-lg hover:bg-zinc-100 transition-colors"
+                      title="Editar"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteProduct(p.id, p.name)}
+                      className="p-1.5 text-rose-500 hover:text-rose-700 rounded-lg hover:bg-rose-50 transition-colors"
+                      title="Excluir"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>
 
+      {/* MODAL DE CRIAÇÃO / EDIÇÃO */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="bg-white border border-zinc-200 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 font-sans">
+            <div className="flex justify-between items-center border-b border-zinc-200 pb-3">
+              <h3 className="text-sm font-black text-zinc-900 uppercase tracking-wider">
+                {editingProduct ? 'Editar Artefato' : 'Novo Artefato no Catálogo'}
+              </h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-zinc-400 hover:text-zinc-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveProduct} className="space-y-4 text-xs font-mono">
+              <div>
+                <label className="text-zinc-600 block mb-1 font-bold">Nome do Produto</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="Ex: Camiseta Boxy Heavyweight"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 focus:outline-none focus:border-zinc-400 font-sans"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-zinc-600 block mb-1 font-bold">Código SKU</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Ex: BOXY-HW-01"
+                    value={sku}
+                    onChange={(e) => setSku(e.target.value)}
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 focus:outline-none focus:border-zinc-400 uppercase"
+                  />
+                </div>
+                <div>
+                  <label className="text-zinc-600 block mb-1 font-bold">Categoria</label>
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 focus:outline-none focus:border-zinc-400 font-sans"
+                  >
+                    <option value="Topwear">Topwear</option>
+                    <option value="Bottomwear">Bottomwear</option>
+                    <option value="Headwear">Headwear</option>
+                    <option value="Acessórios">Acessórios</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-zinc-600 block mb-1 font-bold">Preço de Venda (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    required
+                    placeholder="240.00"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 focus:outline-none focus:border-zinc-400"
+                  />
+                </div>
+                <div>
+                  <label className="text-zinc-600 block mb-1 font-bold">Custo de Confecção CPV (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="65.00"
+                    value={cost}
+                    onChange={(e) => setCost(e.target.value)}
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 focus:outline-none focus:border-zinc-400"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-zinc-200 flex justify-end gap-2 font-sans">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-4 py-2 border border-zinc-200 rounded-lg text-xs font-bold text-zinc-600 hover:bg-zinc-100"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-bold uppercase tracking-wider"
+                >
+                  Salvar Produto
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -67,14 +67,6 @@ const MENU_STRUCTURE: MenuSection[] = [
   }
 ];
 
-interface OperationalAlert {
-  id: string;
-  type: 'LOGISTICA' | 'ABANDONO' | 'ESTOQUE';
-  title: string;
-  description: string;
-  link: string;
-}
-
 export default function CortexLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -82,17 +74,17 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
   const [loading, setLoading] = useState(true);
   const [openSections, setOpenSections] = useState<string[]>([]);
   const [isAlertDrawerOpen, setIsAlertDrawerOpen] = useState(false);
-  const [alerts, setAlerts] = useState<OperationalAlert[]>([]);
+  const [alerts, setAlerts] = useState<any[]>([]);
 
   const fetchAlerts = async () => {
     try {
-      const list: OperationalAlert[] = [];
-
+      const list: any[] = [];
+      // Consulta estrita a pedidos pagos que requerem despacho
       const { data: paidOrders } = await supabase
         .from('orders')
         .select('id, short_id, customer_name')
         .eq('status', 'paid')
-        .limit(3);
+        .limit(5);
 
       (paidOrders || []).forEach((o: any) => {
         list.push({
@@ -104,49 +96,9 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
         });
       });
 
-      const { data: pendingOrders } = await supabase
-        .from('orders')
-        .select('id, short_id, total_amount')
-        .eq('status', 'pending')
-        .limit(3);
-
-      (pendingOrders || []).forEach((p: any) => {
-        list.push({
-          id: `pend-${p.id}`,
-          type: 'ABANDONO',
-          title: `Reserva Pix retida: #${p.short_id || p.id.slice(0, 8)}`,
-          description: `R$ ${Number(p.total_amount || 0).toFixed(2)} • Risco de fuga`,
-          link: '/cortex/qualidade/abandonos'
-        });
-      });
-
-      const { data: prods } = await supabase
-        .from('products')
-        .select('id, name, stock_p, stock_m, stock_g, stock_gg, stock_tu')
-        .limit(6);
-
-      (prods || []).forEach((item: any) => {
-        const pStock = item.stock_p ?? 0;
-        const mStock = item.stock_m ?? 0;
-        const gStock = item.stock_g ?? 0;
-        const ggStock = item.stock_gg ?? 0;
-        const tuStock = item.stock_tu ?? 0;
-        const total = pStock + mStock + gStock + ggStock + tuStock;
-
-        if (total === 0) {
-          list.push({
-            id: `stk-${item.id}`,
-            type: 'ESTOQUE',
-            title: `Estoque zerado: ${item.name}`,
-            description: 'Saldo zerado no galpão. Reposição necessária.',
-            link: '/cortex/estoque'
-          });
-        }
-      });
-
       setAlerts(list);
-    } catch (err) {
-      console.error('Erro ao consultar alertas:', err);
+    } catch {
+      setAlerts([]);
     }
   };
 
@@ -215,8 +167,8 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
 
   return (
     <div className="flex min-h-screen bg-zinc-50 font-sans text-zinc-900 selection:bg-zinc-200">
-
-      {/* SIDEBAR (SCROLL TOUCHPAD DESTRAVADO COM OVERFLOW NATIVO) */}
+      
+      {/* SIDEBAR */}
       <aside
         data-lenis-prevent="true"
         className="hidden lg:flex flex-col w-72 bg-white border-r border-zinc-200 shadow-sm z-20 sticky top-0 h-screen select-none"
@@ -233,7 +185,6 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
           </Link>
         </div>
 
-        {/* CONTAINER COM SCROLL TOTALMENTE INDEPENDENTE */}
         <nav
           data-lenis-prevent="true"
           className="flex-1 overflow-y-auto overscroll-contain touch-pan-y py-6 px-4 space-y-2"
@@ -298,8 +249,6 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
 
       {/* ÁREA PRINCIPAL */}
       <main className="flex-1 flex flex-col min-w-0 bg-zinc-50">
-        
-        {/* HEADER SUPERIOR */}
         <header className="h-20 border-b border-zinc-200 px-8 flex items-center justify-between bg-white/90 backdrop-blur sticky top-0 z-10">
           <div className="flex items-center gap-2 text-xs font-mono uppercase tracking-wider">
             <span className="text-zinc-400 font-bold">TERMINAL</span>
@@ -313,21 +262,22 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
               <span>Banco Integrado</span>
             </div>
 
-            {/* BOTÃO DO SININHO INTERATIVO */}
+            {/* SINO COM BADGE 100% REATIVO (SÓ RENDERIZA SE ALERTS > 0) */}
             <button
               onClick={() => setIsAlertDrawerOpen(!isAlertDrawerOpen)}
               className="relative p-2 text-zinc-500 hover:text-zinc-900 transition-colors"
               title="Alertas da Operação"
             >
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white ring-2 ring-white tabular-nums">
-                {alerts.length > 0 ? alerts.length : 3}
-              </span>
+              {alerts.length > 0 && (
+                <span className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[9px] font-black text-white ring-2 ring-white tabular-nums animate-pulse">
+                  {alerts.length}
+                </span>
+              )}
             </button>
           </div>
         </header>
 
-        {/* CONTAINER DOS MÓDULOS */}
         <div className="flex-1 p-8">
           <div className="max-w-7xl mx-auto">
             {children}
@@ -345,7 +295,7 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
           <aside className="relative w-full max-w-md bg-white border-l border-zinc-200 h-full flex flex-col z-10 shadow-2xl animate-in slide-in-from-right duration-300 font-sans">
             <div className="flex items-center justify-between p-6 border-b border-zinc-200 bg-zinc-50">
               <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-600">
+                <div className="p-2 rounded-lg bg-zinc-100 text-zinc-700">
                   <Bell className="w-5 h-5" />
                 </div>
                 <div>
@@ -377,37 +327,11 @@ export default function CortexLayout({ children }: { children: React.ReactNode }
                     onClick={() => setIsAlertDrawerOpen(false)}
                     className="block p-4 rounded-xl bg-zinc-50 border border-zinc-200 hover:border-zinc-400 hover:bg-white transition-all group shadow-2xs"
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <span className={`text-[10px] font-mono font-black uppercase tracking-wider px-2 py-0.5 rounded border ${
-                        alert.type === 'LOGISTICA' ? 'bg-amber-50 text-amber-800 border-amber-200' :
-                        alert.type === 'ABANDONO' ? 'bg-rose-50 text-rose-800 border-rose-200' :
-                        'bg-zinc-100 text-zinc-800 border-zinc-300'
-                      }`}>
-                        {alert.type}
-                      </span>
-                      <span className="text-xs text-zinc-400 font-bold group-hover:text-zinc-900 flex items-center gap-1">
-                        Ver <ArrowRight className="w-3.5 h-3.5" />
-                      </span>
-                    </div>
-                    <h4 className="text-xs font-bold text-zinc-900 mt-2">
-                      {alert.title}
-                    </h4>
-                    <p className="text-xs text-zinc-600 mt-1">
-                      {alert.description}
-                    </p>
+                    <h4 className="text-xs font-bold text-zinc-900">{alert.title}</h4>
+                    <p className="text-xs text-zinc-600 mt-1">{alert.description}</p>
                   </Link>
                 ))
               )}
-            </div>
-
-            <div className="p-4 border-t border-zinc-200 bg-zinc-50 flex justify-between items-center text-xs font-mono font-bold text-zinc-500">
-              <span>LaRomme Operations Core</span>
-              <button
-                onClick={fetchAlerts}
-                className="text-zinc-900 hover:text-black uppercase tracking-wider font-black"
-              >
-                Atualizar Sinais
-              </button>
             </div>
           </aside>
         </div>
