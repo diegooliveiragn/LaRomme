@@ -8,23 +8,16 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-interface ProductSupply {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-}
-
 export default function SupplyPage() {
-  const [products, setProducts] = useState<ProductSupply[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   
-  // Variáveis do Simulador de Precificação
+  // Simulador de Markup
   const [custoMaoObra, setCustoMaoObra] = useState<number>(45);
   const [custoTecido, setCustoTecido] = useState<number>(28);
   const [custoInsumos, setCustoInsumos] = useState<number>(7.5);
-  const [margemAlvo, setMargemAlvo] = useState<number>(45); // 45%
+  const [margemAlvo, setMargemAlvo] = useState<number>(45);
 
   const formatBRL = (val: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
@@ -34,7 +27,7 @@ export default function SupplyPage() {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, category, price')
+        .select('*')
         .order('price', { ascending: false });
 
       if (error) throw error;
@@ -43,7 +36,7 @@ export default function SupplyPage() {
         setSelectedProductId(data[0].id);
       }
     } catch (err: any) {
-      console.error('Erro ao consultar produtos em Supply:', err.message);
+      console.error('Erro em Supply:', err.message);
     } finally {
       setLoading(false);
     }
@@ -55,9 +48,8 @@ export default function SupplyPage() {
 
   const selectedProduct = products.find(p => p.id === selectedProductId) || products[0];
 
-  // Cálculo da Engenharia de Preços
   const custoDiretoTotal = custoMaoObra + custoTecido + custoInsumos;
-  const taxaImpostoGateway = 0.06 + 0.0499; // 10.99% (Simples + Gateway)
+  const taxaImpostoGateway = 0.06 + 0.0499;
   const precoSugerido = custoDiretoTotal / (1 - (margemAlvo / 100) - taxaImpostoGateway);
   const markupMultiplicador = custoDiretoTotal > 0 ? precoSugerido / custoDiretoTotal : 0;
 
@@ -68,11 +60,11 @@ export default function SupplyPage() {
           <span className="text-xs font-mono uppercase tracking-[0.2em] text-zinc-500 font-bold block mb-1">
             Engenharia de Produto & Private Label
           </span>
-          <h1 className="font-serif text-3xl font-bold tracking-tight text-zinc-900 uppercase flex items-center gap-3">
+          <h1 className="font-serif text-3xl font-bold tracking-tight text-zinc-900 uppercase">
             Supply & Matriz de Produção
           </h1>
           <p className="text-xs text-zinc-500 font-mono mt-1 font-bold">
-            Composição de CPV, Tech Packs Oficiais e Simulador de Markup
+            Composição de CPV, Fichas de Confecção e Simulador de Markup
           </p>
         </div>
 
@@ -88,28 +80,29 @@ export default function SupplyPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* TABELA DE MATRIZ DOS 4 ARTEFATOS */}
+        {/* LISTAGEM DOS ARTEFATOS CADASTRADOS */}
         <div className="lg:col-span-7 bg-white rounded-xl border border-zinc-200 shadow-2xs overflow-hidden">
           <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50/70 flex justify-between items-center">
             <h2 className="text-xs font-black text-zinc-900 tracking-wider uppercase flex items-center gap-2">
-              <Factory className="w-4 h-4 text-zinc-600" /> Acervo em Linha de Produção
+              <Factory className="w-4 h-4 text-zinc-600" /> Acervo em Pré-Produção
             </h2>
             <span className="text-xs font-mono text-zinc-500 font-bold">
-              {products.length} modelos ativos
+              {products.length} modelos configurados
             </span>
           </div>
 
           {loading ? (
             <div className="p-16 text-center text-xs font-mono font-bold text-zinc-500 flex flex-col items-center gap-3">
               <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
-              Carregando artefatos do banco...
+              Carregando artefatos...
             </div>
           ) : (
             <div className="divide-y divide-zinc-100 font-mono text-xs">
               {products.map(p => {
                 const isSelected = p.id === selectedProductId;
-                const cpvBase = Number(p.price) * 0.35;
-                const margemBruta = Number(p.price) - cpvBase;
+                const preco = Number(p.price || 0);
+                const cpvBase = Number(p.cost_piece || (preco * 0.35));
+                const margemBruta = preco - cpvBase;
 
                 return (
                   <div
@@ -126,12 +119,12 @@ export default function SupplyPage() {
 
                     <div className="flex items-center gap-6 text-right">
                       <div>
-                        <span className="text-[10px] text-zinc-400 block uppercase">CPV Base (35%)</span>
+                        <span className="text-[10px] text-zinc-400 block uppercase">CPV Base</span>
                         <span className="font-bold text-zinc-700">{formatBRL(cpvBase)}</span>
                       </div>
                       <div>
                         <span className="text-[10px] text-zinc-400 block uppercase">Preço Tabela</span>
-                        <span className="font-black text-zinc-900">{formatBRL(p.price)}</span>
+                        <span className="font-black text-zinc-900">{formatBRL(preco)}</span>
                       </div>
                       <div>
                         <span className="text-[10px] text-emerald-700 block uppercase font-bold">Margem Bruta</span>

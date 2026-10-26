@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import {
   Package, DollarSign, Layers, ArrowRight,
-  RefreshCw, Loader2, TrendingUp, AlertTriangle
+  RefreshCw, Loader2, TrendingUp, AlertTriangle, ExternalLink
 } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -33,19 +33,21 @@ export default function ValuationEstoquePage() {
     try {
       const { data, error } = await supabase
         .from('products')
-        .select('*');
+        .select('*')
+        .order('name', { ascending: true });
 
       if (error) throw error;
 
       const mapped: ProductValuation[] = (data || []).map((p: any) => {
-        const total = (p.stock_p || 0) + (p.stock_m || 0) + (p.stock_g || 0) + (p.stock_gg || 0) + (p.stock_tu || 0);
+        const total = (p.stock_p || 0) + (p.stock_m || 0) + (p.stock_g || 0) + (p.stock_gg || 0);
         const preco = Number(p.price || 0);
+        const custo = Number(p.cost_piece || (preco * 0.35));
         return {
           id: p.id,
           name: p.name,
-          category: p.category || 'TOPWEAR',
+          category: p.category || 'Topwear',
           price: preco,
-          cpv: preco * 0.35, // Custo de confecção padrão LaRomme
+          cpv: custo,
           total_stock: total
         };
       });
@@ -106,7 +108,7 @@ export default function ValuationEstoquePage() {
             {formatBRL(custoAdquirido)}
           </span>
           <span className="text-xs font-bold text-zinc-500 mt-2 block">
-            Capital investido nas {totalPecas} peças
+            Capital investido nas {totalPecas} peças produzidas
           </span>
         </div>
 
@@ -142,42 +144,58 @@ export default function ValuationEstoquePage() {
 
       </div>
 
-      {/* TABELA DE VALUATION POR PEÇA */}
+      {/* DETALHAMENTO DE CADA ARTEFATO */}
       <div className="bg-white rounded-xl border border-zinc-200 shadow-2xs overflow-hidden">
         <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50/70 flex justify-between items-center">
           <h2 className="text-xs font-black text-zinc-900 tracking-wider uppercase">
-            Detalhamento por Artefato do Primeiro Lote
+            Detalhamento por Artefato do Catálogo
           </h2>
           <span className="text-xs font-mono text-zinc-500 font-bold tabular-nums">
             {products.length} modelos
           </span>
         </div>
 
-        <div className="divide-y divide-zinc-100 font-mono text-xs">
-          {products.map(p => (
-            <div key={p.id} className="p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-zinc-50/60 transition-colors">
-              <div>
-                <span className="font-bold text-zinc-900 text-sm block font-sans">{p.name}</span>
-                <span className="text-[11px] text-zinc-400 uppercase">{p.category} • Saldo: {p.total_stock} unidades</span>
-              </div>
+        {loading ? (
+          <div className="p-16 text-center text-xs font-mono font-bold text-zinc-500 flex flex-col items-center gap-3">
+            <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
+            Consolidando valuation...
+          </div>
+        ) : (
+          <div className="divide-y divide-zinc-100 font-mono text-xs">
+            {products.map(p => (
+              <div key={p.id} className="p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-zinc-50/60 transition-colors">
+                <div>
+                  <span className="font-bold text-zinc-900 text-sm block font-sans">{p.name}</span>
+                  <span className="text-[11px] text-zinc-400 uppercase">
+                    {p.category} • SALDO: {p.total_stock} UNIDADES
+                  </span>
+                </div>
 
-              <div className="flex items-center gap-6 text-right">
-                <div>
-                  <span className="text-[10px] text-zinc-400 block uppercase">Custo Unitário</span>
-                  <span className="font-bold text-zinc-600">{formatBRL(p.cpv)}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-zinc-400 block uppercase">Preço Venda</span>
-                  <span className="font-bold text-zinc-900">{formatBRL(p.price)}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-emerald-700 block uppercase font-bold">VGV Total</span>
-                  <span className="font-black text-emerald-800 text-sm">{formatBRL(p.price * p.total_stock)}</span>
+                <div className="flex items-center gap-6 text-right">
+                  <div>
+                    <span className="text-[10px] text-zinc-400 block uppercase">Custo Unitário</span>
+                    <span className="font-bold text-zinc-600">{formatBRL(p.cpv)}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-zinc-400 block uppercase">Preço Venda</span>
+                    <span className="font-bold text-zinc-900">{formatBRL(p.price)}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-emerald-700 block uppercase font-bold">VGV Total</span>
+                    <span className="font-black text-emerald-800 text-sm">{formatBRL(p.price * p.total_stock)}</span>
+                  </div>
+                  <Link
+                    href="/cortex/estoque"
+                    className="p-1.5 text-zinc-400 hover:text-zinc-900 rounded-lg hover:bg-zinc-100 transition-colors"
+                    title="Ajustar Saldo no WMS"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </Link>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
