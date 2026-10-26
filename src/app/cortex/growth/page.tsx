@@ -1,220 +1,180 @@
 ﻿'use client';
 
-import React, { useState } from 'react';
-import { TrendingUp, Link as LinkIcon, Users, Target, Activity, MessageCircle, Copy, CheckCircle2, AlertTriangle, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import React, { useEffect, useState } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import { TrendingUp, Users, RefreshCw, Loader2, Award, ArrowUpRight } from 'lucide-react';
 
-export default function GrowthAnalytics() {
-  const formatBRL = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-  // Estados do Gerador UTM
-  const [urlOriginal, setUrlOriginal] = useState('');
-  const [utmSource, setUtmSource] = useState('');
-  const [utmMedium, setUtmMedium] = useState('');
-  const [utmCampaign, setUtmCampaign] = useState('');
-  const [generatedLink, setGeneratedLink] = useState('');
-  const [copied, setCopied] = useState(false);
+interface PatronSummary {
+  email: string;
+  name: string;
+  totalSpent: number;
+  ordersCount: number;
+  lastOrderDate: string;
+}
 
-  const handleGenerateUTM = () => {
-    if (!urlOriginal) return;
-    const slug = utmCampaign ? utmCampaign.toLowerCase().replace(/\s+/g, '-') : 'campanha';
-    setGeneratedLink(`https://laromme.com.br/go/${utmSource.toLowerCase()}-${slug}`);
-    setCopied(false);
+export default function GrowthPage() {
+  const [patrons, setPatrons] = useState<PatronSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const formatBRL = (val: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+  const fetchGrowthData = async () => {
+    setLoading(true);
+    try {
+      const { data: orders, error } = await supabase
+        .from('orders')
+        .select('customer_name, customer_email, total_amount, status, created_at')
+        .in('status', ['paid', 'shipped', 'delivered'])
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      const patronMap: Record<string, PatronSummary> = {};
+      (orders || []).forEach(o => {
+        const email = o.customer_email || 'patrono@laromme.com.br';
+        if (!patronMap[email]) {
+          patronMap[email] = {
+            email,
+            name: o.customer_name || 'Patrono Oficial',
+            totalSpent: 0,
+            ordersCount: 0,
+            lastOrderDate: o.created_at,
+          };
+        }
+        patronMap[email].totalSpent += Number(o.total_amount || 0);
+        patronMap[email].ordersCount += 1;
+      });
+
+      setPatrons(Object.values(patronMap).sort((a, b) => b.totalSpent - a.totalSpent));
+    } catch (err: any) {
+      console.error('Erro ao buscar dados de Growth:', err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(generatedLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  useEffect(() => {
+    fetchGrowthData();
+  }, []);
 
-  // Mock Data: Radar RFM (Recência, Frequência, Valor Monetário)
-  const rfmClients = [
-    { id: '1', name: 'Thiago Mendes', ltv: 1450.00, lastPurchase: 'Há 85 dias', status: 'Risco de Fuga', color: 'rose' },
-    { id: '2', name: 'Marina Costa', ltv: 890.00, lastPurchase: 'Há 12 dias', status: 'Ativo VIP', color: 'emerald' },
-    { id: '3', name: 'Lucas Albuquerque', ltv: 3200.00, lastPurchase: 'Há 110 dias', status: 'Dormente', color: 'amber' },
-  ];
+  const totalPatronos = patrons.length;
+  const ltvMedio = totalPatronos > 0 ? patrons.reduce((acc, p) => acc + p.totalSpent, 0) / totalPatronos : 0;
+  const recompras = patrons.filter(p => p.ordersCount > 1).length;
+  const taxaRetencao = totalPatronos > 0 ? Math.round((recompras / totalPatronos) * 100) : 0;
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-12 font-sans max-w-6xl mx-auto">
-      
-      {/* CABEÇALHO */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-5">
+    <div className="space-y-8 animate-in fade-in duration-300 pb-12 font-sans">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-6">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 font-serif tracking-wide uppercase flex items-center gap-3">
-            Growth & Comportamento <TrendingUp className="w-6 h-6 text-emerald-600" />
+          <span className="text-xs font-mono uppercase tracking-[0.2em] text-zinc-500 font-bold block mb-1">
+            Retenção & Análise RFM
+          </span>
+          <h1 className="font-serif text-3xl font-bold tracking-tight text-zinc-900 uppercase">
+            Growth & LTV de Patronos
           </h1>
-          <p className="text-sm text-zinc-500 font-mono mt-1 font-bold">Rastreio de Aquisição, Persona True Fit e Radar RFM</p>
+          <p className="text-xs text-zinc-500 font-mono mt-1 font-bold">
+            Métricas de Ciclo de Vida, Recompra e Ranking de Clientes
+          </p>
+        </div>
+
+        <button
+          onClick={fetchGrowthData}
+          disabled={loading}
+          className="px-4 py-2 bg-white hover:bg-zinc-100 text-zinc-900 border border-zinc-300 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-2xs disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <span>Atualizar LTV</span>
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-6 rounded-xl border bg-white border-zinc-200 shadow-2xs flex flex-col justify-between">
+          <span className="text-xs font-mono font-black uppercase tracking-wider text-zinc-500 block mb-2">
+            Base Ativa de Patronos
+          </span>
+          <span className="text-3xl font-black text-zinc-900 tabular-nums tracking-tight block font-mono">
+            {totalPatronos}
+          </span>
+          <span className="text-xs font-bold text-zinc-500 mt-2 block">
+            Patronos com liquidações confirmadas
+          </span>
+        </div>
+
+        <div className="p-6 rounded-xl border bg-white border-zinc-200 shadow-2xs flex flex-col justify-between">
+          <span className="text-xs font-mono font-black uppercase tracking-wider text-zinc-500 block mb-2">
+            LTV Médio (Valor Vitalício)
+          </span>
+          <span className="text-3xl font-black text-zinc-900 tabular-nums tracking-tight block font-mono">
+            {formatBRL(ltvMedio)}
+          </span>
+          <span className="text-xs font-bold text-emerald-700 mt-2 block">
+            Gasto médio acumulado por patrono
+          </span>
+        </div>
+
+        <div className="p-6 rounded-xl border bg-white border-zinc-200 shadow-2xs flex flex-col justify-between">
+          <span className="text-xs font-mono font-black uppercase tracking-wider text-zinc-500 block mb-2">
+            Taxa de Recompra
+          </span>
+          <span className="text-3xl font-black text-zinc-900 tabular-nums tracking-tight block font-mono">
+            {taxaRetencao}%
+          </span>
+          <span className="text-xs font-bold text-zinc-500 mt-2 block">
+            {recompras} patronos com múltiplos pedidos
+          </span>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
-        {/* COLUNA ESQUERDA: UTM E RFM */}
-        <div className="lg:col-span-7 space-y-6">
-          
-          {/* Seção 1: Gerador UTM Proprietário */}
-          <div className="bg-white p-6 rounded-lg border border-zinc-200 shadow-sm space-y-5">
-            <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-              <h2 className="text-sm font-bold text-zinc-900 tracking-widest uppercase flex items-center gap-2">
-                <LinkIcon className="w-4 h-4 text-zinc-500" /> Gerador de Links (UTM LaRomme)
-              </h2>
-              <span className="text-[10px] font-mono bg-zinc-100 px-2 py-1 rounded text-zinc-500 font-bold uppercase">Substitui Linktree</span>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500 mb-2">URL Destino (Vitrine ou Produto)</label>
-                <input 
-                  type="text" 
-                  value={urlOriginal}
-                  onChange={(e) => setUrlOriginal(e.target.value)}
-                  placeholder="Ex: https://laromme.com.br/produto/tenax"
-                  className="w-full bg-zinc-50 border border-zinc-200 px-4 py-3 text-sm text-zinc-900 focus:outline-none focus:border-zinc-500 transition-colors font-mono"
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500 mb-2">Origem (Source)</label>
-                  <input type="text" value={utmSource} onChange={(e) => setUtmSource(e.target.value)} placeholder="Ex: Meta" className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:border-zinc-500 font-mono" />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500 mb-2">Mídia (Medium)</label>
-                  <input type="text" value={utmMedium} onChange={(e) => setUtmMedium(e.target.value)} placeholder="Ex: IG_Stories" className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:border-zinc-500 font-mono" />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-500 mb-2">Campanha</label>
-                  <input type="text" value={utmCampaign} onChange={(e) => setUtmCampaign(e.target.value)} placeholder="Ex: Drop02" className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 text-sm text-zinc-900 focus:outline-none focus:border-zinc-500 font-mono" />
-                </div>
-              </div>
-
-              <button 
-                onClick={handleGenerateUTM}
-                className="w-full py-3 text-xs font-black uppercase tracking-wider text-white bg-zinc-900 border border-zinc-800 rounded hover:bg-zinc-800 transition-colors"
-              >
-                Gerar Link Encurtado LaRomme
-              </button>
-
-              {generatedLink && (
-                <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded flex items-center justify-between animate-in zoom-in duration-300">
-                  <div>
-                    <span className="block text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-800 mb-1">Link Pronto para Uso:</span>
-                    <span className="text-sm font-mono text-emerald-900 font-bold">{generatedLink}</span>
-                  </div>
-                  <button onClick={copyToClipboard} className="p-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded transition-colors">
-                    {copied ? <CheckCircle2 className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Seção 2: Radar RFM */}
-          <div className="bg-white rounded-lg border border-zinc-200 shadow-sm overflow-hidden flex flex-col">
-            <div className="px-6 py-4 border-b border-zinc-100 bg-zinc-50">
-              <h2 className="text-sm font-bold text-zinc-900 tracking-widest uppercase flex items-center gap-2">
-                <Target className="w-4 h-4 text-rose-500" /> Radar RFM (Resgate de Patronos)
-              </h2>
-            </div>
-            
-            <div className="divide-y divide-zinc-100">
-              {rfmClients.map((client) => (
-                <div key={client.id} className="p-5 flex flex-col sm:flex-row items-center justify-between gap-4 hover:bg-zinc-50 transition-colors">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-sm font-black text-zinc-900 uppercase tracking-wide">{client.name}</span>
-                      <span className={`text-[9px] font-mono font-bold uppercase tracking-widest px-2 py-0.5 rounded border ${
-                        client.color === 'rose' ? 'bg-rose-50 text-rose-700 border-rose-200' :
-                        client.color === 'emerald' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                        'bg-amber-50 text-amber-700 border-amber-200'
-                      }`}>
-                        {client.status}
-                      </span>
-                    </div>
-                    <span className="text-xs font-mono text-zinc-500 font-bold">LTV: {formatBRL(client.ltv)} • Última compra: {client.lastPurchase}</span>
-                  </div>
-                  
-                  <button className="w-full sm:w-auto px-4 py-2 text-[10px] font-black uppercase tracking-wider text-emerald-900 bg-emerald-400 border border-emerald-500 rounded hover:bg-emerald-500 transition-colors flex items-center justify-center gap-2 shadow-sm">
-                    <MessageCircle className="w-3.5 h-3.5" /> Acionar Concierge
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
+      <div className="bg-white rounded-xl border border-zinc-200 shadow-2xs overflow-hidden">
+        <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50/70 flex justify-between items-center">
+          <h2 className="text-xs font-black text-zinc-900 tracking-wider uppercase flex items-center gap-2">
+            <Award className="w-4 h-4 text-zinc-600" /> Ranking de Patronos por Volume Financeiro
+          </h2>
+          <span className="text-xs font-mono text-zinc-500 font-bold">
+            {patrons.length} perfis consolidados
+          </span>
         </div>
 
-        {/* COLUNA DIREITA: PERSONA TRUE FIT */}
-        <div className="lg:col-span-5 space-y-6">
-          <div className="bg-zinc-900 p-6 rounded-lg border border-zinc-800 shadow-sm space-y-5 text-white">
-            <div className="border-b border-zinc-800 pb-3">
-              <h2 className="text-sm font-bold text-white tracking-widest uppercase flex items-center gap-2">
-                <Activity className="w-4 h-4 text-amber-500" /> Mapa "Persona True Fit"
-              </h2>
-              <p className="text-[10px] font-mono text-zinc-400 mt-2 uppercase tracking-widest">
-                Interseção de Modelagem vs Público Alvo
-              </p>
-            </div>
-            
-            <div className="space-y-6">
-              {/* Categoria: Topwear */}
-              <div>
-                <span className="text-xs font-black uppercase tracking-widest text-zinc-300 block mb-3 border-l-2 border-amber-500 pl-2">Topwear (Camisetas & Regatas)</span>
-                <div className="grid grid-cols-4 gap-2">
-                  <div className="bg-zinc-950 border border-zinc-800 rounded p-2 text-center">
-                    <span className="block text-[10px] font-mono text-zinc-500 mb-1">TAM P</span>
-                    <span className="block text-sm font-black text-zinc-300">12%</span>
-                  </div>
-                  <div className="bg-amber-500/20 border border-amber-500/50 rounded p-2 text-center shadow-inner">
-                    <span className="block text-[10px] font-mono text-amber-500 mb-1">TAM M</span>
-                    <span className="block text-sm font-black text-amber-400">45%</span>
-                  </div>
-                  <div className="bg-zinc-800 border border-zinc-700 rounded p-2 text-center">
-                    <span className="block text-[10px] font-mono text-zinc-400 mb-1">TAM G</span>
-                    <span className="block text-sm font-black text-white">35%</span>
-                  </div>
-                  <div className="bg-zinc-950 border border-zinc-800 rounded p-2 text-center">
-                    <span className="block text-[10px] font-mono text-zinc-500 mb-1">TAM GG</span>
-                    <span className="block text-sm font-black text-zinc-300">8%</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Categoria: Bottomwear */}
-              <div>
-                <span className="text-xs font-black uppercase tracking-widest text-zinc-300 block mb-3 border-l-2 border-emerald-500 pl-2">Bottomwear (Shorts)</span>
-                <div className="grid grid-cols-4 gap-2">
-                  <div className="bg-zinc-950 border border-zinc-800 rounded p-2 text-center">
-                    <span className="block text-[10px] font-mono text-zinc-500 mb-1">TAM P</span>
-                    <span className="block text-sm font-black text-zinc-300">5%</span>
-                  </div>
-                  <div className="bg-zinc-800 border border-zinc-700 rounded p-2 text-center">
-                    <span className="block text-[10px] font-mono text-zinc-400 mb-1">TAM M</span>
-                    <span className="block text-sm font-black text-white">30%</span>
-                  </div>
-                  <div className="bg-emerald-500/20 border border-emerald-500/50 rounded p-2 text-center shadow-inner">
-                    <span className="block text-[10px] font-mono text-emerald-500 mb-1">TAM G</span>
-                    <span className="block text-sm font-black text-emerald-400">55%</span>
-                  </div>
-                  <div className="bg-zinc-950 border border-zinc-800 rounded p-2 text-center">
-                    <span className="block text-[10px] font-mono text-zinc-500 mb-1">TAM GG</span>
-                    <span className="block text-sm font-black text-zinc-300">10%</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Insight Automático */}
-              <div className="bg-zinc-950 border border-zinc-800 rounded p-4 flex gap-3 mt-4">
-                <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
-                <p className="text-[11px] text-zinc-400 leading-relaxed font-mono">
-                  <strong className="text-zinc-200">Insight P&D:</strong> Seus Patronos possuem tronco médio (M) e pernas/quadril mais largos (G). Para a próxima fábrica, solicite a grade Topwear (1-4-3-1) e Bottomwear (1-3-5-1).
-                </p>
-              </div>
-
-            </div>
+        {loading ? (
+          <div className="p-16 text-center text-xs font-mono font-bold text-zinc-500 flex flex-col items-center gap-3">
+            <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
+            Consolidando base de patronos...
           </div>
-        </div>
+        ) : patrons.length === 0 ? (
+          <div className="p-16 text-center text-xs font-mono font-bold text-zinc-500">
+            Nenhuma transação liquidada para cálculo de LTV.
+          </div>
+        ) : (
+          <div className="divide-y divide-zinc-100 font-mono text-xs">
+            {patrons.slice(0, 10).map((p, idx) => (
+              <div key={p.email} className="p-5 flex justify-between items-center hover:bg-zinc-50/60 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-bold text-zinc-400 w-6">#{idx + 1}</span>
+                  <div>
+                    <span className="font-bold text-zinc-900 text-sm block font-sans">{p.name}</span>
+                    <span className="text-[11px] text-zinc-400">{p.email}</span>
+                  </div>
+                </div>
 
+                <div className="flex items-center gap-8 text-right">
+                  <div>
+                    <span className="text-[10px] text-zinc-400 block uppercase">Pedidos</span>
+                    <span className="font-bold text-zinc-700">{p.ordersCount}x</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-zinc-400 block uppercase">LTV Total</span>
+                    <span className="font-black text-emerald-800 text-sm">{formatBRL(p.totalSpent)}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

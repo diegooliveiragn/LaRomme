@@ -1,230 +1,219 @@
 ﻿'use client';
 
-import React, { useState } from 'react';
-import { 
-  Factory, Calculator, Plus, Trash2, Settings2, 
-  CheckCircle, ArrowRight, DollarSign 
-} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import { Factory, Calculator, DollarSign, RefreshCw, Loader2, ArrowRight } from 'lucide-react';
 
-interface Supplier {
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+interface ProductSupply {
   id: string;
   name: string;
+  category: string;
   price: number;
-  moq: number;
-  leadTime: number;
-  badge?: string;
-  badgeColor?: string;
 }
 
-const INITIAL_SUPPLIERS: Supplier[] = [
-  { id: '1', name: 'Confecção Alfa', price: 52.00, moq: 100, leadTime: 25, badge: 'MAIOR MARGEM', badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-  { id: '2', name: 'Estúdio Beta PL', price: 58.00, moq: 50, leadTime: 12, badge: 'ENTREGA RÁPIDA', badgeColor: 'bg-blue-50 text-blue-700 border-blue-200' },
-  { id: '3', name: 'Têxtil Gamma', price: 65.00, moq: 30, leadTime: 15, badge: 'BAIXA BARREIRA', badgeColor: 'bg-zinc-100 text-zinc-600 border-zinc-200' },
-];
-
 export default function SupplyPage() {
-  const [suppliers, setSuppliers] = useState<Supplier[]>(INITIAL_SUPPLIERS);
+  const [products, setProducts] = useState<ProductSupply[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedProductId, setSelectedProductId] = useState<string>('');
   
-  // Estados do Motor de Precificação
-  const [cost, setCost] = useState<number>(55.00);
-  const [packaging, setPackaging] = useState<number>(6.50);
-  const [tax, setTax] = useState<number>(6.00); // 6%
-  const [gateway, setGateway] = useState<number>(4.99); // 4.99%
-  const [margin, setMargin] = useState<number>(30.00); // 30%
+  // Variáveis do Simulador de Precificação
+  const [custoMaoObra, setCustoMaoObra] = useState<number>(45);
+  const [custoTecido, setCustoTecido] = useState<number>(28);
+  const [custoInsumos, setCustoInsumos] = useState<number>(7.5);
+  const [margemAlvo, setMargemAlvo] = useState<number>(45); // 45%
 
-  // Cálculo de Precificação Reversa (Mark-up por margem alvo)
-  // Preço de Venda = Custo Total / (1 - (Taxas + Margem em %))
-  const totalVariablePercentage = (tax + gateway + margin) / 100;
-  const totalCost = cost + packaging;
-  const suggestedPrice = totalVariablePercentage < 1 ? totalCost / (1 - totalVariablePercentage) : 0;
-  const currentMarkup = totalCost > 0 ? suggestedPrice / totalCost : 0;
+  const formatBRL = (val: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
-  const handleDeleteSupplier = (id: string) => {
-    setSuppliers(prev => prev.filter(s => s.id !== id));
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name, category, price')
+        .order('price', { ascending: false });
+
+      if (error) throw error;
+      setProducts(data || []);
+      if (data && data.length > 0) {
+        setSelectedProductId(data[0].id);
+      }
+    } catch (err: any) {
+      console.error('Erro ao consultar produtos em Supply:', err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const formatBRL = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const selectedProduct = products.find(p => p.id === selectedProductId) || products[0];
+
+  // Cálculo da Engenharia de Preços
+  const custoDiretoTotal = custoMaoObra + custoTecido + custoInsumos;
+  const taxaImpostoGateway = 0.06 + 0.0499; // 10.99% (Simples + Gateway)
+  const precoSugerido = custoDiretoTotal / (1 - (margemAlvo / 100) - taxaImpostoGateway);
+  const markupMultiplicador = custoDiretoTotal > 0 ? precoSugerido / custoDiretoTotal : 0;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
-      
-      {/* CABEÇALHO C-LEVEL */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-5">
+    <div className="space-y-8 animate-in fade-in duration-300 pb-12 font-sans">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-6">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 font-serif tracking-wide uppercase flex items-center gap-2">
-            Supply & Private Label
+          <span className="text-xs font-mono uppercase tracking-[0.2em] text-zinc-500 font-bold block mb-1">
+            Engenharia de Produto & Private Label
+          </span>
+          <h1 className="font-serif text-3xl font-bold tracking-tight text-zinc-900 uppercase flex items-center gap-3">
+            Supply & Matriz de Produção
           </h1>
-          <p className="text-xs text-zinc-500 font-mono mt-1">Engenharia de Custos • Reposição de Acervo</p>
+          <p className="text-xs text-zinc-500 font-mono mt-1 font-bold">
+            Composição de CPV, Tech Packs Oficiais e Simulador de Markup
+          </p>
         </div>
-        <div className="flex gap-2">
-          <button className="px-3 py-1.5 text-xs font-bold text-white bg-zinc-900 rounded hover:bg-zinc-800 transition-colors flex items-center gap-1.5 shadow-sm">
-            <Plus className="w-3.5 h-3.5" /> Novo Fornecedor PL
-          </button>
-        </div>
+
+        <button
+          onClick={fetchProducts}
+          disabled={loading}
+          className="px-4 py-2 bg-white hover:bg-zinc-100 text-zinc-900 border border-zinc-300 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-2xs disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <span>Sincronizar Artefatos</span>
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* COLUNA ESQUERDA: MATRIZ DE FORNECEDORES (7 COLUNAS) */}
-        <div className="lg:col-span-7 bg-white rounded-lg border border-zinc-200 shadow-sm overflow-hidden flex flex-col">
-          <div className="px-5 py-4 border-b border-zinc-100 bg-zinc-50 flex justify-between items-center">
-            <h2 className="text-xs font-bold text-zinc-900 tracking-widest uppercase flex items-center gap-2">
-              <Factory className="w-4 h-4 text-zinc-500" />
-              Matriz Comparativa (Tech Pack)
+        {/* TABELA DE MATRIZ DOS 4 ARTEFATOS */}
+        <div className="lg:col-span-7 bg-white rounded-xl border border-zinc-200 shadow-2xs overflow-hidden">
+          <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50/70 flex justify-between items-center">
+            <h2 className="text-xs font-black text-zinc-900 tracking-wider uppercase flex items-center gap-2">
+              <Factory className="w-4 h-4 text-zinc-600" /> Acervo em Linha de Produção
             </h2>
-            <select className="text-[10px] font-mono border border-zinc-200 rounded bg-white px-2 py-1 focus:outline-none">
-              <option>PEÇA: TENAX T-SHIRT</option>
-              <option>PEÇA: VESTIGIUM BOXY</option>
-            </select>
-          </div>
-          
-          <div className="p-0 overflow-x-auto">
-            <table className="w-full text-left text-xs whitespace-nowrap">
-              <thead>
-                <tr className="border-b border-zinc-200 text-[10px] text-zinc-500 font-mono uppercase tracking-widest bg-white">
-                  <th className="py-3 px-5 font-bold">Fornecedor (PL)</th>
-                  <th className="py-3 px-5 font-bold">Preço Unit.</th>
-                  <th className="py-3 px-5 font-bold">MOQ</th>
-                  <th className="py-3 px-5 font-bold">Prazo</th>
-                  <th className="py-3 px-5 text-right font-bold">Ação</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {suppliers.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-zinc-400 font-mono text-[10px] uppercase">
-                      Nenhum fornecedor cadastrado.
-                    </td>
-                  </tr>
-                ) : (
-                  suppliers.map((supplier) => (
-                    <tr key={supplier.id} className="hover:bg-zinc-50/50 transition-colors group">
-                      <td className="py-3 px-5">
-                        <div className="font-bold text-zinc-900">{supplier.name}</div>
-                        {supplier.badge && (
-                          <span className={`inline-block mt-1 text-[8px] font-mono font-bold px-1.5 py-0.5 rounded border uppercase ${supplier.badgeColor}`}>
-                            {supplier.badge}
-                          </span>
-                        )}
-                      </td>
-                      <td className="py-3 px-5 font-mono text-zinc-700">{formatBRL(supplier.price)}</td>
-                      <td className="py-3 px-5 text-zinc-600">{supplier.moq} un.</td>
-                      <td className="py-3 px-5 text-zinc-600">{supplier.leadTime} dias</td>
-                      <td className="py-3 px-5 text-right">
-                        <button 
-                          onClick={() => handleDeleteSupplier(supplier.id)}
-                          className="p-1.5 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors opacity-0 group-hover:opacity-100"
-                          title="Remover Fornecedor"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-          <div className="p-4 border-t border-zinc-100 bg-zinc-50 mt-auto">
-            <p className="text-[10px] font-mono text-zinc-400">* MOQ = Minimum Order Quantity (Quantidade Mínima).</p>
-          </div>
-        </div>
-
-        {/* COLUNA DIREITA: MOTOR DE PRECIFICAÇÃO (5 COLUNAS) */}
-        <div className="lg:col-span-5 bg-white rounded-lg border border-zinc-200 shadow-sm overflow-hidden flex flex-col">
-          <div className="px-5 py-4 border-b border-zinc-100 bg-zinc-50 flex justify-between items-center">
-            <h2 className="text-xs font-bold text-zinc-900 tracking-widest uppercase flex items-center gap-2">
-              <Calculator className="w-4 h-4 text-zinc-500" />
-              Motor de Precificação
-            </h2>
-            <span className="text-[9px] font-mono tracking-widest text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded uppercase font-bold">
-              Simulador
+            <span className="text-xs font-mono text-zinc-500 font-bold">
+              {products.length} modelos ativos
             </span>
           </div>
 
-          <div className="p-5 space-y-6 flex-1">
-            
-            {/* Bloco 1: Custos Diretos */}
-            <div className="space-y-3">
-              <h3 className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-1.5">
-                <Settings2 className="w-3.5 h-3.5" /> 1. Custos Diretos (CPV)
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[10px] font-mono text-zinc-500 mb-1">Custo Confecção (R$)</label>
-                  <div className="relative">
-                    <span className="absolute left-2.5 top-2 text-xs font-mono text-zinc-400">R$</span>
-                    <input 
-                      type="number" value={cost} onChange={(e) => setCost(Number(e.target.value))}
-                      className="w-full bg-zinc-50 border border-zinc-200 rounded pl-7 pr-2 py-1.5 text-xs font-mono text-zinc-900 focus:outline-none focus:border-zinc-400"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-[10px] font-mono text-zinc-500 mb-1">Embalagem/Tags (R$)</label>
-                  <div className="relative">
-                    <span className="absolute left-2.5 top-2 text-xs font-mono text-zinc-400">R$</span>
-                    <input 
-                      type="number" value={packaging} onChange={(e) => setPackaging(Number(e.target.value))}
-                      className="w-full bg-zinc-50 border border-zinc-200 rounded pl-7 pr-2 py-1.5 text-xs font-mono text-zinc-900 focus:outline-none focus:border-zinc-400"
-                    />
-                  </div>
-                </div>
-              </div>
+          {loading ? (
+            <div className="p-16 text-center text-xs font-mono font-bold text-zinc-500 flex flex-col items-center gap-3">
+              <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
+              Carregando artefatos do banco...
             </div>
+          ) : (
+            <div className="divide-y divide-zinc-100 font-mono text-xs">
+              {products.map(p => {
+                const isSelected = p.id === selectedProductId;
+                const cpvBase = Number(p.price) * 0.35;
+                const margemBruta = Number(p.price) - cpvBase;
 
-            {/* Bloco 2: Variáveis & Margem */}
-            <div className="space-y-3">
-              <h3 className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-1.5">
-                <DollarSign className="w-3.5 h-3.5" /> 2. Variáveis & Margem
-              </h3>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-[10px] font-mono text-zinc-500 mb-1">Imposto (%)</label>
-                  <input 
-                    type="number" value={tax} onChange={(e) => setTax(Number(e.target.value))}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded px-2 py-1.5 text-xs font-mono text-zinc-900 focus:outline-none focus:border-zinc-400"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-mono text-zinc-500 mb-1">Gateway (%)</label>
-                  <input 
-                    type="number" value={gateway} onChange={(e) => setGateway(Number(e.target.value))}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded px-2 py-1.5 text-xs font-mono text-zinc-900 focus:outline-none focus:border-zinc-400"
-                  />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-mono text-zinc-900 font-bold mb-1">Margem Alvo (%)</label>
-                  <input 
-                    type="number" value={margin} onChange={(e) => setMargin(Number(e.target.value))}
-                    className="w-full bg-emerald-50 border border-emerald-200 rounded px-2 py-1.5 text-xs font-mono text-emerald-900 font-bold focus:outline-none focus:border-emerald-400"
-                  />
-                </div>
-              </div>
+                return (
+                  <div
+                    key={p.id}
+                    onClick={() => setSelectedProductId(p.id)}
+                    className={`p-5 flex justify-between items-center cursor-pointer transition-colors ${
+                      isSelected ? 'bg-zinc-100/70 border-l-4 border-zinc-900' : 'hover:bg-zinc-50/60'
+                    }`}
+                  >
+                    <div>
+                      <span className="font-bold text-zinc-900 text-sm block font-sans">{p.name}</span>
+                      <span className="text-[11px] text-zinc-400 uppercase">{p.category}</span>
+                    </div>
+
+                    <div className="flex items-center gap-6 text-right">
+                      <div>
+                        <span className="text-[10px] text-zinc-400 block uppercase">CPV Base (35%)</span>
+                        <span className="font-bold text-zinc-700">{formatBRL(cpvBase)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-zinc-400 block uppercase">Preço Tabela</span>
+                        <span className="font-black text-zinc-900">{formatBRL(p.price)}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-emerald-700 block uppercase font-bold">Margem Bruta</span>
+                        <span className="font-black text-emerald-800">{formatBRL(margemBruta)}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
+          )}
+        </div>
 
+        {/* MOTOR DE PRECIFICAÇÃO DINÂMICO */}
+        <div className="lg:col-span-5 bg-white rounded-xl border border-zinc-200 shadow-2xs p-6 space-y-6">
+          <div className="border-b border-zinc-100 pb-4">
+            <h2 className="text-xs font-black text-zinc-900 tracking-wider uppercase flex items-center gap-2">
+              <Calculator className="w-4 h-4 text-zinc-600" /> Motor de Precificação (Markup)
+            </h2>
+            <p className="text-[11px] font-mono text-zinc-500 mt-0.5">
+              Simulando: <span className="font-bold text-zinc-900">{selectedProduct?.name}</span>
+            </p>
           </div>
 
-          {/* RODAPÉ: RESULTADO DA PRECIFICAÇÃO */}
-          <div className="bg-zinc-900 p-5 mt-auto text-white flex justify-between items-center">
+          <div className="space-y-4 text-xs font-mono">
             <div>
-              <span className="block text-[10px] font-mono text-zinc-400 tracking-widest uppercase mb-1">
-                Preço Alvo Sugerido
-              </span>
-              <span className="text-3xl font-bold tracking-tight text-white">
-                {formatBRL(suggestedPrice)}
-              </span>
+              <label className="text-zinc-600 block mb-1">Mão de Obra / Facção (R$)</label>
+              <input
+                type="number"
+                value={custoMaoObra}
+                onChange={(e) => setCustoMaoObra(Number(e.target.value))}
+                className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 font-bold focus:outline-none focus:border-zinc-400"
+              />
             </div>
-            <div className="text-right">
-              <span className="block text-[10px] font-mono text-zinc-400 tracking-widest uppercase mb-1">
-                Markup
-              </span>
-              <span className="text-xl font-bold text-emerald-400">
-                {currentMarkup.toFixed(2)}x
-              </span>
+
+            <div>
+              <label className="text-zinc-600 block mb-1">Tecido / Malharia Nobre (R$)</label>
+              <input
+                type="number"
+                value={custoTecido}
+                onChange={(e) => setCustoTecido(Number(e.target.value))}
+                className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 font-bold focus:outline-none focus:border-zinc-400"
+              />
+            </div>
+
+            <div>
+              <label className="text-zinc-600 block mb-1">Insumos de Unboxing & Aviamentos (R$)</label>
+              <input
+                type="number"
+                value={custoInsumos}
+                onChange={(e) => setCustoInsumos(Number(e.target.value))}
+                className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 font-bold focus:outline-none focus:border-zinc-400"
+              />
+            </div>
+
+            <div>
+              <label className="text-zinc-600 block mb-1">Margem Líquida Alvo (%)</label>
+              <input
+                type="number"
+                value={margemAlvo}
+                onChange={(e) => setMargemAlvo(Number(e.target.value))}
+                className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 font-bold focus:outline-none focus:border-zinc-400"
+              />
             </div>
           </div>
 
+          <div className="bg-zinc-900 text-white p-5 rounded-xl space-y-2">
+            <div className="flex justify-between items-center text-xs font-mono text-zinc-400">
+              <span>Custo Direto Total (CPV):</span>
+              <span className="font-bold text-white">{formatBRL(custoDiretoTotal)}</span>
+            </div>
+            <div className="flex justify-between items-center text-xs font-mono text-zinc-400">
+              <span>Markup Operacional:</span>
+              <span className="font-bold text-emerald-400">{markupMultiplicador.toFixed(2)}x</span>
+            </div>
+            <div className="border-t border-zinc-800 pt-3 flex justify-between items-baseline">
+              <span className="text-xs uppercase font-mono font-bold text-zinc-300">Preço Sugerido:</span>
+              <span className="text-2xl font-black font-mono text-emerald-400 tabular-nums">
+                {formatBRL(precoSugerido)}
+              </span>
+            </div>
+          </div>
         </div>
 
       </div>
