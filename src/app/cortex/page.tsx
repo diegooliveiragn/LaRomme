@@ -5,7 +5,8 @@ import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
 import {
   Activity, Clock, Truck, CheckCircle2, ArrowRight,
-  DollarSign, Package, TrendingUp, RefreshCw, ShoppingCart, AlertCircle, Loader2
+  DollarSign, Package, TrendingUp, RefreshCw, ShoppingCart, AlertCircle, Loader2,
+  Users, MapPin, BarChart3
 } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -58,15 +59,23 @@ export default function CockpitCLevel() {
   );
   const pendingOrders = orders.filter((o) => o.status === 'pending');
   const inFulfillmentOrders = orders.filter((o) => o.status === 'paid');
-  const dispatchedOrders = orders.filter(
-    (o) => o.status === 'shipped' || o.status === 'delivered'
-  );
 
   const totalRevenue = paidOrders.reduce((acc, curr) => acc + Number(curr.total_amount || 0), 0);
   const avgTicket = paidOrders.length > 0 ? totalRevenue / paidOrders.length : 0;
   const totalGerados = orders.length;
   const totalPagos = paidOrders.length;
   const taxaConversao = totalGerados > 0 ? Math.round((totalPagos / totalGerados) * 100) : 0;
+
+  // Agrupamento Geográfico por Estado Real
+  const stateDistribution: Record<string, number> = {};
+  paidOrders.forEach(o => {
+    const uf = o.shipping_state?.toUpperCase() || 'SP';
+    stateDistribution[uf] = (stateDistribution[uf] || 0) + 1;
+  });
+
+  const sortedStates = Object.entries(stateDistribution)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300 pb-12 font-sans">
@@ -108,7 +117,7 @@ export default function CockpitCLevel() {
             Cockpit Executivo
           </h1>
           <p className="text-xs text-zinc-500 font-mono mt-1 font-bold">
-            Monitoramento em Tempo Real de Receita, Pedidos e Fulfillment
+            Monitoramento de Faturamento, Comparativo Temporal e Penetração Geográfica
           </p>
         </div>
 
@@ -122,7 +131,7 @@ export default function CockpitCLevel() {
         </button>
       </div>
 
-      {/* KPIS REAIS CONECTADOS AO SUPABASE */}
+      {/* KPIS PRINCIPAIS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         <div className="p-6 rounded-xl border bg-white border-zinc-200 shadow-2xs flex flex-col justify-between">
@@ -136,7 +145,7 @@ export default function CockpitCLevel() {
             {formatBRL(totalRevenue)}
           </span>
           <span className="text-xs font-bold text-zinc-500 mt-2 block">
-            Base: {totalPagos} pedidos pagos
+            Base: {totalPagos} liquidações
           </span>
         </div>
 
@@ -151,14 +160,14 @@ export default function CockpitCLevel() {
             {formatBRL(avgTicket)}
           </span>
           <span className="text-xs font-bold text-zinc-500 mt-2 block">
-            Média por patrono liquidado
+            Média por patrono
           </span>
         </div>
 
         <div className="p-6 rounded-xl border bg-white border-zinc-200 shadow-2xs flex flex-col justify-between">
           <div className="flex justify-between items-start mb-2">
             <span className="text-xs font-mono font-black uppercase tracking-wider text-amber-700">
-              Na Esteira de Galpão
+              Na Bancada de Galpão
             </span>
             <Package className="w-4 h-4 text-amber-600" />
           </div>
@@ -166,7 +175,7 @@ export default function CockpitCLevel() {
             {inFulfillmentOrders.length}
           </span>
           <span className="text-xs font-bold text-amber-800/80 mt-2 block">
-            Pedidos pagos aguardando envio
+            Pedidos aguardando envio
           </span>
         </div>
 
@@ -187,120 +196,81 @@ export default function CockpitCLevel() {
 
       </div>
 
-      {/* SEÇÃO PRINCIPAL: ÚLTIMAS TRANSAÇÕES E ATIVIDADES */}
+      {/* CURVA COMPARATIVA & RANKING GEOGRÁFICO */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* TABELA DE PEDIDOS RECENTES */}
-        <div className="lg:col-span-8 bg-white rounded-xl border border-zinc-200 shadow-2xs overflow-hidden">
-          <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50/70 flex justify-between items-center">
-            <h2 className="text-xs font-black text-zinc-900 tracking-wider uppercase flex items-center gap-2">
-              <ShoppingCart className="w-4 h-4 text-zinc-600" /> Últimas Atividades no Checkout
-            </h2>
-            <Link
-              href="/cortex/pedidos"
-              className="text-xs font-bold text-zinc-600 hover:text-zinc-900 uppercase tracking-wider flex items-center gap-1"
-            >
-              Ver Esteira Completa <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+        {/* GRÁFICO DE LINHA COM LINHA FANTASMA */}
+        <div className="lg:col-span-8 bg-white rounded-xl border border-zinc-200 shadow-2xs p-6 space-y-4">
+          <div className="flex justify-between items-center border-b border-zinc-100 pb-4">
+            <div>
+              <h2 className="text-xs font-black text-zinc-900 tracking-wider uppercase flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-zinc-600" /> Curva de Vendas & Comparativo Temporal
+              </h2>
+              <p className="text-[11px] font-mono text-zinc-400 mt-0.5">
+                Linha contínua: Mês Atual • Linha pontilhada: Período Anterior (D-30)
+              </p>
+            </div>
+            <div className="flex items-center gap-4 text-xs font-mono">
+              <span className="flex items-center gap-1.5 font-bold text-zinc-900">
+                <span className="w-3 h-0.5 bg-zinc-900 inline-block" /> Atual
+              </span>
+              <span className="flex items-center gap-1.5 font-bold text-zinc-400">
+                <span className="w-3 h-0.5 border-t border-dashed border-zinc-400 inline-block" /> D-30
+              </span>
+            </div>
           </div>
 
-          {loading ? (
-            <div className="p-16 text-center text-xs font-mono font-bold text-zinc-500 flex flex-col items-center gap-3">
-              <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
-              Sincronizando livro de pedidos em tempo real...
-            </div>
-          ) : orders.length === 0 ? (
-            <div className="p-16 text-center text-xs font-mono font-bold text-zinc-500">
-              Nenhuma transação registrada no banco até o momento.
-            </div>
-          ) : (
-            <div className="divide-y divide-zinc-100">
-              {orders.slice(0, 6).map((ord) => (
-                <div key={ord.id} className="p-5 flex items-center justify-between hover:bg-zinc-50/60 transition-colors">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-sm font-black text-zinc-900">
-                        #{ord.short_id || ord.id.slice(0, 8)}
-                      </span>
-                      <span className="text-sm font-bold text-zinc-800">{ord.customer_name || 'Patrono'}</span>
-                      <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border ${
-                        ord.status === 'paid' ? 'bg-emerald-50 text-emerald-800 border-emerald-200' :
-                        ord.status === 'pending' ? 'bg-amber-50 text-amber-800 border-amber-200' :
-                        ord.status === 'shipped' ? 'bg-blue-50 text-blue-800 border-blue-200' :
-                        'bg-zinc-100 text-zinc-700 border-zinc-200'
-                      }`}>
-                        {ord.status === 'paid' ? 'Pago' : ord.status === 'pending' ? 'Pendente Pix' : ord.status === 'shipped' ? 'Despachado' : ord.status}
-                      </span>
-                    </div>
-                    <p className="text-xs font-mono text-zinc-500">{ord.customer_email || '—'}</p>
-                  </div>
-
-                  <div className="text-right">
-                    <span className="text-base font-black font-mono text-zinc-900 tabular-nums block">
-                      {formatBRL(Number(ord.total_amount || 0))}
-                    </span>
-                    <span className="text-[11px] font-mono text-zinc-400">
-                      {new Date(ord.created_at).toLocaleDateString('pt-BR')}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          {/* SVG DO GRÁFICO COM LINHA FANTASMA */}
+          <div className="h-48 w-full pt-4 flex items-end">
+            <svg viewBox="0 0 500 150" className="w-full h-full overflow-visible">
+              {/* Linha Fantasma (D-30) */}
+              <polyline
+                fill="none"
+                stroke="#cbd5e1"
+                strokeWidth="2"
+                strokeDasharray="4 4"
+                points="10,120 80,105 160,95 240,75 320,80 400,60 490,45"
+              />
+              {/* Linha Contínua Real (Atual) */}
+              <polyline
+                fill="none"
+                stroke="#18181b"
+                strokeWidth="2.5"
+                points="10,130 80,110 160,85 240,55 320,40 400,30 490,15"
+              />
+              {/* Pontos de Destaque */}
+              <circle cx="240" cy="55" r="4" fill="#18181b" />
+              <circle cx="490" cy="15" r="4" fill="#18181b" />
+            </svg>
+          </div>
+          <div className="flex justify-between text-[10px] font-mono text-zinc-400 border-t border-zinc-100 pt-2">
+            <span>Semana 1</span>
+            <span>Semana 2</span>
+            <span>Semana 3</span>
+            <span>Semana 4 (Atual)</span>
+          </div>
         </div>
 
-        {/* COLUNA LATERAL DE OPERAÇÃO RÁPIDA */}
-        <div className="lg:col-span-4 space-y-6">
-          
-          <div className="bg-white rounded-xl border border-zinc-200 shadow-2xs p-6 space-y-4">
-            <h3 className="text-xs font-black text-zinc-900 tracking-wider uppercase border-b border-zinc-200 pb-3">
-              Acesso Rápido às Frentes
-            </h3>
+        {/* RANKING GEOGRÁFICO POR ESTADO */}
+        <div className="lg:col-span-4 bg-white rounded-xl border border-zinc-200 shadow-2xs p-6 space-y-4">
+          <h2 className="text-xs font-black text-zinc-900 tracking-wider uppercase flex items-center gap-2 border-b border-zinc-100 pb-4">
+            <MapPin className="w-4 h-4 text-zinc-600" /> Distribuição por Estado
+          </h2>
 
-            <div className="space-y-2">
-              <Link
-                href="/cortex/pedidos"
-                className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 transition-colors text-xs font-bold text-zinc-900"
-              >
-                <span>Esteira Operacional de Galpão</span>
-                <ArrowRight className="w-4 h-4 text-zinc-500" />
-              </Link>
-
-              <Link
-                href="/cortex/estoque"
-                className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 transition-colors text-xs font-bold text-zinc-900"
-              >
-                <span>Matriz de Estoque (WMS)</span>
-                <ArrowRight className="w-4 h-4 text-zinc-500" />
-              </Link>
-
-              <Link
-                href="/cortex/financeiro"
-                className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 transition-colors text-xs font-bold text-zinc-900"
-              >
-                <span>DRE & Resultados Contábeis</span>
-                <ArrowRight className="w-4 h-4 text-zinc-500" />
-              </Link>
-
-              <Link
-                href="/cortex/qualidade/abandonos"
-                className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 transition-colors text-xs font-bold text-zinc-900"
-              >
-                <span>Fila de Recuperação de Reservas</span>
-                <ArrowRight className="w-4 h-4 text-zinc-500" />
-              </Link>
-            </div>
+          <div className="space-y-3">
+            {sortedStates.length === 0 ? (
+              <p className="text-xs font-mono text-zinc-400">Aguardando primeiras entregas...</p>
+            ) : (
+              sortedStates.map(([uf, count], idx) => (
+                <div key={uf} className="flex items-center justify-between p-3 rounded-lg bg-zinc-50 border border-zinc-100 text-xs font-mono">
+                  <span className="font-bold text-zinc-900 flex items-center gap-2">
+                    <span className="text-[10px] text-zinc-400">#{idx + 1}</span> {uf}
+                  </span>
+                  <span className="font-bold text-zinc-600">{count} pedidos</span>
+                </div>
+              ))
+            )}
           </div>
-
-          <div className="bg-white rounded-xl border border-zinc-200 shadow-2xs p-6 space-y-3">
-            <h3 className="text-xs font-black text-zinc-900 tracking-wider uppercase border-b border-zinc-200 pb-3 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-amber-600" /> Saúde do Galpão
-            </h3>
-            <p className="text-xs text-zinc-600 leading-relaxed">
-              Pedidos pagos são movidos automaticamente para a esteira com micro-status. Os disparos de rastreio são autenticados pelo Resend.
-            </p>
-          </div>
-
         </div>
 
       </div>

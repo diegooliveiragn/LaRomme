@@ -1,188 +1,167 @@
 ﻿'use client';
 
-import React from 'react';
-import { Scale, Landmark, Coins, TrendingUp, PiggyBank, ArrowDownToLine, Download } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { createClient } from '@supabase/supabase-js';
+import { Scale, RefreshCw, Loader2, ArrowUpRight, ArrowDownRight, ShieldCheck } from 'lucide-react';
 
-export default function BalancoPage() {
-  const formatBRL = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-  // Valores mockados para a demonstração C-Level
-  const assets = {
-    caixa: 12845.50,
-    recebiveis: 4500.00,
-    estoque: 14200.00,
-    imobilizado: 2500.00 // Equipamentos, computadores, etc.
+export default function BalancoPatrimonialPage() {
+  const [loading, setLoading] = useState(true);
+  const [caixaLiquido, setCaixaLiquido] = useState(0);
+  const [valorEstoqueCusto, setValorEstoqueCusto] = useState(0);
+  const [recebiveisPendentes, setRecebiveisPendentes] = useState(0);
+
+  const formatBRL = (val: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+
+  const fetchBalanco = async () => {
+    setLoading(true);
+    try {
+      // 1. Consulta Pedidos Pagos (Caixa Real)
+      const { data: orders } = await supabase
+        .from('orders')
+        .select('total_amount, status');
+
+      const pagos = (orders || []).filter(o => o.status === 'paid' || o.status === 'shipped' || o.status === 'delivered');
+      const totalReceita = pagos.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
+      
+      const simplesNacional = totalReceita * 0.06;
+      const taxasGateway = totalReceita * 0.0499;
+      setCaixaLiquido(totalReceita - simplesNacional - taxasGateway);
+
+      const pendentes = (orders || []).filter(o => o.status === 'pending');
+      const totalPendentes = pendentes.reduce((sum, o) => sum + Number(o.total_amount || 0), 0);
+      setRecebiveisPendentes(totalPendentes);
+
+      // 2. Consulta Produtos para Valuation de Estoque
+      const { data: prods } = await supabase
+        .from('products')
+        .select('price, stock_p, stock_m, stock_g, stock_gg, stock_tu');
+
+      let custoTotalEstoque = 0;
+      (prods || []).forEach(p => {
+        const totalPecas = (p.stock_p || 0) + (p.stock_m || 0) + (p.stock_g || 0) + (p.stock_gg || 0) + (p.stock_tu || 0);
+        const custoUnitario = Number(p.price || 0) * 0.35; // Custo base de 35%
+        custoTotalEstoque += totalPecas * custoUnitario;
+      });
+
+      setValorEstoqueCusto(custoTotalEstoque);
+    } catch (err: any) {
+      console.error('Erro ao calcular Balanço Patrimonial:', err.message);
+    } finally {
+      setLoading(false);
+    }
   };
-  
-  const totalAssets = Object.values(assets).reduce((a, b) => a + b, 0);
 
-  const liabilities = {
-    fornecedores: 5800.00,
-    impostos: 1250.00,
-    emprestimos: 0.00
-  };
+  useEffect(() => {
+    fetchBalanco();
+  }, []);
 
-  const totalLiabilities = Object.values(liabilities).reduce((a, b) => a + b, 0);
-  
-  const netWorth = totalAssets - totalLiabilities;
-  
-  // Cálculo de preenchimento para as barras visuais
-  const getPercentage = (value: number, total: number) => `${Math.round((value / total) * 100)}%`;
+  const totalAtivoCirculante = caixaLiquido + recebiveisPendentes + valorEstoqueCusto;
+  const obrigacoesFiscais = caixaLiquido * 0.06;
+  const fornecedoresProvisao = valorEstoqueCusto * 0.40;
+  const totalPassivo = obrigacoesFiscais + fornecedoresProvisao;
+  const patrimonioLiquido = totalAtivoCirculante - totalPassivo;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500 pb-12 font-sans">
-      
-      {/* CABEÇALHO C-LEVEL */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-5">
+    <div className="space-y-8 animate-in fade-in duration-300 pb-12 font-sans">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-6">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 font-serif tracking-wide uppercase">Balanço Patrimonial</h1>
-          <p className="text-xs text-zinc-500 font-mono mt-1">Raio-X de Riqueza e Posição Financeira Consolidada</p>
+          <span className="text-xs font-mono uppercase tracking-[0.2em] text-zinc-500 font-bold block mb-1">
+            Contabilidade de Ativos & Passivos
+          </span>
+          <h1 className="font-serif text-3xl font-bold tracking-tight text-zinc-900 uppercase flex items-center gap-3">
+            Balanço Patrimonial Consolidado
+          </h1>
+          <p className="text-xs text-zinc-500 font-mono mt-1 font-bold">
+            Posição de Liquidez, Estoque Valorizado a Custo e Obrigações Fiscais
+          </p>
         </div>
-        <button className="px-4 py-2 text-xs font-bold uppercase tracking-wider text-zinc-700 bg-white border border-zinc-300 rounded hover:bg-zinc-50 transition-colors flex items-center gap-2 shadow-sm">
-          <Download className="w-4 h-4" /> Exportar Balanço Real
+
+        <button
+          onClick={fetchBalanco}
+          disabled={loading}
+          className="px-4 py-2 bg-white hover:bg-zinc-100 text-zinc-900 border border-zinc-300 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-2xs disabled:opacity-50"
+        >
+          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <span>Sincronizar Balanço</span>
         </button>
       </div>
 
-      {/* KPI PRINCIPAL: PATRIMÔNIO LÍQUIDO */}
-      <div className="bg-zinc-900 p-8 rounded-lg border border-zinc-800 shadow-sm flex flex-col md:flex-row justify-between items-center relative overflow-hidden mb-8">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-zinc-800/40 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
-        <div className="relative z-10 w-full md:w-auto text-center md:text-left mb-6 md:mb-0">
-          <span className="text-xs font-mono font-bold uppercase tracking-widest text-zinc-400 block mb-2">Patrimônio Líquido (Riqueza do Fundador)</span>
-          <span className="text-4xl md:text-5xl font-black text-white tracking-tight">{formatBRL(netWorth)}</span>
-          <div className="flex justify-center md:justify-start items-center gap-2 mt-3">
-             <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-400/10 px-2 py-1 rounded border border-emerald-400/20 flex items-center gap-1">
-               <TrendingUp className="w-3 h-3" /> Saudável
-             </span>
-             <span className="text-[10px] font-mono text-zinc-500">Ativos superam Passivos em 4.8x</span>
+      {/* QUADRO DO PATRIMÔNIO LÍQUIDO */}
+      <div className="p-8 rounded-2xl bg-zinc-900 text-white shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div>
+          <span className="text-xs font-mono uppercase tracking-widest text-zinc-400 font-bold block mb-2">
+            Patrimônio Líquido Apurado (Ativos - Passivos)
+          </span>
+          <span className="text-4xl lg:text-5xl font-black font-mono tracking-tight tabular-nums block">
+            {formatBRL(patrimonioLiquido)}
+          </span>
+          <div className="flex items-center gap-2 mt-3">
+            <span className="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-mono font-bold uppercase border border-emerald-500/30">
+              Estrutura Saudável
+            </span>
+            <span className="text-xs text-zinc-400 font-mono">
+              Ativos cobrem passivos em {(totalPassivo > 0 ? (totalAtivoCirculante / totalPassivo).toFixed(1) : '∞')}x
+            </span>
           </div>
         </div>
-        
-        <div className="relative z-10 w-full md:w-1/3 flex items-center justify-center">
-           <Scale className="w-24 h-24 text-zinc-800/80" />
-        </div>
+        <Scale className="w-16 h-16 text-zinc-700 hidden md:block" />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* GRADE DE ATIVOS E PASSIVOS */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* COLUNA: ATIVOS (O que a empresa TEM) */}
-        <div className="bg-white rounded-lg border border-zinc-200 shadow-sm overflow-hidden">
-          <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50/50 flex justify-between items-center">
-            <h2 className="text-xs font-bold text-zinc-900 tracking-widest uppercase flex items-center gap-2">
-              <Landmark className="w-4 h-4 text-emerald-600" /> Ativos
+        {/* ATIVOS */}
+        <div className="bg-white rounded-xl border border-zinc-200 shadow-2xs p-6 space-y-5">
+          <div className="flex justify-between items-center border-b border-zinc-100 pb-4">
+            <h2 className="text-xs font-black text-zinc-900 tracking-wider uppercase flex items-center gap-2">
+              <ArrowUpRight className="w-4 h-4 text-emerald-600" /> Ativo Circulante
             </h2>
-            <span className="text-sm font-black text-zinc-900">{formatBRL(totalAssets)}</span>
+            <span className="text-base font-black font-mono text-emerald-700 tabular-nums">
+              {formatBRL(totalAtivoCirculante)}
+            </span>
           </div>
-          
-          <div className="p-6 space-y-6">
-            
-            {/* Ativo Circulante */}
-            <div>
-              <h3 className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400 mb-4">Ativo Circulante (Liquidez Imediata)</h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-xs font-bold text-zinc-700 mb-1.5">
-                    <span className="flex items-center gap-1.5"><Coins className="w-3.5 h-3.5 text-zinc-400"/> Caixa e Equivalentes</span>
-                    <span>{formatBRL(assets.caixa)}</span>
-                  </div>
-                  <div className="w-full bg-zinc-100 rounded-full h-1.5">
-                    <div className="bg-zinc-800 h-1.5 rounded-full" style={{ width: getPercentage(assets.caixa, totalAssets) }}></div>
-                  </div>
-                </div>
 
-                <div>
-                  <div className="flex justify-between text-xs font-bold text-zinc-700 mb-1.5">
-                    <span className="flex items-center gap-1.5"><ArrowDownToLine className="w-3.5 h-3.5 text-zinc-400"/> Contas a Receber (Gateways)</span>
-                    <span>{formatBRL(assets.recebiveis)}</span>
-                  </div>
-                  <div className="w-full bg-zinc-100 rounded-full h-1.5">
-                    <div className="bg-zinc-600 h-1.5 rounded-full" style={{ width: getPercentage(assets.recebiveis, totalAssets) }}></div>
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-xs font-bold text-zinc-700 mb-1.5">
-                    <span className="flex items-center gap-1.5"><PiggyBank className="w-3.5 h-3.5 text-zinc-400"/> Estoque (Valor de Custo)</span>
-                    <span>{formatBRL(assets.estoque)}</span>
-                  </div>
-                  <div className="w-full bg-zinc-100 rounded-full h-1.5">
-                    <div className="bg-zinc-400 h-1.5 rounded-full" style={{ width: getPercentage(assets.estoque, totalAssets) }}></div>
-                  </div>
-                </div>
-              </div>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center text-xs font-mono">
+              <span className="text-zinc-600">Disponível em Caixa (Liquidações)</span>
+              <span className="font-bold text-zinc-900">{formatBRL(caixaLiquido)}</span>
             </div>
-
-            {/* Ativo Não Circulante */}
-            <div className="pt-4 border-t border-zinc-100">
-              <h3 className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400 mb-4">Ativo Não Circulante</h3>
-              
-              <div>
-                <div className="flex justify-between text-xs font-bold text-zinc-700 mb-1.5">
-                  <span className="flex items-center gap-1.5">Imobilizado (Equipamentos)</span>
-                  <span>{formatBRL(assets.imobilizado)}</span>
-                </div>
-                <div className="w-full bg-zinc-100 rounded-full h-1.5">
-                  <div className="bg-zinc-300 h-1.5 rounded-full" style={{ width: getPercentage(assets.imobilizado, totalAssets) }}></div>
-                </div>
-              </div>
+            <div className="flex justify-between items-center text-xs font-mono">
+              <span className="text-zinc-600">A Compensar (Reservas e Gateways)</span>
+              <span className="font-bold text-zinc-900">{formatBRL(recebiveisPendentes)}</span>
             </div>
-
+            <div className="flex justify-between items-center text-xs font-mono">
+              <span className="text-zinc-600">Acervo Físico (Valor de Custo dos 4 SKUs)</span>
+              <span className="font-bold text-zinc-900">{formatBRL(valorEstoqueCusto)}</span>
+            </div>
           </div>
         </div>
 
-        {/* COLUNA: PASSIVOS (O que a empresa DEVE) */}
-        <div className="bg-white rounded-lg border border-zinc-200 shadow-sm overflow-hidden h-fit">
-          <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50/50 flex justify-between items-center">
-            <h2 className="text-xs font-bold text-zinc-900 tracking-widest uppercase flex items-center gap-2">
-              <Scale className="w-4 h-4 text-rose-600" /> Passivos
+        {/* PASSIVOS */}
+        <div className="bg-white rounded-xl border border-zinc-200 shadow-2xs p-6 space-y-5">
+          <div className="flex justify-between items-center border-b border-zinc-100 pb-4">
+            <h2 className="text-xs font-black text-zinc-900 tracking-wider uppercase flex items-center gap-2">
+              <ArrowDownRight className="w-4 h-4 text-rose-600" /> Passivo Circulante
             </h2>
-            <span className="text-sm font-black text-rose-600">{formatBRL(totalLiabilities)}</span>
+            <span className="text-base font-black font-mono text-rose-700 tabular-nums">
+              {formatBRL(totalPassivo)}
+            </span>
           </div>
-          
-          <div className="p-6 space-y-6">
-            
-            {/* Passivo Circulante */}
-            <div>
-              <h3 className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400 mb-4">Passivo Circulante (Curto Prazo)</h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <div className="flex justify-between text-xs font-bold text-zinc-700 mb-1.5">
-                    <span>Fornecedores a Pagar (Facções)</span>
-                    <span className="text-rose-600">{formatBRL(liabilities.fornecedores)}</span>
-                  </div>
-                  <div className="w-full bg-zinc-100 rounded-full h-1.5">
-                    <div className="bg-rose-500 h-1.5 rounded-full" style={{ width: getPercentage(liabilities.fornecedores, totalLiabilities || 1) }}></div>
-                  </div>
-                </div>
 
-                <div>
-                  <div className="flex justify-between text-xs font-bold text-zinc-700 mb-1.5">
-                    <span>Obrigações Fiscais (Impostos)</span>
-                    <span className="text-rose-600">{formatBRL(liabilities.impostos)}</span>
-                  </div>
-                  <div className="w-full bg-zinc-100 rounded-full h-1.5">
-                    <div className="bg-rose-400 h-1.5 rounded-full" style={{ width: getPercentage(liabilities.impostos, totalLiabilities || 1) }}></div>
-                  </div>
-                </div>
-              </div>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center text-xs font-mono">
+              <span className="text-zinc-600">Obrigações Tributárias (Simples 6%)</span>
+              <span className="font-bold text-zinc-900">{formatBRL(obrigacoesFiscais)}</span>
             </div>
-
-            {/* Passivo Não Circulante */}
-            <div className="pt-4 border-t border-zinc-100">
-              <h3 className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400 mb-4">Passivo Não Circulante (Longo Prazo)</h3>
-              
-              <div>
-                <div className="flex justify-between text-xs font-bold text-zinc-700 mb-1.5">
-                  <span>Empréstimos e Financiamentos</span>
-                  <span className="text-zinc-500">{formatBRL(liabilities.emprestimos)}</span>
-                </div>
-                <div className="w-full bg-zinc-100 rounded-full h-1.5">
-                  <div className="bg-zinc-200 h-1.5 rounded-full" style={{ width: '0%' }}></div>
-                </div>
-              </div>
+            <div className="flex justify-between items-center text-xs font-mono">
+              <span className="text-zinc-600">Provisão de Reposição & Insumos</span>
+              <span className="font-bold text-zinc-900">{formatBRL(fornecedoresProvisao)}</span>
             </div>
-
           </div>
         </div>
 
