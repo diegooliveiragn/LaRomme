@@ -1,7 +1,7 @@
 ﻿'use client';
 
-import React, { useState } from 'react';
-import { Box, Plus, Edit, Trash2, X, RefreshCw } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Edit, Trash2, X, RefreshCw, Box } from 'lucide-react';
 
 interface InsumoItem {
   id: string;
@@ -11,20 +11,39 @@ interface InsumoItem {
   estoqueFisico: number;
 }
 
-export default function GestaoInsumosPage() {
-  const [insumos, setInsumos] = useState<InsumoItem[]>([
-    { id: 'INS-01', nome: 'Caixa Rígida Gaveta LaRomme', categoria: 'EMBALAGEM', custoUnit: 4.80, estoqueFisico: 0 },
-    { id: 'INS-02', nome: 'Papel de Seda Aromatizado (20g)', categoria: 'EMBALAGEM', custoUnit: 0.65, estoqueFisico: 0 },
-    { id: 'INS-03', nome: 'Tag Lacre Termocolante com Cordão', categoria: 'AVIAMENTO', custoUnit: 0.90, estoqueFisico: 0 },
-    { id: 'INS-04', nome: 'Fita Gomada Kraft Personalizada', categoria: 'LOGÍSTICA', custoUnit: 0.30, estoqueFisico: 0 },
-  ]);
+const DEFAULT_INSUMOS: InsumoItem[] = [
+  { id: 'INS-01', nome: 'Caixa Rígida Gaveta LaRomme', categoria: 'EMBALAGEM', custoUnit: 4.80, estoqueFisico: 0 },
+  { id: 'INS-02', nome: 'Papel de Seda Aromatizado (20g)', categoria: 'EMBALAGEM', custoUnit: 0.65, estoqueFisico: 0 },
+  { id: 'INS-03', nome: 'Tag Lacre Termocolante com Cordão', categoria: 'AVIAMENTO', custoUnit: 0.90, estoqueFisico: 0 },
+  { id: 'INS-04', nome: 'Fita Gomada Kraft Personalizada', categoria: 'LOGÍSTICA', custoUnit: 0.30, estoqueFisico: 0 },
+];
 
+export default function GestaoInsumosPage() {
+  const [insumos, setInsumos] = useState<InsumoItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [nome, setNome] = useState('');
   const [categoria, setCategoria] = useState('EMBALAGEM');
   const [custo, setCusto] = useState('');
   const [saldo, setSaldo] = useState('0');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('laromme_insumos_v1');
+    if (saved) {
+      try {
+        setInsumos(JSON.parse(saved));
+      } catch {
+        setInsumos(DEFAULT_INSUMOS);
+      }
+    } else {
+      setInsumos(DEFAULT_INSUMOS);
+    }
+  }, []);
+
+  const saveToStorage = (updated: InsumoItem[]) => {
+    setInsumos(updated);
+    localStorage.setItem('laromme_insumos_v1', JSON.stringify(updated));
+  };
 
   const formatBRL = (val: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
@@ -53,33 +72,36 @@ export default function GestaoInsumosPage() {
     const stockVal = parseInt(saldo) || 0;
 
     if (editingId) {
-      setInsumos(prev => prev.map(i => i.id === editingId ? {
+      const updated = insumos.map(i => i.id === editingId ? {
         ...i,
         nome,
         categoria,
         custoUnit: costVal,
         estoqueFisico: stockVal
-      } : i));
+      } : i);
+      saveToStorage(updated);
     } else {
       const newItem: InsumoItem = {
-        id: `INS-${String(insumos.length + 1).padStart(2, '0')}`,
+        id: `INS-${String(Date.now()).slice(-4)}`,
         nome,
         categoria,
         custoUnit: costVal,
         estoqueFisico: stockVal
       };
-      setInsumos(prev => [...prev, newItem]);
+      saveToStorage([...insumos, newItem]);
     }
     setIsModalOpen(false);
   };
 
   const handleDeleteInsumo = (id: string, itemNome: string) => {
     if (!confirm(`Remover "${itemNome}" da gestão de insumos?`)) return;
-    setInsumos(prev => prev.filter(i => i.id !== id));
+    const updated = insumos.filter(i => i.id !== id);
+    saveToStorage(updated);
   };
 
   const custoTotalUnboxing = insumos.reduce((acc, curr) => acc + curr.custoUnit, 0);
   const capitalImobilizadoInsumos = insumos.reduce((acc, curr) => acc + (curr.custoUnit * curr.estoqueFisico), 0);
+  const totalPecasInsumos = insumos.reduce((acc, curr) => acc + curr.estoqueFisico, 0);
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300 pb-12 font-sans">
@@ -126,7 +148,7 @@ export default function GestaoInsumosPage() {
             {formatBRL(capitalImobilizadoInsumos)}
           </span>
           <span className="text-xs font-bold text-zinc-500 mt-2 block">
-            Nenhum lote físico de insumos armazenado
+            {capitalImobilizadoInsumos === 0 ? 'Nenhum lote físico de insumos armazenado' : 'Total imobilizado'}
           </span>
         </div>
 
@@ -135,10 +157,10 @@ export default function GestaoInsumosPage() {
             Status de Suprimentos
           </span>
           <span className="text-3xl font-black text-amber-600 tabular-nums tracking-tight block font-mono">
-            0 un.
+            {totalPecasInsumos} un.
           </span>
           <span className="text-xs font-bold text-zinc-500 mt-2 block">
-            Aguardando pedido de compra com gráfica
+            {totalPecasInsumos === 0 ? 'Aguardando pedido de compra com gráfica' : 'Insumos disponíveis'}
           </span>
         </div>
       </div>
@@ -151,46 +173,51 @@ export default function GestaoInsumosPage() {
           <span className="text-xs font-mono text-zinc-500 font-bold">{insumos.length} itens</span>
         </div>
 
-        <div className="divide-y divide-zinc-100 font-mono text-xs">
-          {insumos.map(item => (
-            <div key={item.id} className="p-5 flex justify-between items-center hover:bg-zinc-50/60 transition-colors">
-              <div>
-                <span className="font-bold text-zinc-900 text-sm block font-sans">{item.nome}</span>
-                <span className="text-[11px] text-zinc-400 uppercase">{item.id} • {item.categoria}</span>
-              </div>
+        {insumos.length === 0 ? (
+          <div className="p-16 text-center text-xs font-mono font-bold text-zinc-500">
+            Nenhum insumo cadastrado.
+          </div>
+        ) : (
+          <div className="divide-y divide-zinc-100 font-mono text-xs">
+            {insumos.map(item => (
+              <div key={item.id} className="p-5 flex justify-between items-center hover:bg-zinc-50/60 transition-colors">
+                <div>
+                  <span className="font-bold text-zinc-900 text-sm block font-sans">{item.nome}</span>
+                  <span className="text-[11px] text-zinc-400 uppercase">{item.id} • {item.categoria}</span>
+                </div>
 
-              <div className="flex items-center gap-8 text-right">
-                <div>
-                  <span className="text-[10px] text-zinc-400 block uppercase">Custo Unitário</span>
-                  <span className="font-bold text-zinc-700">{formatBRL(item.custoUnit)}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-zinc-400 block uppercase">Saldo Físico</span>
-                  <span className="font-black text-zinc-900 text-sm">{item.estoqueFisico} un.</span>
-                </div>
-                <div className="flex items-center gap-2 border-l border-zinc-200 pl-4">
-                  <button
-                    onClick={() => openEditModal(item)}
-                    className="p-1.5 text-zinc-500 hover:text-zinc-900 rounded-lg hover:bg-zinc-100 transition-colors"
-                    title="Editar Insumo"
-                  >
-                    <Edit className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteInsumo(item.id, item.nome)}
-                    className="p-1.5 text-rose-500 hover:text-rose-700 rounded-lg hover:bg-rose-50 transition-colors"
-                    title="Excluir"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                <div className="flex items-center gap-6 text-right">
+                  <div>
+                    <span className="text-[10px] text-zinc-400 block uppercase">Custo Unitário</span>
+                    <span className="font-bold text-zinc-700">{formatBRL(item.custoUnit)}</span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-zinc-400 block uppercase">Saldo Físico</span>
+                    <span className="font-black text-zinc-900 text-sm">{item.estoqueFisico} un.</span>
+                  </div>
+                  <div className="flex items-center gap-2 border-l border-zinc-200 pl-4">
+                    <button
+                      onClick={() => openEditModal(item)}
+                      className="p-1.5 text-zinc-500 hover:text-zinc-900 rounded-lg hover:bg-zinc-100 transition-colors"
+                      title="Editar Insumo"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteInsumo(item.id, item.nome)}
+                      className="p-1.5 text-rose-500 hover:text-rose-700 rounded-lg hover:bg-rose-50 transition-colors"
+                      title="Excluir"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* MODAL DE CRIAÇÃO / EDIÇÃO DE INSUMOS */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
           <div className="bg-white border border-zinc-200 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 font-sans">

@@ -2,10 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import Link from 'next/link';
-import {
-  Package, Plus, RefreshCw, Loader2, Edit, Trash2, X, Check, ArrowRight
-} from 'lucide-react';
+import { Package, Plus, RefreshCw, Loader2, Edit, Trash2, X } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -16,8 +13,7 @@ export default function CatalogoPage() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any | null>(null);
-  
-  // Campos do Formulário
+
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
   const [category, setCategory] = useState('Topwear');
@@ -86,9 +82,21 @@ export default function CatalogoPage() {
       };
 
       if (editingProduct) {
-        await supabase.from('products').update(payload).eq('id', editingProduct.id);
+        const res = await fetch('/api/cortex/products', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: editingProduct.id, ...payload })
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Erro ao atualizar');
       } else {
-        await supabase.from('products').insert([payload]);
+        const res = await fetch('/api/cortex/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || 'Erro ao cadastrar');
       }
 
       setIsModalOpen(false);
@@ -99,10 +107,14 @@ export default function CatalogoPage() {
   };
 
   const handleDeleteProduct = async (id: string, prodName: string) => {
-    if (!confirm(`Deseja remover "${prodName}" do catálogo?`)) return;
+    if (!confirm(`Deseja remover "${prodName}" definitivamente?`)) return;
     try {
-      await supabase.from('products').delete().eq('id', id);
-      fetchProducts();
+      const res = await fetch(`/api/cortex/products?id=${id}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Erro ao excluir');
+
+      setProducts(prev => prev.filter(p => p.id !== id));
+      alert(`"${prodName}" excluído com sucesso.`);
     } catch (err: any) {
       alert(`Erro ao excluir: ${err.message}`);
     }
@@ -143,7 +155,6 @@ export default function CatalogoPage() {
         </div>
       </div>
 
-      {/* LISTAGEM DE PRODUTOS NO TEMA CLARO */}
       <div className="bg-white rounded-xl border border-zinc-200 shadow-2xs overflow-hidden">
         <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50/70 flex justify-between items-center">
           <h2 className="text-xs font-black text-zinc-900 tracking-wider uppercase">
@@ -202,7 +213,6 @@ export default function CatalogoPage() {
         )}
       </div>
 
-      {/* MODAL DE CRIAÇÃO / EDIÇÃO */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
           <div className="bg-white border border-zinc-200 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5 font-sans">

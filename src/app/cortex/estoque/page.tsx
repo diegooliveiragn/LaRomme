@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Box, RefreshCw, Loader2, Edit, Trash2, Plus, X, Package } from 'lucide-react';
+import { Box, RefreshCw, Loader2, Edit, Trash2, X, Package } from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -14,7 +14,6 @@ export default function CortexEstoquePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any | null>(null);
 
-  // Form states para grade
   const [pStock, setPStock] = useState('0');
   const [mStock, setMStock] = useState('0');
   const [gStock, setGStock] = useState('0');
@@ -61,13 +60,21 @@ export default function CortexEstoquePage() {
       const gg = parseInt(ggStock) || 0;
       const total = p + m + g + gg;
 
-      await supabase.from('products').update({
-        stock_p: p,
-        stock_m: m,
-        stock_g: g,
-        stock_gg: gg,
-        stock: total
-      }).eq('id', editingItem.id);
+      const res = await fetch('/api/cortex/products', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingItem.id,
+          stock_p: p,
+          stock_m: m,
+          stock_g: g,
+          stock_gg: gg,
+          stock: total
+        })
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Erro ao atualizar');
 
       setIsModalOpen(false);
       fetchStock();
@@ -77,18 +84,26 @@ export default function CortexEstoquePage() {
   };
 
   const handleDeleteItem = async (id: string, name: string) => {
-    if (!confirm(`Remover "${name}" do controle de estoque?`)) return;
+    if (!confirm(`Remover "${name}" do controle de estoque e do catálogo?`)) return;
     try {
-      await supabase.from('products').delete().eq('id', id);
-      fetchStock();
+      const res = await fetch(`/api/cortex/products?id=${id}`, {
+        method: 'DELETE'
+      });
+      const json = await res.json();
+
+      if (!res.ok) {
+        throw new Error(json.error || 'Falha ao remover produto do banco');
+      }
+
+      setProducts(prev => prev.filter(p => p.id !== id));
+      alert(`"${name}" removido com sucesso.`);
     } catch (err: any) {
-      alert(`Erro ao excluir: ${err.message}`);
+      alert(`Erro na exclusão: ${err.message}`);
     }
   };
 
   const totalFisico = products.reduce((acc, p) => {
-    const sum = (p.stock_p || 0) + (p.stock_m || 0) + (p.stock_g || 0) + (p.stock_gg || 0);
-    return acc + sum;
+    return acc + (p.stock_p || 0) + (p.stock_m || 0) + (p.stock_g || 0) + (p.stock_gg || 0);
   }, 0);
 
   return (
@@ -125,7 +140,7 @@ export default function CortexEstoquePage() {
             {totalFisico}
           </span>
           <span className="text-xs font-bold text-zinc-500 mt-2 block">
-            Nenhuma peça produzida no momento
+            {totalFisico === 0 ? 'Nenhuma peça produzida no momento' : 'Unidades em galpão'}
           </span>
         </div>
 
@@ -146,10 +161,10 @@ export default function CortexEstoquePage() {
             Status Operacional
           </span>
           <span className="text-3xl font-black text-amber-600 tabular-nums tracking-tight block font-mono">
-            Pré-Produção
+            {totalFisico === 0 ? 'Pré-Produção' : 'Operação Ativa'}
           </span>
           <span className="text-xs font-bold text-zinc-500 mt-2 block">
-            Aguardando abertura de lote
+            {totalFisico === 0 ? 'Aguardando abertura de lote' : 'Prateleiras abastecidas'}
           </span>
         </div>
       </div>
@@ -234,7 +249,6 @@ export default function CortexEstoquePage() {
         )}
       </div>
 
-      {/* MODAL DE AJUSTE DE SALDO FÍSICO */}
       {isModalOpen && editingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
           <div className="bg-white border border-zinc-200 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 font-sans">
@@ -251,7 +265,7 @@ export default function CortexEstoquePage() {
             <form onSubmit={handleSaveStock} className="space-y-4 text-xs font-mono">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-zinc-600 block mb-1 font-bold">Saldo Tamanho P</label>
+                  <label className="text-zinc-600 block mb-1 font-bold">Saldo P</label>
                   <input
                     type="number"
                     min="0"
@@ -261,7 +275,7 @@ export default function CortexEstoquePage() {
                   />
                 </div>
                 <div>
-                  <label className="text-zinc-600 block mb-1 font-bold">Saldo Tamanho M</label>
+                  <label className="text-zinc-600 block mb-1 font-bold">Saldo M</label>
                   <input
                     type="number"
                     min="0"
@@ -271,7 +285,7 @@ export default function CortexEstoquePage() {
                   />
                 </div>
                 <div>
-                  <label className="text-zinc-600 block mb-1 font-bold">Saldo Tamanho G</label>
+                  <label className="text-zinc-600 block mb-1 font-bold">Saldo G</label>
                   <input
                     type="number"
                     min="0"
@@ -281,7 +295,7 @@ export default function CortexEstoquePage() {
                   />
                 </div>
                 <div>
-                  <label className="text-zinc-600 block mb-1 font-bold">Saldo Tamanho GG</label>
+                  <label className="text-zinc-600 block mb-1 font-bold">Saldo GG</label>
                   <input
                     type="number"
                     min="0"
