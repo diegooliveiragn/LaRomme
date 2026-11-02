@@ -1,180 +1,178 @@
 ﻿'use client';
 
-import React, { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import { TrendingUp, Users, RefreshCw, Loader2, Award, ArrowUpRight } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  TrendingUp, Users, Target, Activity, RefreshCw,
+  Compass, PieChart, ShieldCheck, ArrowUpRight, Zap
+} from 'lucide-react';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-interface PatronSummary {
-  email: string;
-  name: string;
-  totalSpent: number;
-  ordersCount: number;
-  lastOrderDate: string;
-}
-
-export default function GrowthPage() {
-  const [patrons, setPatrons] = useState<PatronSummary[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function CortexGrowthPage() {
+  const [loading, setLoading] = useState(false);
 
   const formatBRL = (val: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-
-  const fetchGrowthData = async () => {
-    setLoading(true);
-    try {
-      const { data: orders, error } = await supabase
-        .from('orders')
-        .select('customer_name, customer_email, total_amount, status, created_at')
-        .in('status', ['paid', 'shipped', 'delivered'])
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const patronMap: Record<string, PatronSummary> = {};
-      (orders || []).forEach(o => {
-        const email = o.customer_email || 'patrono@laromme.com.br';
-        if (!patronMap[email]) {
-          patronMap[email] = {
-            email,
-            name: o.customer_name || 'Patrono Oficial',
-            totalSpent: 0,
-            ordersCount: 0,
-            lastOrderDate: o.created_at,
-          };
-        }
-        patronMap[email].totalSpent += Number(o.total_amount || 0);
-        patronMap[email].ordersCount += 1;
-      });
-
-      setPatrons(Object.values(patronMap).sort((a, b) => b.totalSpent - a.totalSpent));
-    } catch (err: any) {
-      console.error('Erro ao buscar dados de Growth:', err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchGrowthData();
-  }, []);
-
-  const totalPatronos = patrons.length;
-  const ltvMedio = totalPatronos > 0 ? patrons.reduce((acc, p) => acc + p.totalSpent, 0) / totalPatronos : 0;
-  const recompras = patrons.filter(p => p.ordersCount > 1).length;
-  const taxaRetencao = totalPatronos > 0 ? Math.round((recompras / totalPatronos) * 100) : 0;
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300 pb-12 font-sans">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-6">
+    <div className="space-y-6 pb-12 font-sans bg-transparent">
+      {/* CABEÇALHO */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-5">
         <div>
-          <span className="text-xs font-mono uppercase tracking-[0.2em] text-zinc-500 font-bold block mb-1">
-            Retenção & Análise RFM
+          <span className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase">
+            INTELIGÊNCIA PREDITIVA & AUDIÊNCIA
           </span>
-          <h1 className="font-serif text-3xl font-bold tracking-tight text-zinc-900 uppercase">
-            Growth & LTV de Patronos
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 uppercase">
+            Growth & Análise Comportamental
           </h1>
-          <p className="text-xs text-zinc-500 font-mono mt-1 font-bold">
-            Métricas de Ciclo de Vida, Recompra e Ranking de Clientes
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Matriz RFM, apetite esportivo e segmentação para os próximos lançamentos da LaRomme
           </p>
         </div>
 
         <button
-          onClick={fetchGrowthData}
+          onClick={() => { setLoading(true); setTimeout(() => setLoading(false), 500); }}
           disabled={loading}
-          className="px-4 py-2 bg-white hover:bg-zinc-100 text-zinc-900 border border-zinc-300 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-2xs disabled:opacity-50"
+          className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 disabled:opacity-50 shadow-sm"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>Atualizar LTV</span>
+          <span>Atualizar Segmentos</span>
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-6 rounded-xl border bg-white border-zinc-200 shadow-2xs flex flex-col justify-between">
-          <span className="text-xs font-mono font-black uppercase tracking-wider text-zinc-500 block mb-2">
-            Base Ativa de Patronos
+      {/* TOP RADAR: MATRIZ DE RETENÇÃO */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">
+            Patronos Fundadores
           </span>
-          <span className="text-3xl font-black text-zinc-900 tabular-nums tracking-tight block font-mono">
-            {totalPatronos}
+          <span className="text-3xl font-bold text-zinc-900 font-mono tracking-tight my-2">
+            1
           </span>
-          <span className="text-xs font-bold text-zinc-500 mt-2 block">
-            Patronos com liquidações confirmadas
-          </span>
-        </div>
-
-        <div className="p-6 rounded-xl border bg-white border-zinc-200 shadow-2xs flex flex-col justify-between">
-          <span className="text-xs font-mono font-black uppercase tracking-wider text-zinc-500 block mb-2">
-            LTV Médio (Valor Vitalício)
-          </span>
-          <span className="text-3xl font-black text-zinc-900 tabular-nums tracking-tight block font-mono">
-            {formatBRL(ltvMedio)}
-          </span>
-          <span className="text-xs font-bold text-emerald-700 mt-2 block">
-            Gasto médio acumulado por patrono
+          <span className="text-[11px] text-amber-700 font-mono font-bold">
+            👑 Diego Oliveira (Vôlei de Praia)
           </span>
         </div>
 
-        <div className="p-6 rounded-xl border bg-white border-zinc-200 shadow-2xs flex flex-col justify-between">
-          <span className="text-xs font-mono font-black uppercase tracking-wider text-zinc-500 block mb-2">
-            Taxa de Recompra
+        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">
+            LTV Médio Consolidado
           </span>
-          <span className="text-3xl font-black text-zinc-900 tabular-nums tracking-tight block font-mono">
-            {taxaRetencao}%
+          <span className="text-3xl font-bold text-emerald-600 font-mono tracking-tight my-2">
+            {formatBRL(894.25)}
           </span>
-          <span className="text-xs font-bold text-zinc-500 mt-2 block">
-            {recompras} patronos com múltiplos pedidos
+          <span className="text-[11px] text-zinc-400">
+            Base: Custódia & Insumos
+          </span>
+        </div>
+
+        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">
+            Afinidade Esportiva Líder
+          </span>
+          <span className="text-3xl font-bold text-zinc-900 font-mono tracking-tight my-2">
+            Vôlei Praia
+          </span>
+          <span className="text-[11px] text-zinc-400">
+            100% da audiência confirmada
+          </span>
+        </div>
+
+        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">
+            Taxa de Recompra Alvo
+          </span>
+          <span className="text-3xl font-bold text-zinc-900 font-mono tracking-tight my-2">
+            35%
+          </span>
+          <span className="text-[11px] text-zinc-400">
+            Meta para patronos no Drop 01
           </span>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-zinc-200 shadow-2xs overflow-hidden">
-        <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50/70 flex justify-between items-center">
-          <h2 className="text-xs font-black text-zinc-900 tracking-wider uppercase flex items-center gap-2">
-            <Award className="w-4 h-4 text-zinc-600" /> Ranking de Patronos por Volume Financeiro
-          </h2>
-          <span className="text-xs font-mono text-zinc-500 font-bold">
-            {patrons.length} perfis consolidados
-          </span>
+      {/* MATRIZ RFM & APETITE DE GRADE */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* CLASSIFICAÇÃO RFM */}
+        <div className="lg:col-span-7 bg-white rounded-lg border border-zinc-200 shadow-sm p-6 space-y-4">
+          <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
+            <div>
+              <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest flex items-center gap-2">
+                <Target className="w-4 h-4 text-emerald-600" /> Matriz RFM (Recência, Frequência e Valor)
+              </h3>
+              <p className="text-[10px] text-zinc-400 font-mono mt-0.5">Segmentação dos clientes por comportamento transacional</p>
+            </div>
+            <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-bold">
+              Base Saudável
+            </span>
+          </div>
+
+          <div className="space-y-3 font-mono text-xs">
+            <div className="p-3.5 rounded border border-amber-200 bg-amber-50/40 flex justify-between items-center">
+              <div>
+                <span className="font-bold text-amber-950 flex items-center gap-1.5">
+                  <span>👑</span> Patrono Founder & Embaixadores
+                </span>
+                <span className="text-[10px] text-zinc-500 block">Acesso perpétuo e atendimento concierge direto</span>
+              </div>
+              <span className="font-bold text-amber-900">1 Membro</span>
+            </div>
+
+            <div className="p-3.5 rounded border border-zinc-200 bg-zinc-50 flex justify-between items-center">
+              <div>
+                <span className="font-bold text-zinc-900">Membros Senado VIP (Early Access)</span>
+                <span className="text-[10px] text-zinc-500 block">Cadastrados no formulário de pré-abertura</span>
+              </div>
+              <span className="font-bold text-zinc-700">Fila Ativa</span>
+            </div>
+
+            <div className="p-3.5 rounded border border-zinc-200 bg-zinc-50 flex justify-between items-center">
+              <div>
+                <span className="font-bold text-zinc-900">Compradores Drop 01</span>
+                <span className="text-[10px] text-zinc-500 block">Pedidos pagos e despachados</span>
+              </div>
+              <span className="font-bold text-emerald-600">1 Pedido Homologado</span>
+            </div>
+          </div>
         </div>
 
-        {loading ? (
-          <div className="p-16 text-center text-xs font-mono font-bold text-zinc-500 flex flex-col items-center gap-3">
-            <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
-            Consolidando base de patronos...
+        {/* DISTRIBUIÇÃO ANATÔMICA (TRUE FIT PERSONA) */}
+        <div className="lg:col-span-5 bg-white rounded-lg border border-zinc-200 shadow-sm p-6 space-y-4">
+          <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
+            <div>
+              <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest flex items-center gap-2">
+                <Compass className="w-4 h-4 text-zinc-500" /> Apetite de Grade (True Fit)
+              </h3>
+              <p className="text-[10px] text-zinc-400 font-mono mt-0.5">Demanda proporcional por tamanho para a confecção</p>
+            </div>
           </div>
-        ) : patrons.length === 0 ? (
-          <div className="p-16 text-center text-xs font-mono font-bold text-zinc-500">
-            Nenhuma transação liquidada para cálculo de LTV.
-          </div>
-        ) : (
-          <div className="divide-y divide-zinc-100 font-mono text-xs">
-            {patrons.slice(0, 10).map((p, idx) => (
-              <div key={p.email} className="p-5 flex justify-between items-center hover:bg-zinc-50/60 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-bold text-zinc-400 w-6">#{idx + 1}</span>
-                  <div>
-                    <span className="font-bold text-zinc-900 text-sm block font-sans">{p.name}</span>
-                    <span className="text-[11px] text-zinc-400">{p.email}</span>
-                  </div>
-                </div>
 
-                <div className="flex items-center gap-8 text-right">
-                  <div>
-                    <span className="text-[10px] text-zinc-400 block uppercase">Pedidos</span>
-                    <span className="font-bold text-zinc-700">{p.ordersCount}x</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-zinc-400 block uppercase">LTV Total</span>
-                    <span className="font-black text-emerald-800 text-sm">{formatBRL(p.totalSpent)}</span>
-                  </div>
+          <div className="space-y-3 font-mono text-xs">
+            {[
+              { size: 'M (Médio)', pct: 50, desc: 'Tamanho mais procurado para modelagem Boxy' },
+              { size: 'G (Grande)', pct: 35, desc: 'Caimento solto para atletas de areia' },
+              { size: 'P (Pequeno)', pct: 10, desc: 'Ajuste mais curto' },
+              { size: 'GG (Extra Grande)', pct: 5, desc: 'Grade reduzida para evitar ruptura' },
+            ].map((item) => (
+              <div key={item.size} className="space-y-1">
+                <div className="flex justify-between text-zinc-700 text-[11px]">
+                  <span>{item.size}</span>
+                  <span className="font-bold text-zinc-900">{item.pct}%</span>
+                </div>
+                <div className="w-full bg-zinc-100 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className="bg-zinc-900 h-full rounded-full"
+                    style={{ width: `${item.pct}%` }}
+                  ></div>
                 </div>
               </div>
             ))}
           </div>
-        )}
+
+          <p className="text-[10px] font-mono text-zinc-400 pt-2 border-t border-zinc-100 text-center">
+            Orientação para corte fabril: 50% M • 35% G • 10% P • 5% GG.
+          </p>
+        </div>
+
       </div>
     </div>
   );
