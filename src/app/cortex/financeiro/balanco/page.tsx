@@ -61,7 +61,7 @@ export default function BalancoPatrimonialPage() {
           </span>
           <div className="text-4xl font-bold font-mono tracking-tight">{formatBRL(netWorth)}</div>
           <span className="inline-block mt-3 px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold uppercase rounded">
-            Estrutura Saudável • Ativos cobrem passivos
+            Estrutura Ativa • Liquidez Operacional
           </span>
         </div>
         <Scale className="w-12 h-12 text-zinc-700" />

@@ -1,12 +1,11 @@
 ﻿'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Wallet, TrendingUp, TrendingDown, RefreshCw, ArrowUpCircle, ArrowDownCircle, Landmark } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 export default function FluxoCaixaPage() {
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<any[]>([]);
-  const [mpBalance, setMpBalance] = useState({ available: 0, total: 0 });
 
   const fetchCashFlow = async () => {
     setLoading(true);
@@ -15,7 +14,6 @@ export default function FluxoCaixaPage() {
       const json = await res.json();
       if (json.success) {
         setOrders(json.orders || []);
-        if (json.mpBalance) setMpBalance(json.mpBalance);
       }
     } catch (e) {
       console.error('Erro ao buscar fluxo de caixa:', e);
@@ -32,7 +30,7 @@ export default function FluxoCaixaPage() {
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
 
   const totalIn = orders.reduce((acc, curr) => acc + Number(curr.total_amount || curr.subtotal || 0), 0);
-  const totalOut = totalIn * (0.06 + 0.0499 + 0.35); // Provisão de Fisco, Gateway e CMV
+  const totalOut = totalIn * (0.06 + 0.0499 + 0.35);
   const netBalance = totalIn - totalOut;
   const avgTicket = orders.length > 0 ? totalIn / orders.length : 0;
 
