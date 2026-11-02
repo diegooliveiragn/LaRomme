@@ -2,21 +2,21 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Activity, Target, Clock, AlertTriangle, Truck, MapPin,
-  CheckCircle2, Zap, ArrowRight, ShieldCheck, DollarSign, RefreshCw, Box, Layers
+  Activity, Target, Clock, Truck, MapPin, CheckCircle2,
+  AlertTriangle, DollarSign, RefreshCw, Box, Layers, TrendingUp, ArrowRight, ShieldCheck
 } from 'lucide-react';
 
 export default function CockpitCLevel() {
   const [loading, setLoading] = useState(true);
-  const [orders, setOrders] = useState<any[]>([]);
+  const [finData, setFinData] = useState<any>(null);
 
-  const fetchCockpitData = async () => {
+  const fetchCockpit = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/orders', { cache: 'no-store' });
+      const res = await fetch('/api/cortex/financeiro', { cache: 'no-store' });
       const json = await res.json();
       if (json.success) {
-        setOrders(json.orders || []);
+        setFinData(json);
       }
     } catch (err: any) {
       console.error('Erro ao carregar Cockpit:', err);
@@ -26,37 +26,35 @@ export default function CockpitCLevel() {
   };
 
   useEffect(() => {
-    fetchCockpitData();
+    fetchCockpit();
   }, []);
 
   const formatBRL = (val: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
 
-  const paidOrders = orders.filter((o) =>
-    ['paid', 'approved', 'shipped', 'delivered'].includes(o.status)
-  );
+  const allOrders = finData?.allOrders || [];
+  const paidOrders = finData?.orders || [];
+  const grossRev = finData?.accounting?.grossRevenue || 0;
+  const netRetained = finData?.accounting?.contributionMargin || 0;
+  const avgTicket = paidOrders.length > 0 ? grossRev / paidOrders.length : 0;
 
-  const totalRevenue = paidOrders.reduce((acc, curr) => acc + Number(curr.total_amount || curr.subtotal || 0), 0);
-  const avgTicket = paidOrders.length > 0 ? totalRevenue / paidOrders.length : 0;
-  const inFulfillmentCount = orders.filter((o) => o.status === 'approved' && o.fulfillment_substatus !== 'ENTREGUE').length;
-  const conversionRate = orders.length > 0 ? Math.round((paidOrders.length / orders.length) * 100) : 0;
+  // Funil Pix em Tempo Real
+  const totalPixGenerated = allOrders.length;
+  const totalPixPaid = paidOrders.length;
+  const pixAbandonmentRate = totalPixGenerated > 0
+    ? Math.round(((totalPixGenerated - totalPixPaid) / totalPixGenerated) * 100)
+    : 0;
 
-  // Decomposição Contábil Real (Alíquota Pix Real 0.99%)
-  const simplesNacional = totalRevenue * 0.06;
-  const gatewayReal = totalRevenue * 0.0099; // Mercado Pago Pix Real
-  const cogsTotal = totalRevenue * 0.35;
-  const netRetained = totalRevenue - simplesNacional - gatewayReal - cogsTotal;
-
-  // Agrupamento Geográfico Real por Estado
+  // Penetração Geográfica Real
   const geoCount: Record<string, number> = {};
-  paidOrders.forEach((o) => {
+  paidOrders.forEach((o: any) => {
     const uf = (o.shipping_state || 'CE').toUpperCase();
     geoCount[uf] = (geoCount[uf] || 0) + 1;
   });
 
   return (
     <div className="space-y-6 pb-12 font-sans bg-transparent">
-      {/* SYSTEM HEALTH MONITOR */}
+      {/* INFRAESTRUTURA OPERACIONAL */}
       <div className="flex flex-wrap items-center gap-4 bg-white border border-zinc-200 px-4 py-3 rounded-lg shadow-sm">
         <span className="text-xs font-mono font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2 border-r border-zinc-200 pr-4">
           <Activity className="w-4 h-4 text-emerald-600" /> Infraestrutura Operacional
@@ -88,7 +86,7 @@ export default function CockpitCLevel() {
         </div>
 
         <button
-          onClick={fetchCockpitData}
+          onClick={fetchCockpit}
           disabled={loading}
           className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 disabled:opacity-50 shadow-sm"
         >
@@ -97,92 +95,128 @@ export default function CockpitCLevel() {
         </button>
       </div>
 
-      {/* RADARES PRINCIPAIS */}
+      {/* TOP RADAR: SAÚDE DO CAIXA E EFICIÊNCIA */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
           <div className="flex justify-between items-start mb-2">
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Receita Liquidada</span>
             <DollarSign className="w-4 h-4 text-emerald-600" />
           </div>
-          <div className="text-3xl font-bold text-zinc-900 font-mono tracking-tight">{formatBRL(totalRevenue)}</div>
+          <div className="text-3xl font-bold text-zinc-900 font-mono tracking-tight">{formatBRL(grossRev)}</div>
           <p className="text-[11px] text-zinc-400 mt-1">Base: {paidOrders.length} liquidação real</p>
         </div>
 
         <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
           <div className="flex justify-between items-start mb-2">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Margem Retida (58%)</span>
+            <Target className="w-4 h-4 text-emerald-600" />
+          </div>
+          <div className="text-3xl font-bold text-emerald-600 font-mono tracking-tight">{formatBRL(netRetained)}</div>
+          <p className="text-[11px] text-zinc-400 mt-1">Livre após CPV (35%) e Impostos</p>
+        </div>
+
+        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-2">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">ROAS Breakeven</span>
+            <TrendingUp className="w-4 h-4 text-indigo-600" />
+          </div>
+          <div className="text-3xl font-bold text-zinc-900 font-mono tracking-tight">1.72x</div>
+          <p className="text-[11px] text-zinc-400 mt-1">Ponto de equilíbrio para tráfego pago</p>
+        </div>
+
+        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
+          <div className="flex justify-between items-start mb-2">
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Ticket Médio Real</span>
-            <Target className="w-4 h-4 text-indigo-600" />
+            <CheckCircle2 className="w-4 h-4 text-purple-600" />
           </div>
           <div className="text-3xl font-bold text-zinc-900 font-mono tracking-tight">{formatBRL(avgTicket)}</div>
-          <p className="text-[11px] text-zinc-400 mt-1">Média por patrono</p>
-        </div>
-
-        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Na Bancada de Galpão</span>
-            <Box className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="text-3xl font-bold text-zinc-900 font-mono tracking-tight">{inFulfillmentCount}</div>
-          <p className="text-[11px] text-zinc-400 mt-1">Ordens em processamento</p>
-        </div>
-
-        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Conversão Checkout</span>
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-          </div>
-          <div className="text-3xl font-bold text-zinc-900 font-mono tracking-tight">{conversionRate}%</div>
-          <p className="text-[11px] text-zinc-400 mt-1">{paidOrders.length} pagos de {orders.length} gerados</p>
+          <p className="text-[11px] text-zinc-400 mt-1">Média por patrono liquidado</p>
         </div>
       </div>
 
-      {/* SEÇÃO INTERMEDIÁRIA: RUNWAY, SLA E DECOMPOSIÇÃO */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Runway de Sobrevivência</span>
-            <ShieldCheck className="w-4 h-4 text-emerald-600" />
+      {/* FUNIL PIX EM TEMPO REAL & SAZONALIDADE */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* FUNIL PIX */}
+        <div className="lg:col-span-6 p-6 rounded-lg border border-zinc-200 bg-white shadow-sm space-y-4">
+          <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
+            <div>
+              <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest">Funil de Conversão Pix (Tempo Real)</h3>
+              <p className="text-[10px] text-zinc-400 font-mono">Chaves Geradas vs. Confirmações de Pagamento</p>
+            </div>
+            <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
+              pixAbandonmentRate > 35 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
+            }`}>
+              Abandono: {pixAbandonmentRate}%
+            </span>
           </div>
-          <div className="text-2xl font-bold text-zinc-900 font-mono">Estrutura Ativa</div>
-          <p className="text-[11px] text-zinc-400 mt-1">
-            Caixa operacional positivo com ciclo Pix D+0 no Mercado Pago.
-          </p>
+
+          <div className="space-y-3 font-mono text-xs">
+            <div>
+              <div className="flex justify-between text-zinc-600 mb-1">
+                <span>1. Pix Gerados no Checkout</span>
+                <span className="font-bold text-zinc-900">{totalPixGenerated}</span>
+              </div>
+              <div className="w-full bg-zinc-100 h-2.5 rounded-full overflow-hidden">
+                <div className="bg-zinc-800 h-full rounded-full" style={{ width: '100%' }}></div>
+              </div>
+            </div>
+
+            <div>
+              <div className="flex justify-between text-zinc-600 mb-1">
+                <span>2. Pix Liquidados com Sucesso</span>
+                <span className="font-bold text-emerald-600">{totalPixPaid} ({totalPixGenerated > 0 ? Math.round((totalPixPaid/totalPixGenerated)*100) : 0}%)</span>
+              </div>
+              <div className="w-full bg-zinc-100 h-2.5 rounded-full overflow-hidden">
+                <div
+                  className="bg-emerald-500 h-full rounded-full"
+                  style={{ width: `${totalPixGenerated > 0 ? (totalPixPaid / totalPixGenerated) * 100 : 0}%` }}
+                ></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-3 border-t border-zinc-100 flex justify-between items-center text-xs">
+            <span className="text-zinc-500 font-mono text-[11px]">Tarifa Mercado Pago: 0,99%</span>
+            <span className="text-emerald-600 font-mono font-bold">Liquidação D+0 Ativa</span>
+          </div>
         </div>
 
-        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Velocidade de Fulfillment</span>
-            <Clock className="w-4 h-4 text-indigo-600" />
+        {/* SLA DE FULFILLMENT & RUNWAY */}
+        <div className="lg:col-span-6 p-6 rounded-lg border border-zinc-200 bg-white shadow-sm space-y-4">
+          <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
+            <div>
+              <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest">SLA de Bancada & Sobrevivência</h3>
+              <p className="text-[10px] text-zinc-400 font-mono">Eficiência Logística de Expedição e Cobertura</p>
+            </div>
+            <Clock className="w-4 h-4 text-zinc-400" />
           </div>
-          <div className="text-2xl font-bold text-zinc-900 font-mono">&lt; 24h</div>
-          <p className="text-[11px] text-zinc-400 mt-1">
-            Meta operacional: despacho no mesmo dia para pedidos aprovados.
-          </p>
-        </div>
 
-        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Decomposição Contábil</span>
-            <Layers className="w-4 h-4 text-amber-600" />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="p-4 rounded border border-zinc-200 bg-zinc-50">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase block font-mono mb-1">
+                Velocidade de Despacho
+              </span>
+              <span className="text-2xl font-bold font-mono text-zinc-900">&lt; 24h</span>
+              <p className="text-[10px] text-zinc-400 mt-1">Meta interna: envio no mesmo dia útil</p>
+            </div>
+
+            <div className="p-4 rounded border border-zinc-200 bg-zinc-50">
+              <span className="text-[10px] font-bold text-zinc-500 uppercase block font-mono mb-1">
+                Runway Operacional
+              </span>
+              <span className="text-2xl font-bold font-mono text-emerald-600">Estruturado</span>
+              <p className="text-[10px] text-zinc-400 mt-1">R$ 894,25 em Ativos de Fundação</p>
+            </div>
           </div>
-          <div className="space-y-1 text-xs font-mono">
-            <div className="flex justify-between text-zinc-600">
-              <span>Lucro Líquido Retido (~58%):</span>
-              <span className="font-bold text-emerald-600">{formatBRL(netRetained)}</span>
-            </div>
-            <div className="flex justify-between text-zinc-500">
-              <span>Fisco (6%) + Gateway (0,99%):</span>
-              <span>{formatBRL(simplesNacional + gatewayReal)}</span>
-            </div>
-            <div className="flex justify-between text-zinc-500">
-              <span>Provisão CMV Têxtil (35%):</span>
-              <span>{formatBRL(cogsTotal)}</span>
-            </div>
+
+          <div className="pt-2 text-xs text-zinc-600 font-mono flex items-center justify-between">
+            <span>Logística Bifurcada:</span>
+            <span className="font-bold text-zinc-900">LaRomme Courier (CE) + Correios (BR)</span>
           </div>
         </div>
       </div>
 
-      {/* SEÇÃO INFERIOR: DISTRIBUIÇÃO GEOGRÁFICA REAL */}
+      {/* PENETRAÇÃO GEOGRÁFICA REAL */}
       <div className="p-6 rounded-lg border border-zinc-200 bg-white shadow-sm">
         <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest mb-4 flex items-center gap-2">
           <MapPin className="w-4 h-4 text-zinc-500" /> Penetração Geográfica de Vendas
@@ -195,7 +229,7 @@ export default function CockpitCLevel() {
             </div>
           ))}
           {Object.keys(geoCount).length === 0 && (
-            <span className="text-zinc-400 col-span-full">Aguardando novos despachos regionais.</span>
+            <span className="text-zinc-400 col-span-full font-mono text-xs">Aguardando novos despachos regionais.</span>
           )}
         </div>
       </div>

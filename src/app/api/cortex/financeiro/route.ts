@@ -14,14 +14,18 @@ export async function GET() {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // 1. Busca todos os pedidos homologados/pagos
-    const { data: orders, error: ordersErr } = await supabase
+    // 1. Busca todos os pedidos do sistema (para funil e conversão)
+    const { data: allOrders, error: allOrdersErr } = await supabase
       .from('orders')
-      .select('id, short_id, total_amount, subtotal, status, created_at')
-      .in('status', ['approved', 'paid', 'shipped', 'delivered'])
+      .select('id, short_id, total_amount, subtotal, status, created_at, shipping_state, customer_name, customer_email')
       .order('created_at', { ascending: false });
 
-    if (ordersErr) throw ordersErr;
+    if (allOrdersErr) throw allOrdersErr;
+
+    const orders = allOrders || [];
+    const paidOrders = orders.filter((o) =>
+      ['approved', 'paid', 'shipped', 'delivered'].includes(o.status)
+    );
 
     // 2. Consulta Saldo em Conta no Mercado Pago
     let mpBalance = {
@@ -50,10 +54,46 @@ export async function GET() {
       }
     }
 
+    // 3. Custos de Fundação / Pré-Operacionais Reais
+    const startupCosts = {
+      inpiIntangible: 500.00, // Ativo Não Circulante (Marca)
+      domainsInfrastructure: 394.25, // .com.br (R$ 129,99) + .club, .xyz, .net, .store (R$ 264,26)
+      totalStartup: 894.25
+    };
+
+    // 4. Métricas Contábeis Consolidadas
+    const grossRevenue = paidOrders.reduce((acc, curr) => acc + Number(curr.total_amount || curr.subtotal || 0), 0);
+    const taxSimples = Number((grossRevenue * 0.06).toFixed(2));
+    const gatewayPixFee = Number((grossRevenue * 0.0099).toFixed(2)); // Alíquota Real MP: 0,99%
+    const cogsTextil = Number((grossRevenue * 0.35).toFixed(2)); // CMV Têxtil ~35%
+    const opexFixo = Number((grossRevenue * 0.12).toFixed(2)); // Despesas Operacionais e Nuvem ~12%
+
+    const netRevenue = Number((grossRevenue - taxSimples - gatewayPixFee).toFixed(2));
+    const contributionMargin = Number((netRevenue - cogsTextil).toFixed(2));
+    const netProfitEbitda = Number((contributionMargin - opexFixo).toFixed(2));
+
+    // Regra de Ouro (70% Reinvestimento Acervo / 30% Pró-Labore Fundador)
+    const splitReinvestimento = Number((netProfitEbitda * 0.70).toFixed(2));
+    const splitProLabore = Number((netProfitEbitda * 0.30).toFixed(2));
+
     return NextResponse.json({
       success: true,
-      orders: orders || [],
-      mpBalance
+      orders: paidOrders,
+      allOrders,
+      mpBalance,
+      startupCosts,
+      accounting: {
+        grossRevenue,
+        taxSimples,
+        gatewayPixFee,
+        netRevenue,
+        cogsTextil,
+        contributionMargin,
+        opexFixo,
+        netProfitEbitda,
+        splitReinvestimento,
+        splitProLabore
+      }
     });
   } catch (err: any) {
     console.error('Erro na API Financeiro Cortex:', err);
