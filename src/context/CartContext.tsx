@@ -253,6 +253,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+    useEffect(() => {
+    const handleStorageChange = () => {
+      const saved = localStorage.getItem('laromme_active_order');
+      if (!saved) setActiveOrder(null);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const clearActiveOrder = () => {
     setActiveOrder(null);
     localStorage.removeItem('laromme_active_order');

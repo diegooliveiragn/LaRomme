@@ -86,12 +86,13 @@ export default function PedidosPage() {
       });
 
       const fullOrders: Order[] = (ordersData || []).map((ord: any) => {
+          if (ord.status === 'approved') ord.status = 'paid';
         // Resolve substatus padrão se não existir na coluna
         let substatus: MicroStatus = ord.fulfillment_substatus;
         if (!substatus) {
           if (ord.status === 'delivered') substatus = 'ENTREGUE';
           else if (ord.status === 'shipped') substatus = 'DESPACHADO';
-          else if (ord.status === 'paid') substatus = 'PAGAMENTO_APROVADO';
+          else if (ord.status === 'paid' || ord.status === 'approved') substatus = 'PAGAMENTO_APROVADO';
           else substatus = 'PAGAMENTO_APROVADO';
         }
 
