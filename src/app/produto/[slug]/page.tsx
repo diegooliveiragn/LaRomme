@@ -3,10 +3,8 @@
 import { useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
-import Link from 'next/link';
 import { PRODUCTS, Product } from '@/data/products';
 import { useCart } from '@/context/CartContext';
-import FadeIn from '@/components/FadeIn';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -14,42 +12,86 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function ProductPage({ params }: { params: { slug: string } }) {
-  const product: Product | undefined = PRODUCTS.find((p) => p.id === params.slug);
+  const localProduct: Product | undefined = PRODUCTS.find((p) => p.id === params.slug);
 
-  if (!product) {
-    notFound();
-  }
-
-  const otherProducts = PRODUCTS.filter((p) => p.id !== product.id);
-
-  const { addToCart, openCart } = useCart();
-  const [selectedColorIndex, setSelectedColorIndex] = useState(0);
-  const [selectedSize, setSelectedSize] = useState<string>(product.isOneSize ? 'TU' : 'M');
-
-  const [showProportionModal, setShowProportionModal] = useState(false);
-  const [addedToast, setAddedToast] = useState(false);
-
-  const [height, setHeight] = useState('180');
-  const [weight, setWeight] = useState('80');
-  const [fitPreference, setFitPreference] = useState<'ANATÔMICO' | 'PADRÃO' | 'AMPLO'>('PADRÃO');
-  const [openAccordion, setOpenAccordion] = useState<number | null>(0);
-  const [zoomStyle, setZoomStyle] = useState<{ [key: number]: React.CSSProperties }>({});
-
+  const [dbProduct, setDbProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(!localProduct);
   const [stockMap, setStockMap] = useState<Record<string, number>>({});
   const [hasFetchedStock, setHasFetchedStock] = useState(false);
 
-  const productId = product.id;
+  useEffect(() => {
+    async function loadProductFromDb() {
+      if (localProduct) return;
+      try {
+        const { data, error } = await supabase
+          .from('products')
+          .select('*')
+          .or(`id.eq.${params.slug},sku_code.eq.${params.slug}`)
+          .maybeSingle();
+
+        if (error || !data) {
+          setLoading(false);
+          return;
+        }
+
+        const rawPrice = Number(data.price || 0);
+        const formattedPrice = new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
+        }).format(rawPrice);
+
+        const mapped: Product = {
+          id: data.sku_code || data.id,
+          name: data.name,
+          category: data.category || 'LIFESTYLE / ALGODÃO BOXY',
+          tag: 'ARTEFATO HOMOLOGADO',
+          price: formattedPrice,
+          description: data.description || 'Artefato oficial LaRomme.',
+          fabric: 'Algodão Premium 260 GSM estruturado.',
+          fit: 'Corte Boxy. Ombros deslocados e gola estruturada.',
+          care: 'Lavar em ciclo delicado em água fria. Secar à sombra.',
+          isOneSize: false,
+          colors: [
+            {
+              name: 'Noir',
+              hex: '#0D0D0D',
+              images: [data.image || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1000&auto=format&fit=crop']
+            }
+          ],
+          defaultImages: [data.image || 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?q=80&w=1000&auto=format&fit=crop']
+        };
+
+        setDbProduct(mapped);
+        setStockMap({
+          P: data.stock_p ?? 0,
+          M: data.stock_m ?? 1,
+          G: data.stock_g ?? 0,
+          GG: data.stock_gg ?? 0,
+          TU: data.stock ?? 1
+        });
+        setHasFetchedStock(true);
+      } catch (err) {
+        console.error('Erro ao buscar produto no banco:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadProductFromDb();
+  }, [params.slug, localProduct]);
+
+  const product = localProduct || dbProduct;
 
   useEffect(() => {
     async function fetchRealtimeStock() {
-      if (!productId) return;
+      if (!localProduct || !localProduct.id) return;
       try {
         const { data: variants, error } = await supabase
           .from('inventory_variants')
           .select('size, stock_available')
-          .eq('product_id', productId);
+          .eq('product_id', localProduct.id);
 
-        if (!error && variants) {
+        if (!error && variants && variants.length > 0) {
           const map: Record<string, number> = {};
           variants.forEach((v) => {
             const key = v.size ? v.size.toUpperCase() : 'TU';
@@ -63,7 +105,24 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
       }
     }
     fetchRealtimeStock();
-  }, [productId]);
+  }, [localProduct]);
+
+  const { addToCart } = useCart();
+  const [selectedColorIndex] = useState(0);
+  const [selectedSize, setSelectedSize] = useState<string>('M');
+  const [addedToast, setAddedToast] = useState(false);
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-black text-white flex items-center justify-center font-mono text-xs uppercase tracking-widest">
+        Localizando artefato no acervo...
+      </main>
+    );
+  }
+
+  if (!product) {
+    notFound();
+  }
 
   const currentImages = product.colors[selectedColorIndex]?.images || product.defaultImages;
   const isSelectedSizeOutOfStock = hasFetchedStock && (stockMap[selectedSize] ?? 0) <= 0;
@@ -78,330 +137,99 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     }, 3000);
   };
 
-  const handleQuickAdd = (p: Product, size: string) => {
-    addToCart(p, size, 0);
-    openCart();
-  };
-
-  const calculateRecommendedSize = () => {
-    const w = parseFloat(weight) || 80;
-    if (w < 70) return 'P';
-    if (w >= 70 && w <= 83) return fitPreference === 'AMPLO' ? 'G' : 'M';
-    if (w > 83 && w <= 93) return fitPreference === 'ANATÔMICO' ? 'M' : 'G';
-    return 'GG';
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>, idx: number) => {
-    const { left, top, width, height } = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - left) / width) * 100;
-    const y = ((e.clientY - top) / height) * 100;
-    setZoomStyle((prev) => ({
-      ...prev,
-      [idx]: { transformOrigin: `${x}\%${y}%`, transform: 'scale(1.8)' }
-    }));
-  };
-
-  const handleMouseLeave = (idx: number) => {
-    setZoomStyle((prev) => ({
-      ...prev,
-      [idx]: { transformOrigin: 'center center', transform: 'scale(1)' }
-    }));
-  };
-
   return (
-    <div className="pt-28 pb-20 px-6 md:px-12 max-w-7xl mx-auto space-y-16 relative font-sans">
-      <FadeIn>
-        <div className="flex justify-between items-center text-xs font-mono text-zinc-500 border-b border-zinc-900 pb-4">
-          <Link href="/#origo" className="hover:text-white transition-colors">← VOLTAR AO ACERVO.</Link>
-          <span>ARTEFATO / {product.id.toUpperCase()}</span>
-        </div>
-      </FadeIn>
+    <main className="min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black pt-28 pb-20">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:gap-16 items-start">
+          
+          <div className="relative aspect-3/4 w-full bg-zinc-900 border border-zinc-800 rounded-sm overflow-hidden">
+            <Image
+              src={currentImages[0]}
+              alt={product.name}
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        {/* COLUNA ESQUERDA: GALERIA AMPLA SPOTLIGHT */}
-        <div className="lg:col-span-7 space-y-6">
-          {currentImages.map((imgUrl, idx) => (
-            <FadeIn key={idx} delay={idx * 100}>
-              <div
-                className="relative aspect-[3/4] w-full overflow-hidden cursor-crosshair group 
-                           bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.04)_0%,rgba(0,0,0,0)_70%)] rounded-sm"
-                onMouseMove={(e) => handleMouseMove(e, idx)}
-                onMouseLeave={() => handleMouseLeave(idx)}
-              >
-                <div className="absolute inset-0 w-full h-full transition-transform duration-200 ease-out p-3 sm:p-6" style={zoomStyle[idx] || {}}>
-                  <Image
-                    src={imgUrl}
-                    alt={`${product.name} -${idx + 1}`}
-                    fill
-                    className="object-contain drop-shadow-[0_25px_35px_rgba(0,0,0,0.9)]"
-                    priority={idx === 0}
-                  />
-                </div>
-                <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1.5 border border-white/5 text-[9px] font-mono tracking-widest text-zinc-400">
-                  {idx === 0 ? 'VISTA FRONTAL' : 'VISTA DORSAL'}
-                </div>
-                <div className="absolute top-4 right-4 bg-black/80 backdrop-blur-md px-3 py-1.5 border border-white/10 text-[9px] font-mono tracking-widest text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity">
-                  ZOOM ÓPTICO
-                </div>
-              </div>
-            </FadeIn>
-          ))}
-        </div>
-
-        {/* COLUNA DIREITA: INFORMAÇÕES TÉCNICAS */}
-        <div className="lg:col-span-5 space-y-8 lg:sticky lg:top-28 h-fit">
-          <FadeIn>
-            <div className="space-y-2">
-              <span className="text-[10px] font-mono tracking-[0.3em] text-zinc-500 uppercase">{product.category}</span>
-              <h1 className="font-serif text-3xl md:text-5xl tracking-[0.2em] text-white font-bold">{product.name}</h1>
-              <p className="text-xl font-mono text-white font-bold pt-2">{product.price}</p>
+          <div className="space-y-8">
+            <div className="space-y-2 border-b border-zinc-800 pb-6">
+              <span className="text-xs font-mono tracking-[0.2em] text-zinc-500 uppercase block">
+                {product.category}
+              </span>
+              <h1 className="font-serif text-3xl md:text-4xl uppercase tracking-wider font-bold">
+                {product.name}
+              </h1>
+              <p className="font-mono text-xl text-zinc-300 font-bold mt-2">
+                {product.price}
+              </p>
             </div>
-          </FadeIn>
 
-          <FadeIn delay={100}>
-            <p className="text-xs text-zinc-400 leading-relaxed font-sans">{product.description}</p>
-          </FadeIn>
+            <p className="text-zinc-400 text-sm leading-relaxed font-light">
+              {product.description}
+            </p>
 
-          {product.colors.length > 0 && (
-            <FadeIn delay={150}>
-              <div className="space-y-3 border-t border-zinc-900 pt-6">
-                <div className="flex justify-between text-xs font-mono text-zinc-400">
-                  <span>COR ATIVA:</span>
-                  <span className="text-white font-bold">{product.colors[selectedColorIndex].name}.</span>
-                </div>
+            {!product.isOneSize && (
+              <div className="space-y-3">
+                <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 block font-bold">
+                  Dimensão / Grade
+                </span>
                 <div className="flex gap-3">
-                  {product.colors.map((color, idx) => (
-                    <button
-                      key={color.name}
-                      onClick={() => setSelectedColorIndex(idx)}
-                      className={`w-8 h-8 rounded-full border transition-all ${
-                        selectedColorIndex === idx ? 'border-white scale-110' : 'border-zinc-800 hover:border-zinc-500'
-                      }`}
-                      style={{ backgroundColor: color.hex }}
-                      title={color.name}
-                    />
-                  ))}
+                  {['P', 'M', 'G', 'GG'].map((sz) => {
+                    const isAvailable = (stockMap[sz] ?? 1) > 0;
+                    return (
+                      <button
+                        key={sz}
+                        type="button"
+                        disabled={!isAvailable}
+                        onClick={() => setSelectedSize(sz)}
+                        className={`w-12 h-12 flex items-center justify-center font-mono text-xs border transition-all ${
+                          selectedSize === sz
+                            ? 'border-white bg-white text-black font-bold'
+                            : isAvailable
+                            ? 'border-zinc-800 text-zinc-300 hover:border-zinc-600'
+                            : 'border-zinc-900 text-zinc-600 cursor-not-allowed opacity-40 line-through'
+                        }`}
+                      >
+                        {sz}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-            </FadeIn>
-          )}
+            )}
 
-          <FadeIn delay={200}>
-            <div className="space-y-3 border-t border-zinc-900 pt-6">
-              {product.isOneSize ? (
-                <div className="flex justify-between items-center text-xs font-mono">
-                  <span className="text-zinc-400">TAMANHO:</span>
-                  <span className="text-white font-bold tracking-widest border border-zinc-800 px-4 py-2">ÚNICO (AJUSTÁVEL)</span>
+            <div className="space-y-3 pt-4">
+              <button
+                type="button"
+                onClick={handleAddToCart}
+                disabled={isSelectedSizeOutOfStock}
+                className="w-full py-4 bg-white text-black font-mono text-xs uppercase tracking-[0.2em] font-bold hover:bg-zinc-200 transition-all disabled:bg-zinc-800 disabled:text-zinc-500 disabled:cursor-not-allowed"
+              >
+                {isSelectedSizeOutOfStock ? 'Esgotado nesta grade' : 'Adicionar à Sacola'}
+              </button>
+
+              {addedToast && (
+                <div className="p-3 bg-zinc-900 border border-emerald-500/40 text-emerald-400 text-xs font-mono text-center tracking-wider uppercase animate-in fade-in">
+                  Artefato reservado na sacola
                 </div>
-              ) : (
-                <>
-                  <div className="flex justify-between items-center text-xs font-mono">
-                    <span className="text-zinc-400">TAMANHO:</span>
-                    <button
-                      onClick={() => setShowProportionModal(true)}
-                      className="text-zinc-300 underline underline-offset-4 hover:text-white"
-                    >
-                      SISTEMA DE PROPORÇÃO.
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-4 gap-2">
-                    {['P', 'M', 'G', 'GG'].map((size) => {
-                      const isOutOfStock = hasFetchedStock && (stockMap[size] ?? 0) <= 0;
-                      return (
-                        <button
-                          key={size}
-                          disabled={isOutOfStock}
-                          onClick={() => setSelectedSize(size)}
-                          className={`py-3 text-xs font-mono border transition-all ${
-                            isOutOfStock
-                              ? 'opacity-30 border-zinc-900 text-zinc-700 line-through cursor-not-allowed'
-                              : selectedSize === size
-                                ? 'bg-white text-black border-white font-bold'
-                                : 'bg-zinc-950 text-zinc-400 border-zinc-800 hover:border-zinc-600'
-                          }`}
-                        >
-                          {size}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </>
               )}
             </div>
-          </FadeIn>
 
-          <FadeIn delay={250}>
-            <button
-              onClick={handleAddToCart}
-              disabled={isSelectedSizeOutOfStock}
-              className={`w-full font-bold text-xs tracking-[0.3em] uppercase py-4 transition-all shadow-2xl ${
-                isSelectedSizeOutOfStock
-                  ? 'bg-zinc-900 text-zinc-600 border border-zinc-800 cursor-not-allowed'
-                  : 'bg-white text-black hover:bg-zinc-200 active:scale-[0.99]'
-              }`}
-            >
-              {addedToast
-                ? '✓ ARTEFATO ADICIONADO!'
-                : isSelectedSizeOutOfStock
-                  ? 'TAMANHO INDISPONÍVEL'
-                  : 'ADICIONAR AO CARRINHO.'}
-            </button>
-          </FadeIn>
-
-          <FadeIn delay={300}>
-            <div className="border-t border-zinc-900 pt-6 space-y-4 font-sans text-xs">
-              <div className="border-b border-zinc-900 pb-4">
-                <button
-                  onClick={() => setOpenAccordion(openAccordion === 0 ? null : 0)}
-                  className="w-full flex justify-between text-left font-mono text-zinc-300 uppercase tracking-wider"
-                >
-                  <span>01. TECIDO & COMPOSIÇÃO.</span>
-                  <span>{openAccordion === 0 ? '—' : '+'}</span>
-                </button>
-                {openAccordion === 0 && (
-                  <p className="mt-3 text-zinc-400 leading-relaxed font-light">{product.fabric}</p>
-                )}
-              </div>
-
-              <div className="border-b border-zinc-900 pb-4">
-                <button
-                  onClick={() => setOpenAccordion(openAccordion === 1 ? null : 1)}
-                  className="w-full flex justify-between text-left font-mono text-zinc-300 uppercase tracking-wider"
-                >
-                  <span>02. MODELAGEM & FIT.</span>
-                  <span>{openAccordion === 1 ? '—' : '+'}</span>
-                </button>
-                {openAccordion === 1 && (
-                  <p className="mt-3 text-zinc-400 leading-relaxed font-light">{product.fit}</p>
-                )}
-              </div>
-
-              <div className="border-b border-zinc-900 pb-4">
-                <button
-                  onClick={() => setOpenAccordion(openAccordion === 2 ? null : 2)}
-                  className="w-full flex justify-between text-left font-mono text-zinc-300 uppercase tracking-wider"
-                >
-                  <span>03. CUIDADOS & CONSERVAÇÃO.</span>
-                  <span>{openAccordion === 2 ? '—' : '+'}</span>
-                </button>
-                {openAccordion === 2 && (
-                  <p className="mt-3 text-zinc-400 leading-relaxed font-light">{product.care}</p>
-                )}
+            <div className="border-t border-zinc-800 pt-6 space-y-4">
+              <span className="text-xs font-mono tracking-wider text-zinc-400 uppercase font-bold block mb-2">
+                Especificações Técnicas
+              </span>
+              <div className="text-xs font-mono text-zinc-400 space-y-2">
+                <p><strong className="text-zinc-300">Tecido:</strong> {product.fabric}</p>
+                <p><strong className="text-zinc-300">Modelagem:</strong> {product.fit}</p>
+                <p><strong className="text-zinc-300">Cuidados:</strong> {product.care}</p>
               </div>
             </div>
-          </FadeIn>
+          </div>
+
         </div>
       </div>
-
-      {/* MODAL DE PROPORÇÃO */}
-      {!product.isOneSize && showProportionModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex justify-end animate-in fade-in duration-300">
-          <div className="w-full max-w-md bg-[#080808] border-l border-zinc-800 p-8 flex flex-col justify-between space-y-6">
-            <div className="space-y-6 font-sans">
-              <div className="flex justify-between items-center border-b border-zinc-800 pb-4">
-                <h3 className="font-serif text-lg tracking-wider text-white">SISTEMA DE PROPORÇÃO.</h3>
-                <button onClick={() => setShowProportionModal(false)} className="text-zinc-500 hover:text-white font-mono">✕</button>
-              </div>
-              <p className="text-xs text-zinc-400 leading-relaxed font-light">
-                Insira suas medidas anatômicas para calcularmos o caimento exato na modelagem de Fortaleza.
-              </p>
-              <div className="space-y-4 font-mono text-xs">
-                <div>
-                  <label className="block text-zinc-400 mb-2">ALTURA (CM):</label>
-                  <input type="number" value={height} onChange={(e) => setHeight(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" />
-                </div>
-                <div>
-                  <label className="block text-zinc-400 mb-2">PESO (KG):</label>
-                  <input type="number" value={weight} onChange={(e) => setWeight(e.target.value)} className="w-full bg-zinc-950 border border-zinc-800 px-4 py-3 text-white focus:outline-none focus:border-white" />
-                </div>
-                <div>
-                  <label className="block text-zinc-400 mb-2">PREFERÊNCIA DE CAIMENTO:</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {(['ANATÔMICO', 'PADRÃO', 'AMPLO'] as const).map((pref) => (
-                      <button key={pref} onClick={() => setFitPreference(pref)} className={`py-2 text-[10px] border ${fitPreference === pref ? 'bg-white text-black border-white font-bold' : 'border-zinc-800 text-zinc-500'}`}>
-                        {pref}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="bg-zinc-950 border border-zinc-800 p-6 space-y-2">
-                <span className="text-[10px] font-mono text-zinc-500 uppercase block">RECOMENDAÇÃO CALCULADA</span>
-                <p className="font-serif text-2xl text-white font-bold">TAMANHO {calculateRecommendedSize()}.</p>
-                <p className="text-[11px] text-zinc-400 font-light">Proporção perfeita para caimento alinhado sem excessos.</p>
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                setSelectedSize(calculateRecommendedSize());
-                setShowProportionModal(false);
-              }}
-              className="w-full bg-white text-black font-bold text-xs tracking-[0.25em] uppercase py-4 hover:bg-zinc-200 transition-all font-sans"
-            >
-              APLICAR TAMANHO {calculateRecommendedSize()}.
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* QUICK ADD - VITRINE COMPLEMENTAR INFERIOR */}
-      <FadeIn delay={400}>
-        <div className="pt-24 border-t border-zinc-900 mt-20 space-y-12">
-          <div className="flex items-center justify-between">
-            <h2 className="font-serif text-xl md:text-2xl tracking-[0.2em] text-white uppercase font-bold">
-              EXPANDA O SISTEMA.
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {otherProducts.map((p) => (
-              <div key={p.id} className="group relative flex flex-col justify-between">
-                <div className="relative aspect-[3/4] w-full mb-6 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.04)_0%,rgba(0,0,0,0)_70%)] rounded-sm overflow-hidden">
-                  <Link href={`/produto/${p.id}`} className="absolute inset-0 z-10" />
-                  <div className="relative w-full h-full p-4">
-                    <Image
-                      src={p.defaultImages[0]}
-                      alt={p.name}
-                      fill
-                      className="object-contain group-hover:scale-105 transition-transform duration-500 drop-shadow-[0_20px_20px_rgba(0,0,0,0.85)]"
-                    />
-                  </div>
-                </div>
-                
-                <div className="px-1">
-                  <div className="flex justify-between items-baseline mb-1 border-b border-zinc-900 pb-2">
-                    <h3 className="font-serif text-base tracking-wider text-white font-bold">{p.name}</h3>
-                    <span className="text-[11px] font-mono text-zinc-300 font-bold">{p.price}</span>
-                  </div>
-                  <span className="text-[9px] font-mono tracking-widest text-zinc-500 block mb-4 mt-1">{p.category}</span>
-                  
-                  {/* Régua Quick Add */}
-                  {p.isOneSize ? (
-                    <button 
-                      onClick={() => handleQuickAdd(p, 'TU')}
-                      className="w-full py-2.5 text-[9px] font-bold uppercase tracking-widest border border-zinc-800 text-zinc-400 hover:text-white hover:border-white transition-colors z-20 relative bg-zinc-950"
-                    >
-                      + SACOLA (ÚNICO)
-                    </button>
-                  ) : (
-                    <div className="flex gap-1 z-20 relative">
-                      {['P', 'M', 'G', 'GG'].map(sz => (
-                        <button
-                          key={sz}
-                          onClick={() => handleQuickAdd(p, sz)}
-                          className="flex-1 py-2 text-[9px] font-mono font-bold uppercase tracking-widest border border-zinc-800 text-zinc-400 hover:bg-white hover:text-black hover:border-white transition-all bg-zinc-950"
-                        >
-                          + {sz}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </FadeIn>
-    </div>
+    </main>
   );
 }
