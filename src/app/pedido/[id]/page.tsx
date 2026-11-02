@@ -3,10 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import FadeIn from '@/components/FadeIn';
 
 export default function OrderDetailsPage({ params }: { params: { id: string } }) {
   const orderId = params.id;
+  const router = useRouter();
 
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -19,9 +21,18 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [submittingRating, setSubmittingRating] = useState(false);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const storageKey = 'laromme_feedback_' + orderId;
+      if (localStorage.getItem(storageKey)) {
+        setFeedbackSubmitted(true);
+      }
+    }
+  }, [orderId]);
+
   const fetchOrder = async () => {
     try {
-      const res = await fetch(`/api/pedido/${orderId}`, { cache: 'no-store' });
+      const res = await fetch('/api/pedido/' + orderId, { cache: 'no-store' });
       if (res.ok) {
         const data = await res.json();
         setOrder(data.order);
@@ -56,11 +67,20 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
       return;
     }
     setSubmittingRating(true);
-    // Simula envio e confirmação do feedback de pós-compra
-    setTimeout(() => {
-      setSubmittingRating(false);
+    try {
+      if (typeof window !== 'undefined') {
+        const storageKey = 'laromme_feedback_' + orderId;
+        localStorage.setItem(storageKey, JSON.stringify({ rating, comment, date: new Date().toISOString() }));
+      }
       setFeedbackSubmitted(true);
-    }, 800);
+      setTimeout(() => {
+        router.push('/');
+      }, 2000);
+    } catch (e) {
+      console.error('Erro ao registrar avaliação:', e);
+    } finally {
+      setSubmittingRating(false);
+    }
   };
 
   const formatBRL = (val: number) =>
@@ -199,10 +219,10 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
                     {feedbackSubmitted ? (
                       <div className="p-4 bg-emerald-950/20 border border-emerald-900/40 rounded text-center space-y-1">
                         <span className="text-emerald-400 font-bold text-xs uppercase tracking-wider block">
-                          ✓ Avaliação Recebida
+                          ✓ Avaliação Concluída
                         </span>
                         <p className="text-[11px] text-zinc-400">
-                          Seu retorno foi registrado diretamente na controladoria de qualidade da LaRomme.
+                          Agradecemos pelo seu retorno. Redirecionando para o acervo...
                         </p>
                       </div>
                     ) : (
