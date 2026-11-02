@@ -172,7 +172,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         productId: product.id || product.slug || 'origo',
         name: product.name || 'Artefato',
         price: product.price || product.priceString || `R$ ${product.priceNumeric || 0}`,
-        priceNumeric: product.priceNumeric || (typeof product.price === 'number' ? product.price : 0),
+        priceNumeric: product.priceNumeric || (typeof product.price === 'number' ? product.price : parseFloat(String(product.price || '').replace(/[^\d,.]/g, '').replace(',', '.')) || 0),
         priceString: product.priceString || product.price || `R$ ${product.priceNumeric || 0}`,
         image: product.image || (product.images && product.images[0]) || '',
         size: size,

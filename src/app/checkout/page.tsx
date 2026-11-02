@@ -73,15 +73,17 @@ export default function CheckoutPage() {
     }
   };
 
-  const getItemPrice = (item: any): number => {
-    if (typeof item.priceNumeric === 'number' && !isNaN(item.priceNumeric)) {
+    const getItemPrice = (item: any): number => {
+    if (typeof item.priceNumeric === 'number' && item.priceNumeric > 0) {
       return item.priceNumeric;
     }
-    if (typeof item.price === 'string') {
-      const clean = item.price.replace(/[^\d,]/g, '').replace(',', '.');
-      return parseFloat(clean) || 0;
+    const valStr = item.price || item.priceString || '';
+    if (typeof valStr === 'string' && valStr.trim() !== '') {
+      const clean = valStr.replace(/[^\d,.]/g, '').replace(',', '.');
+      const parsed = parseFloat(clean);
+      if (!isNaN(parsed) && parsed > 0) return parsed;
     }
-    return 0;
+    return 1.00;
   };
 
   const subtotal = items.reduce((acc, item) => {
