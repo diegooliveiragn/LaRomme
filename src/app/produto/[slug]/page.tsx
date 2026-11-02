@@ -11,6 +11,9 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
+const isUUID = (str: string) =>
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str);
+
 export default function ProductPage({ params }: { params: { slug: string } }) {
   const localProduct: Product | undefined = PRODUCTS.find((p) => p.id === params.slug);
 
@@ -23,11 +26,15 @@ export default function ProductPage({ params }: { params: { slug: string } }) {
     async function loadProductFromDb() {
       if (localProduct) return;
       try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .or(`id.eq.${params.slug},sku_code.eq.${params.slug}`)
-          .maybeSingle();
+        let query = supabase.from('products').select('*');
+
+        if (isUUID(params.slug)) {
+          query = query.or(`id.eq.${params.slug},sku_code.eq.${params.slug}`);
+        } else {
+          query = query.eq('sku_code', params.slug);
+        }
+
+        const { data, error } = await query.maybeSingle();
 
         if (error || !data) {
           setLoading(false);
