@@ -39,14 +39,18 @@ export async function POST(req: Request) {
     const externalRef = paymentData.external_reference; // Contém o short_id ex: "LR-123456"
 
     // Busca o pedido correspondente no Supabase
-    let query = supabase.from('orders').select('id, status, short_id');
-    if (externalRef) {
-      query = query.eq('short_id', externalRef);
-    } else {
-      query = query.eq('mp_payment_id', paymentId);
+    const cleanNumericRef = externalRef ? parseInt(String(externalRef).replace(/\D/g, ''), 10) : null;
+    let order = null;
+
+    if (cleanNumericRef && !isNaN(cleanNumericRef)) {
+      const { data } = await supabase.from('orders').select('id, status, short_id').eq('short_id', cleanNumericRef).maybeSingle();
+      order = data;
     }
 
-    const { data: order } = await query.single();
+    if (!order && paymentId) {
+      const { data } = await supabase.from('orders').select('id, status, short_id').eq('mp_payment_id', String(paymentId)).maybeSingle();
+      order = data;
+    }
 
     if (!order) {
       return NextResponse.json({ status: 'ignored', message: 'Order not found' }, { status: 200 });

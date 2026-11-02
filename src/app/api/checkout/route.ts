@@ -75,6 +75,7 @@ export async function POST(req: Request) {
           transaction_amount: Number(totalAmount.toFixed(2)),
           description: `LaRomme - Pedido ${orderShortId}`,
           payment_method_id: 'pix',
+            external_reference: String(numericShortId),
           payer: {
             email: payer.email.trim().toLowerCase(),
             first_name: (payer.name || payer.fullName || 'Patrono').trim().split(' ')[0] || 'Patrono',
@@ -104,6 +105,7 @@ export async function POST(req: Request) {
     // 4. SALVA O PEDIDO NO BANCO
     const orderPayload = {
       short_id: numericShortId,
+        mp_payment_id: pixData?.paymentId ? String(pixData.paymentId) : null,
       status: 'pending',
       total_amount: totalAmount,
       subtotal: calculatedSubtotal,
