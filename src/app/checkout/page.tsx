@@ -167,6 +167,20 @@ export default function CheckoutPage() {
       try {
         const res = await fetch(`https://viacep.com.br/ws/${raw}/json/`);
         const data = await res.json();
+
+      if (data && (data.pix || data.qrCode || data.qrCodeBase64)) {
+        try {
+          const payloadToCache = data.pix || {
+            paymentId: data.paymentId,
+            qrCode: data.qrCode,
+            qrCodeBase64: data.qrCodeBase64,
+            ticketUrl: data.ticketUrl
+          };
+          localStorage.setItem('laromme_pix_' + data.orderId, JSON.stringify(payloadToCache));
+        } catch (storageErr) {
+          console.error('Falha ao gravar Pix no localStorage:', storageErr);
+        }
+      }
         if (!data.erro) {
           setAddress((prev) => ({
             ...prev,
@@ -291,6 +305,20 @@ export default function CheckoutPage() {
       });
 
       const data = await res.json();
+
+      if (data && (data.pix || data.qrCode || data.qrCodeBase64)) {
+        try {
+          const payloadToCache = data.pix || {
+            paymentId: data.paymentId,
+            qrCode: data.qrCode,
+            qrCodeBase64: data.qrCodeBase64,
+            ticketUrl: data.ticketUrl
+          };
+          localStorage.setItem('laromme_pix_' + data.orderId, JSON.stringify(payloadToCache));
+        } catch (storageErr) {
+          console.error('Falha ao gravar Pix no localStorage:', storageErr);
+        }
+      }
 
       if (!res.ok) {
         throw new Error(data.error || 'Erro ao processar transação.');

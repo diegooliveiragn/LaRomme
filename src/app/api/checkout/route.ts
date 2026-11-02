@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     }
 
     const numericShortId = Math.floor(100000 + Math.random() * 900000);
-    const orderShortId = `LR-`;
+    const orderShortId = `LR-${numericShortId}`;
     const mpAccessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
     let pixData = null;
 
