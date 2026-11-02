@@ -75,8 +75,8 @@ export async function POST(req: Request) {
           payment_method_id: 'pix',
           payer: {
             email: payer.email.trim().toLowerCase(),
-            first_name: payer.fullName.split(' ')[0] || 'Patrono',
-            last_name: payer.fullName.split(' ').slice(1).join(' ') || 'LaRomme',
+            first_name: (payer.name || payer.fullName || 'Patrono').trim().split(' ')[0] || 'Patrono',
+            last_name: (payer.name || payer.fullName || 'LaRomme').trim().split(' ').slice(1).join(' ') || 'LaRomme',
             identification: {
               type: cleanCpf.length > 11 ? 'CNPJ' : 'CPF',
               number: cleanCpf || '00000000000',

@@ -5,6 +5,67 @@ import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
 import FadeIn from '@/components/FadeIn';
 
+// VALIDAÇÃO MATEMÁTICA OFICIAL DE CPF (MÓDULO 11)
+function isValidCPF(cpf: string): boolean {
+  const clean = cpf.replace(/\D/g, '');
+  if (clean.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(clean)) return false; // Bloqueia 111.111.111-11, etc.
+
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(clean.charAt(i)) * (10 - i);
+  }
+  let rev = 11 - (sum % 11);
+  if (rev === 10 || rev === 11) rev = 0;
+  if (rev !== parseInt(clean.charAt(9))) return false;
+
+  sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(clean.charAt(i)) * (11 - i);
+  }
+  rev = 11 - (sum % 11);
+  if (rev === 10 || rev === 11) rev = 0;
+  if (rev !== parseInt(clean.charAt(10))) return false;
+
+  return true;
+}
+
+// VALIDAÇÃO MATEMÁTICA OFICIAL DE CNPJ
+function isValidCNPJ(cnpj: string): boolean {
+  const clean = cnpj.replace(/\D/g, '');
+  if (clean.length !== 14) return false;
+  if (/^(\d)\1{13}$/.test(clean)) return false;
+
+  let size = clean.length - 2;
+  let numbers = clean.substring(0, size);
+  const digits = clean.substring(size);
+  let sum = 0;
+  let pos = size - 7;
+  for (let i = size; i >= 1; i--) {
+    sum += parseInt(numbers.charAt(size - i)) * pos--;
+    if (pos < 2) pos = 9;
+  }
+  let result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  if (result !== parseInt(digits.charAt(0))) return false;
+
+  size = size + 1;
+  numbers = clean.substring(0, size);
+  sum = 0;
+  pos = size - 7;
+  for (let i = size; i >= 1; i--) {
+    sum += parseInt(numbers.charAt(size - i)) * pos--;
+    if (pos < 2) pos = 9;
+  }
+  result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  if (result !== parseInt(digits.charAt(1))) return false;
+
+  return true;
+}
+
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
 export default function CheckoutPage() {
   const { items, clearCart, setActiveOrderData } = useCart();
   const router = useRouter();
@@ -15,6 +76,7 @@ export default function CheckoutPage() {
   const [payer, setPayer] = useState({ fullName: '', email: '', cpf: '', phone: '' });
   const [address, setAddress] = useState({ cep: '', street: '', number: '', neighborhood: '', city: '', state: '' });
 
+  // MÁSCARA REATIVA CPF/CNPJ
   const maskCPFCNPJ = (value: string) => {
     const digits = value.replace(/\D/g, '').slice(0, 14);
     if (digits.length <= 11) {
@@ -30,6 +92,7 @@ export default function CheckoutPage() {
       .replace(/(\d{4})(\d)/, '$1-$2');
   };
 
+  // MÁSCARA REATIVA TELEFONE
   const maskPhone = (value: string) => {
     const digits = value.replace(/\D/g, '').slice(0, 11);
     if (digits.length <= 10) {
@@ -42,6 +105,7 @@ export default function CheckoutPage() {
       .replace(/(\d{5})(\d)/, '$1-$2');
   };
 
+  // MÁSCARA REATIVA CEP
   const maskCEP = (value: string) => {
     return value
       .replace(/\D/g, '')
@@ -73,7 +137,7 @@ export default function CheckoutPage() {
     }
   };
 
-    const getItemPrice = (item: any): number => {
+  const getItemPrice = (item: any): number => {
     if (typeof item.priceNumeric === 'number' && item.priceNumeric > 0) {
       return item.priceNumeric;
     }
@@ -97,11 +161,46 @@ export default function CheckoutPage() {
     e.preventDefault();
     setErrorMsg('');
 
-    if (!payer.fullName || !payer.email || !payer.cpf || !payer.phone) {
-      setErrorMsg('Preencha todos os campos de identificação.');
+    // SANITIZAÇÃO
+    const cleanName = payer.fullName.trim().replace(/\s+/g, ' ');
+    const cleanEmail = payer.email.trim().toLowerCase();
+    const cleanDoc = payer.cpf.replace(/\D/g, '');
+    const cleanPhone = payer.phone.replace(/\D/g, '');
+    const cleanCEP = address.cep.replace(/\D/g, '');
+
+    // VALIDAÇÕES RIGOROSAS
+    if (!cleanName || cleanName.split(' ').length < 2) {
+      setErrorMsg('Informe seu nome e sobrenome completos.');
       return;
     }
-    if (!address.cep || !address.street || !address.number || !address.city || !address.state) {
+    if (!isValidEmail(cleanEmail)) {
+      setErrorMsg('E-mail institucional ou pessoal inválido.');
+      return;
+    }
+    if (cleanDoc.length === 11) {
+      if (!isValidCPF(cleanDoc)) {
+        setErrorMsg('O número de CPF informado é matematicamente inválido.');
+        return;
+      }
+    } else if (cleanDoc.length === 14) {
+      if (!isValidCNPJ(cleanDoc)) {
+        setErrorMsg('O número de CNPJ informado é inválido.');
+        return;
+      }
+    } else {
+      setErrorMsg('Documento de identificação incompleto (CPF ou CNPJ).');
+      return;
+    }
+
+    if (cleanPhone.length < 10) {
+      setErrorMsg('Telefone inválido. Inclua o DDD.');
+      return;
+    }
+    if (cleanCEP.length !== 8) {
+      setErrorMsg('CEP incompleto ou inválido.');
+      return;
+    }
+    if (!address.street.trim() || !address.number.trim() || !address.city.trim() || !address.state.trim()) {
       setErrorMsg('Preencha os dados completos de entrega.');
       return;
     }
@@ -118,14 +217,19 @@ export default function CheckoutPage() {
           price: getItemPrice(i)
         })),
         payer: {
-          name: payer.fullName,
-          email: payer.email,
-          cpf: payer.cpf.replace(/\D/g, ''),
-          phone: payer.phone.replace(/\D/g, '')
+          name: cleanName,
+          fullName: cleanName,
+          email: cleanEmail,
+          cpf: cleanDoc,
+          phone: cleanPhone
         },
         shippingAddress: {
-          ...address,
-          cep: address.cep.replace(/\D/g, '')
+          cep: cleanCEP,
+          street: address.street.trim(),
+          number: address.number.trim(),
+          neighborhood: address.neighborhood.trim(),
+          city: address.city.trim(),
+          state: address.state.trim().toUpperCase()
         }
       };
 
