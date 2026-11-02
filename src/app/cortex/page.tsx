@@ -73,8 +73,8 @@ export default function CockpitCLevel() {
 
   // Mix por Modalidade Esportiva
   const sportMix: Record<string, number> = {
-    'Beach Tennis': 1,
-    'Vôlei de Praia': 0,
+    'Vôlei de Praia': 1,
+    'Beach Tennis': 0,
     'Futevôlei': 0,
     'Corrida': 0,
     'Musculação / Treino': 0,

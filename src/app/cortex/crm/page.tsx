@@ -1,114 +1,206 @@
 ﻿'use client';
 
-import React, { useEffect, useState } from 'react';
-import { Users, ShieldCheck, RefreshCw, MessageSquare, MapPin, Mail, Phone } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  Users, Crown, Search, RefreshCw, Filter, Sparkles,
+  Phone, Mail, Calendar, Activity, ShieldCheck
+} from 'lucide-react';
 
-export default function CrmPatronosPage() {
-  const [loading, setLoading] = useState(true);
-  const [patronos, setPatronos] = useState<any[]>([]);
+export default function BasePatronosPage() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSport, setSelectedSport] = useState('ALL');
 
-  const fetchCrm = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/cortex/crm', { cache: 'no-store' });
-      const json = await res.json();
-      if (json.success) {
-        setPatronos(json.patronos || []);
-      }
-    } catch (e) {
-      console.error('Erro ao carregar CRM:', e);
-    } finally {
-      setLoading(false);
-    }
+  // Registro Oficial do Fundador (Exclusivo e Imutável)
+  const founderMember = {
+    id: 'FOUNDER-001',
+    name: 'Diego Oliveira Gomes do Nascimento',
+    email: 'fundador@laromme.com.br',
+    phone: '(85) 99124-0000',
+    cpf: '024.771.053-96',
+    birthDate: '26/07/2000',
+    sport: 'Vôlei de Praia',
+    tier: 'FOUNDER',
+    role: 'Fundador & Diretor Criativo',
+    status: 'Custódia Permanente',
+    totalSpent: 894.25
   };
 
-  useEffect(() => {
-    fetchCrm();
-  }, []);
+  // Base de Patronos
+  const members = [
+    founderMember
+  ];
 
   const formatBRL = (val: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
 
-  const totalLTV = patronos.reduce((acc, p) => acc + p.total_spent, 0);
-  const avgLTV = patronos.length > 0 ? totalLTV / patronos.length : 0;
+  const filteredMembers = members.filter((m) => {
+    const matchesSearch =
+      m.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      m.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      m.cpf.includes(searchTerm);
+    const matchesSport = selectedSport === 'ALL' || m.sport === selectedSport;
+    return matchesSearch && matchesSport;
+  });
 
   return (
     <div className="space-y-6 pb-12 font-sans bg-transparent">
+      {/* CABEÇALHO */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-5">
         <div>
-          <span className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase">RELACIONAMENTO & INTELIGÊNCIA DE PÚBLICO</span>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 uppercase">Base de Patronos</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">Matriz de Clientes, Histórico de Consumo e Perfil de Prática</p>
+          <span className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase">
+            RELACIONAMENTO & INTELIGÊNCIA DE AUDIÊNCIA
+          </span>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 uppercase">
+            Base de Patronos & VIP
+          </h1>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Gestão de membros, perfil esportivo e preferências de compra para drops exclusivos
+          </p>
         </div>
 
-        <button
-          onClick={fetchCrm}
-          disabled={loading}
-          className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-sm disabled:opacity-50"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>Sincronizar Patronos</span>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
-          <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500 block mb-2">Base Cadastrada</span>
-          <div className="text-3xl font-bold text-zinc-900 font-mono tracking-tight">{patronos.length}</div>
-          <p className="text-[11px] text-zinc-400 mt-1">Patronos ativos com compras</p>
-        </div>
-
-        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
-          <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-600 block mb-2">LTV Médio por Patrono</span>
-          <div className="text-3xl font-bold text-zinc-900 font-mono tracking-tight">{formatBRL(avgLTV)}</div>
-          <p className="text-[11px] text-zinc-400 mt-1">Gasto total acumulado por cliente</p>
-        </div>
-
-        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
-          <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500 block mb-2">Pedidos Realizados</span>
-          <div className="text-3xl font-bold text-zinc-900 font-mono tracking-tight">
-            {patronos.reduce((acc, p) => acc + p.order_count, 0)}
-          </div>
-          <p className="text-[11px] text-zinc-400 mt-1">Volume de transações liquidadas</p>
-        </div>
-
-        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
-          <span className="text-xs font-mono font-bold uppercase tracking-wider text-purple-600 block mb-2">Senado VIP Elegíveis</span>
-          <div className="text-3xl font-bold text-purple-600 font-mono tracking-tight">{patronos.length}</div>
-          <p className="text-[11px] text-zinc-400 mt-1">Com direito a acesso prioritário</p>
+        <div className="flex items-center gap-3">
+          <span className="px-3 py-1.5 rounded bg-amber-50 border border-amber-300 text-amber-900 text-xs font-mono font-bold flex items-center gap-1.5 shadow-sm">
+            <Crown className="w-3.5 h-3.5 text-amber-600" /> 1 Registro Fundador
+          </span>
         </div>
       </div>
 
-      <div className="p-6 rounded-lg border border-zinc-200 bg-white shadow-sm">
-        <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest mb-4">Registro Individual de Patronos</h3>
-        {patronos.length === 0 ? (
-          <p className="text-xs font-mono text-zinc-400 text-center py-8">Nenhum patrono localizado com ordens aprovadas.</p>
-        ) : (
-          <div className="divide-y divide-zinc-100">
-            {patronos.map((p) => (
-              <div key={p.email} className="py-4 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-zinc-900 text-sm capitalize">{p.full_name}</span>
-                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded text-[10px] font-bold uppercase">
-                      Patrono Ativo
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-4 text-zinc-500 mt-1 font-mono text-[11px]">
-                    <span className="flex items-center gap-1"><Mail className="w-3 h-3 text-zinc-400" /> {p.email}</span>
-                    <span className="flex items-center gap-1"><MapPin className="w-3 h-3 text-zinc-400" /> {p.city} - {p.state}</span>
-                    {p.phone && <span className="flex items-center gap-1"><Phone className="w-3 h-3 text-zinc-400" /> {p.phone}</span>}
-                  </div>
-                </div>
+      {/* FILTROS E BUSCA */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 absolute left-3 top-3 text-zinc-400" />
+          <input
+            type="text"
+            placeholder="Buscar por nome, e-mail ou CPF..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-white border border-zinc-200 pl-9 pr-4 py-2.5 text-xs text-zinc-800 placeholder-zinc-400 rounded-lg focus:outline-none focus:border-zinc-500 font-mono shadow-sm"
+          />
+        </div>
 
-                <div className="text-right">
-                  <span className="text-[10px] font-mono text-zinc-400 block uppercase">LTV Acumulado</span>
-                  <span className="text-sm font-bold font-mono text-emerald-600">{formatBRL(p.total_spent)}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <div className="flex items-center gap-2">
+          <select
+            value={selectedSport}
+            onChange={(e) => setSelectedSport(e.target.value)}
+            className="bg-white border border-zinc-200 px-3 py-2.5 text-xs font-mono text-zinc-700 rounded-lg focus:outline-none shadow-sm cursor-pointer"
+          >
+            <option value="ALL">Todas as Modalidades</option>
+            <option value="Vôlei de Praia">Vôlei de Praia</option>
+            <option value="Beach Tennis">Beach Tennis</option>
+            <option value="Futevôlei">Futevôlei</option>
+            <option value="Corrida">Corrida</option>
+            <option value="Musculação / Treino">Musculação / Treino</option>
+            <option value="Cotidiano / Lifestyle">Cotidiano / Lifestyle</option>
+          </select>
+        </div>
+      </div>
+
+      {/* TABELA DE PATRONOS */}
+      <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs font-mono border-collapse">
+            <thead>
+              <tr className="border-b border-zinc-200 bg-zinc-50 text-[10px] text-zinc-500 uppercase tracking-wider">
+                <th className="py-3 px-4">Patrono</th>
+                <th className="py-3 px-4">Esporte Principal</th>
+                <th className="py-3 px-4">Nascimento</th>
+                <th className="py-3 px-4">Documento</th>
+                <th className="py-3 px-4">Tier / Cargo</th>
+                <th className="py-3 px-4 text-right">Aportes / LTV</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100">
+              {filteredMembers.map((member) => {
+                const isFounder = member.tier === 'FOUNDER';
+
+                return (
+                  <tr
+                    key={member.id}
+                    className={`transition-colors ${
+                      isFounder
+                        ? 'bg-gradient-to-r from-amber-50/80 via-yellow-50/40 to-amber-50/80 border-y-2 border-amber-400/80 font-bold shadow-sm'
+                        : 'hover:bg-zinc-50'
+                    }`}
+                  >
+                    {/* NOME E STATUS */}
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-2">
+                        {isFounder && (
+                          <span
+                            className="p-1 rounded-full bg-amber-400 text-amber-950 shadow-sm flex items-center justify-center text-xs"
+                            title="Founder • Coroa de Louros LaRomme"
+                          >
+                            👑
+                          </span>
+                        )}
+                        <div>
+                          <div className={`font-serif tracking-wide text-xs ${isFounder ? 'text-amber-950 font-bold' : 'text-zinc-900 font-medium'}`}>
+                            {member.name}
+                          </div>
+                          <span className="text-[10px] text-zinc-500 font-mono block">
+                            {member.email}
+                          </span>
+                        </div>
+                      </div>
+                    </td>
+
+                    {/* ESPORTE */}
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`px-2.5 py-1 rounded-full text-[10px] uppercase font-bold tracking-wider inline-flex items-center gap-1.5 border ${
+                          isFounder
+                            ? 'bg-amber-100 border-amber-300 text-amber-900'
+                            : 'bg-zinc-100 border-zinc-200 text-zinc-700'
+                        }`}
+                      >
+                        <Activity className="w-3 h-3 text-amber-600" />
+                        {member.sport}
+                      </span>
+                    </td>
+
+                    {/* DATA DE NASCIMENTO */}
+                    <td className="py-3.5 px-4 text-zinc-700">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-zinc-400" />
+                        <span>{member.birthDate}</span>
+                      </div>
+                    </td>
+
+                    {/* CPF */}
+                    <td className="py-3.5 px-4 text-zinc-600">
+                      {member.cpf}
+                    </td>
+
+                    {/* TIER COM LOUROS */}
+                    <td className="py-3.5 px-4">
+                      {isFounder ? (
+                        <span className="px-2.5 py-1 rounded bg-amber-200/80 border border-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-widest flex items-center gap-1 w-fit shadow-xs">
+                          <span>🌿</span> FOUNDER <span>🌿</span>
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded bg-zinc-100 text-zinc-600 text-[10px] uppercase">
+                          PATRONO
+                        </span>
+                      )}
+                    </td>
+
+                    {/* LTV */}
+                    <td className="py-3.5 px-4 text-right">
+                      <span className={`font-mono font-bold ${isFounder ? 'text-amber-950 text-sm' : 'text-zinc-900'}`}>
+                        {formatBRL(member.totalSpent)}
+                      </span>
+                      {isFounder && (
+                        <span className="text-[9px] text-amber-700 block uppercase font-mono">
+                          Custódia de Fundação
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
