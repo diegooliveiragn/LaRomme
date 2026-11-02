@@ -2,221 +2,210 @@
 
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
-import { Crown, Star, Mail, ArrowUpRight, Trophy, ShieldCheck, RefreshCw } from 'lucide-react';
+import {
+  Crown, Search, RefreshCw, Mail, Download,
+  CheckCircle2, Sparkles, Filter, Activity, Calendar
+} from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-interface PatronVIP {
-  id: string;
-  email: string;
-  full_name: string;
-  total_spent: number;
-  order_count: number;
-  last_order_date?: string;
-  categoria: 'CÔNSUL' | 'SENADOR' | 'PATRONO';
-}
-
 export default function SenadoVipPage() {
-  const [members, setMembers] = useState<PatronVIP[]>([]);
+  const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  const fetchVipData = async () => {
+  const fetchSenado = async () => {
     setLoading(true);
     try {
-      const { data: ordersData } = await supabase
-        .from('orders')
+      const { data } = await supabase
+        .from('senado_vip')
         .select('*')
-        .in('status', ['paid', 'shipped', 'delivered']);
+        .order('created_at', { ascending: false });
 
-      const orders = ordersData || [];
-      const customerMap: Record<string, PatronVIP> = {};
+      // Registro do Fundador fixo
+      const founder = {
+        id: 'FOUNDER-001',
+        nome: 'Diego Oliveira Gomes do Nascimento',
+        email: 'fundador@laromme.com.br',
+        esporte: 'Vôlei de Praia',
+        tamanho: 'M',
+        estado: 'CE',
+        created_at: '2026-10-12T10:00:00Z',
+        is_founder: true
+      };
 
-      orders.forEach((ord: any) => {
-        const email = (ord.customer_email || 'anonimo@laromme.com.br').toLowerCase().trim();
-        const amount = Number(ord.total_amount || ord.subtotal || 0);
-        const orderDate = ord.created_at;
-
-        if (!customerMap[email]) {
-          customerMap[email] = {
-            id: ord.id,
-            email,
-            full_name: ord.customer_name || 'Patrono Anônimo',
-            total_spent: 0,
-            order_count: 0,
-            last_order_date: orderDate,
-            categoria: 'PATRONO',
-          };
-        }
-
-        customerMap[email].total_spent += amount;
-        customerMap[email].order_count += 1;
-        
-        if (new Date(orderDate) > new Date(customerMap[email].last_order_date!)) {
-          customerMap[email].last_order_date = orderDate;
-        }
-      });
-
-      // Filtra apenas membros elegíveis (gastaram >= 1000 OU têm >= 3 pedidos)
-      const vipProfiles: PatronVIP[] = Object.values(customerMap)
-        .filter((cust) => cust.total_spent >= 1000 || cust.order_count >= 3)
-        .map((cust) => {
-          let categoria: PatronVIP['categoria'] = 'PATRONO';
-          if (cust.total_spent >= 3000) categoria = 'CÔNSUL';
-          else if (cust.total_spent >= 1500) categoria = 'SENADOR';
-          
-          return { ...cust, categoria };
-        })
-        .sort((a, b) => b.total_spent - a.total_spent); // Ordena por maior LTV
-
-      setMembers(vipProfiles);
-    } catch (error) {
-      console.error('Erro ao buscar dados VIP:', error);
+      const list = [founder, ...(data || [])];
+      setMembers(list);
+    } catch (err: any) {
+      console.error('Erro ao buscar membros do senado:', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchVipData();
+    fetchSenado();
   }, []);
 
-  const formatBRL = (val: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-
-  const totalMembers = members.length;
-  const totalRevenue = members.reduce((acc, curr) => acc + curr.total_spent, 0);
-  const avgLtv = totalMembers > 0 ? totalRevenue / totalMembers : 0;
+  const filtered = members.filter((m) =>
+    (m.nome || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (m.email || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300 pb-12 font-sans">
-
+    <div className="space-y-6 pb-12 font-sans bg-transparent">
       {/* CABEÇALHO */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4 border-b border-slate-800/60 pb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-5">
         <div>
-          <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-slate-400 font-semibold block mb-1">
-            Gestão de Exclusividade
+          <span className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase">
+            GESTAO DE EXCLUSIVIDADE & ACESSO ANTECIPADO
           </span>
-          <h1 className="font-serif text-3xl font-bold tracking-tight text-white uppercase">
-            Senado VIP
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 uppercase">
+            Senado VIP • Drop 01
           </h1>
-          <p className="text-xs text-slate-500 font-mono mt-2 font-bold">Gestão de Patronos, Valor Vitalício e Acesso Antecipado</p>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Patronos cadastrados para compra antecipada (24 horas antes da abertura geral)
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="px-4 py-2.5 text-[11px] font-bold uppercase tracking-wider text-slate-300 bg-slate-900 border border-slate-700 rounded hover:bg-slate-800 hover:text-white transition-colors flex items-center gap-2 shadow-sm">
-            <Mail className="w-3.5 h-3.5" /> Exportar Lista
-          </button>
-          <button className="px-5 py-2.5 text-[11px] font-black uppercase tracking-wider text-amber-950 bg-amber-400 rounded hover:bg-amber-300 transition-colors flex items-center gap-2 shadow-sm">
-            <Crown className="w-4 h-4" /> Conceder Acesso Antecipado
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={fetchSenado}
+            disabled={loading}
+            className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 disabled:opacity-50 shadow-sm"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span>Atualizar Membros</span>
           </button>
         </div>
       </div>
 
-      {/* KPIs DO SENADO */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-
-        <div className="bg-slate-900/60 p-6 rounded-xl border border-slate-800 shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">Total de Membros</span>
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-          </div>
-          <div>
-            <span className="text-4xl font-black text-white tracking-tight tabular-nums">{loading ? '...' : totalMembers}</span>
-            <p className="text-[11px] font-mono text-emerald-400 mt-2 font-bold">Membros ativos</p>
-          </div>
+      {/* KPIS */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">
+            Total no Senado VIP
+          </span>
+          <span className="text-3xl font-bold text-zinc-900 font-mono tracking-tight my-2">
+            {members.length}
+          </span>
+          <span className="text-[11px] text-zinc-400">Patronos homologados para acesso</span>
         </div>
 
-        <div className="bg-amber-500/10 p-6 rounded-xl border border-amber-500/30 shadow-sm flex flex-col justify-between relative overflow-hidden">
-          <div className="flex justify-between items-start mb-2 relative z-10">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-amber-300">Valor Vitalício Médio</span>
-            <ArrowUpRight className="w-4 h-4 text-amber-400" />
-          </div>
-          <div className="relative z-10">
-            <span className="text-4xl font-black text-amber-400 tracking-tight tabular-nums font-mono">{loading ? '...' : formatBRL(avgLtv)}</span>
-            <p className="text-[11px] font-mono text-amber-300/80 mt-2 font-bold">Média gasta por VIP</p>
-          </div>
+        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-700">
+            Aporte Base / LTV
+          </span>
+          <span className="text-3xl font-bold text-zinc-900 font-mono tracking-tight my-2">
+            R$ 894,25
+          </span>
+          <span className="text-[11px] text-amber-800 font-bold">Custódia & Insumos de Fundação</span>
         </div>
 
-        <div className="bg-slate-900/60 p-6 rounded-xl border border-slate-800 shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-emerald-300">Receita Retida do Clube</span>
-            <Trophy className="w-4 h-4 text-emerald-400" />
-          </div>
-          <div>
-            <span className="text-3xl font-black text-emerald-400 tracking-tight block tabular-nums font-mono">{loading ? '...' : formatBRL(totalRevenue)}</span>
-            <p className="text-[11px] font-mono text-emerald-300/80 mt-2 font-bold">Volume financeiro acumulado</p>
-          </div>
+        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-600">
+            Modalidade Líder
+          </span>
+          <span className="text-3xl font-bold text-emerald-600 font-mono tracking-tight my-2">
+            Vôlei de Praia
+          </span>
+          <span className="text-[11px] text-zinc-400">Maior afinidade declarada</span>
         </div>
-
       </div>
 
-      {/* TABELA DE MEMBROS VIP */}
-      <div className="bg-slate-950/60 rounded-xl border border-slate-800 shadow-sm overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/80">
-          <h2 className="text-xs font-bold text-white tracking-widest uppercase flex items-center gap-2">
-            <Star className="w-4 h-4 text-amber-400" /> Ranking de Exclusividade
-          </h2>
-          <button onClick={fetchVipData} disabled={loading} className="text-slate-400 hover:text-white transition-colors">
-            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          </button>
+      {/* BARRA DE PESQUISA */}
+      <div className="flex gap-3">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 absolute left-3 top-3 text-zinc-400" />
+          <input
+            type="text"
+            placeholder="Buscar por nome ou e-mail..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-white border border-zinc-200 pl-9 pr-4 py-2.5 text-xs text-zinc-800 placeholder-zinc-400 rounded-lg focus:outline-none focus:border-zinc-500 font-mono shadow-sm"
+          />
         </div>
+      </div>
 
-        {loading ? (
-          <div className="p-12 text-center text-xs font-mono font-bold text-slate-500">
-            Processando matriz relacional do Senado...
-          </div>
-        ) : members.length === 0 ? (
-          <div className="p-12 text-center text-xs font-mono font-bold text-slate-500">
-            Nenhum membro elegível no momento.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs font-mono">
-              <thead className="bg-slate-900/50 border-b border-slate-800 text-slate-400 uppercase tracking-widest text-[10px]">
-                <tr>
-                  <th className="px-6 py-4 font-bold">Patrono</th>
-                  <th className="px-6 py-4 font-bold text-center">Categoria</th>
-                  <th className="px-6 py-4 font-bold text-center">Pedidos</th>
-                  <th className="px-6 py-4 font-bold text-right">Valor Vitalício Acumulado</th>
-                  <th className="px-6 py-4 font-bold text-right">Última Aquisição</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {members.map((member) => (
-                  <tr key={member.id} className="hover:bg-slate-900/40 transition-colors">
-                    <td className="px-6 py-5">
-                      <span className="font-bold text-white block font-sans text-sm">{member.full_name}</span>
-                      <span className="text-[10px] text-slate-400 mt-1 block">{member.email}</span>
-                    </td>
-                    <td className="px-6 py-5 text-center">
-                      <div className="flex justify-center">
-                        <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded flex items-center gap-1.5 w-fit ${
-                          member.categoria === 'CÔNSUL' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/30' :
-                          member.categoria === 'SENADOR' ? 'bg-slate-100 text-slate-900 border border-slate-300' :
-                          'bg-slate-800 text-slate-300 border border-slate-700'
-                        }`}>
-                          {member.categoria === 'CÔNSUL' && <Crown className="w-3.5 h-3.5" />}
-                          {member.categoria}
-                        </span>
+      {/* TABELA DE MEMBROS */}
+      <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs font-mono border-collapse">
+            <thead>
+              <tr className="border-b border-zinc-200 bg-zinc-50 text-[10px] text-zinc-500 uppercase tracking-wider">
+                <th className="py-3 px-4">Patrono</th>
+                <th className="py-3 px-4">Modalidade Principal</th>
+                <th className="py-3 px-4">Grade</th>
+                <th className="py-3 px-4">UF</th>
+                <th className="py-3 px-4">Tier / Categoria</th>
+                <th className="py-3 px-4 text-right">Data de Entrada</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100">
+              {filtered.map((m) => {
+                const isFounder = m.is_founder === true;
+
+                return (
+                  <tr
+                    key={m.id}
+                    className={`transition-colors ${
+                      isFounder
+                        ? 'bg-gradient-to-r from-amber-50/80 via-yellow-50/40 to-amber-50/80 border-y-2 border-amber-400/80 font-bold shadow-sm'
+                        : 'hover:bg-zinc-50'
+                    }`}
+                  >
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-2">
+                        {isFounder && <span className="p-1 rounded-full bg-amber-400 text-amber-950 text-xs">👑</span>}
+                        <div>
+                          <span className={`font-serif text-xs ${isFounder ? 'font-bold text-amber-950' : 'text-zinc-900 font-medium'}`}>
+                            {m.nome}
+                          </span>
+                          <span className="text-[10px] text-zinc-500 block">{m.email}</span>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-6 py-5 text-center font-black text-sm text-white tabular-nums">
-                      {member.order_count}
+
+                    <td className="py-3.5 px-4">
+                      <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-bold border ${
+                        isFounder ? 'bg-amber-100 border-amber-300 text-amber-900' : 'bg-zinc-100 border-zinc-200 text-zinc-700'
+                      }`}>
+                        {m.esporte || 'Vôlei de Praia'}
+                      </span>
                     </td>
-                    <td className="px-6 py-5 text-right font-black text-sm text-emerald-400 tabular-nums">
-                      {formatBRL(member.total_spent)}
+
+                    <td className="py-3.5 px-4 font-bold text-zinc-800">
+                      {m.tamanho || 'M'}
                     </td>
-                    <td className="px-6 py-5 text-right font-bold text-[11px] text-slate-400">
-                      {member.last_order_date ? new Date(member.last_order_date).toLocaleDateString('pt-BR') : '—'}
+
+                    <td className="py-3.5 px-4 font-bold text-zinc-700">
+                      {m.estado || 'CE'}
+                    </td>
+
+                    <td className="py-3.5 px-4">
+                      {isFounder ? (
+                        <span className="px-2 py-0.5 rounded bg-amber-200/80 border border-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-1">
+                          🌿 FOUNDER 🌿
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded bg-zinc-100 text-zinc-600 text-[10px] uppercase">
+                          SENADOR VIP
+                        </span>
+                      )}
+                    </td>
+
+                    <td className="py-3.5 px-4 text-right text-zinc-500">
+                      {new Date(m.created_at).toLocaleDateString('pt-BR')}
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
-
     </div>
   );
 }
