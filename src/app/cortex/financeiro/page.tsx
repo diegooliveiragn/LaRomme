@@ -104,6 +104,25 @@ export default function DreResultadosPage() {
             <span className="text-[10px] font-mono text-zinc-400 uppercase">ANO-BASE 2026</span>
           </div>
 
+                    {/* CASCATA VISUAL DE MARGEM */}
+          <div className="p-4 bg-zinc-50 border border-zinc-200 rounded-lg space-y-2 mb-4">
+            <div className="flex justify-between text-xs font-mono">
+              <span className="font-bold text-zinc-700 uppercase">Decomposição de Cada R$ 100 Faturados</span>
+              <span className="font-bold text-emerald-600">Lucro Líquido: 46%</span>
+            </div>
+            <div className="w-full h-3 rounded-full overflow-hidden flex bg-zinc-200">
+              <div className="bg-emerald-500 h-full" style={{ width: '46%' }} title="Lucro Líquido: 46%"></div>
+              <div className="bg-amber-500 h-full" style={{ width: '35%' }} title="CMV Têxtil: 35%"></div>
+              <div className="bg-indigo-500 h-full" style={{ width: '12%' }} title="OpEx / Nuvem: 12%"></div>
+              <div className="bg-rose-500 h-full" style={{ width: '6.99%' }} title="Fisco + Pix: 6.99%"></div>
+            </div>
+            <div className="flex flex-wrap gap-4 text-[10px] font-mono text-zinc-500 pt-1">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> 46% EBITDA</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500"></span> 35% Tecido/Corte</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-indigo-500"></span> 12% OpEx</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-rose-500"></span> 6,99% Fisco/MP</span>
+            </div>
+          </div>
           <div className="divide-y divide-zinc-100 text-xs font-mono">
             <div className="py-2.5 flex justify-between font-bold text-zinc-900">
               <span>(+) Receita Operacional Bruta de Vendas</span>

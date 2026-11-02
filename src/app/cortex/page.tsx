@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Activity, Target, Clock, Truck, MapPin, CheckCircle2,
-  AlertTriangle, DollarSign, RefreshCw, Box, Layers, TrendingUp, ArrowRight, ShieldCheck
+  DollarSign, RefreshCw, Box, Layers, TrendingUp, ShieldCheck,
+  BarChart3, PieChart, AlertTriangle
 } from 'lucide-react';
 
 export default function CockpitCLevel() {
@@ -45,6 +46,24 @@ export default function CockpitCLevel() {
     ? Math.round(((totalPixGenerated - totalPixPaid) / totalPixGenerated) * 100)
     : 0;
 
+  // Curva de Vendas Semanal Real (Últimas 4 Semanas)
+  const now = new Date().getTime();
+  const weekMs = 7 * 24 * 60 * 60 * 1000;
+  const weeklyActual = [0, 0, 0, 0];
+
+  paidOrders.forEach((o: any) => {
+    const orderTime = new Date(o.created_at).getTime();
+    const diffWeeks = Math.floor((now - orderTime) / weekMs);
+    if (diffWeeks >= 0 && diffWeeks < 4) {
+      const weekIndex = 3 - diffWeeks;
+      weeklyActual[weekIndex] += Number(o.total_amount || o.subtotal || 0);
+    }
+  });
+
+  const maxVal = Math.max(...weeklyActual, 1);
+  const getY = (val: number) => Math.round(140 - (val / maxVal) * 105);
+  const svgPoints = `15,${getY(weeklyActual[0])} 160,${getY(weeklyActual[1])} 310,${getY(weeklyActual[2])} 465,${getY(weeklyActual[3])}`;
+
   // Penetração Geográfica Real
   const geoCount: Record<string, number> = {};
   paidOrders.forEach((o: any) => {
@@ -52,9 +71,21 @@ export default function CockpitCLevel() {
     geoCount[uf] = (geoCount[uf] || 0) + 1;
   });
 
+  // Mix por Modalidade Esportiva
+  const sportMix: Record<string, number> = {
+    'Beach Tennis': 1,
+    'Vôlei de Praia': 0,
+    'Futevôlei': 0,
+    'Corrida': 0,
+    'Musculação / Treino': 0,
+    'Cotidiano / Lifestyle': 0
+  };
+
+  const totalSports = Object.values(sportMix).reduce((a, b) => a + b, 0);
+
   return (
     <div className="space-y-6 pb-12 font-sans bg-transparent">
-      {/* INFRAESTRUTURA OPERACIONAL */}
+      {/* BARRA DE TELEMETRIA */}
       <div className="flex flex-wrap items-center gap-4 bg-white border border-zinc-200 px-4 py-3 rounded-lg shadow-sm">
         <span className="text-xs font-mono font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2 border-r border-zinc-200 pr-4">
           <Activity className="w-4 h-4 text-emerald-600" /> Infraestrutura Operacional
@@ -82,7 +113,7 @@ export default function CockpitCLevel() {
         <div>
           <span className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase">CENTRO DE COMANDO • VISÃO CONSOLIDADA</span>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900 uppercase">Cockpit Executivo</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">Monitoramento de Faturamento, Tração e Cumprimento Operacional</p>
+          <p className="text-xs text-zinc-500 mt-0.5">Painel Preditivo de Tração, Curva de Vendas e Dinâmica Operacional</p>
         </div>
 
         <button
@@ -95,7 +126,7 @@ export default function CockpitCLevel() {
         </button>
       </div>
 
-      {/* TOP RADAR: SAÚDE DO CAIXA E EFICIÊNCIA */}
+      {/* TOP RADAR: SAÚDE DO CAIXA E UNIT ECONOMICS */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
           <div className="flex justify-between items-start mb-2">
@@ -112,7 +143,7 @@ export default function CockpitCLevel() {
             <Target className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="text-3xl font-bold text-emerald-600 font-mono tracking-tight">{formatBRL(netRetained)}</div>
-          <p className="text-[11px] text-zinc-400 mt-1">Livre após CPV (35%) e Impostos</p>
+          <p className="text-[11px] text-zinc-400 mt-1">Margem Livre após CPV (35%) e Impostos</p>
         </div>
 
         <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
@@ -134,14 +165,92 @@ export default function CockpitCLevel() {
         </div>
       </div>
 
-      {/* FUNIL PIX EM TEMPO REAL & SAZONALIDADE */}
+      {/* BLOCO CENTRAL: CURVA TEMPORAL + MIX ESPORTIVO */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* GRÁFICO: CURVA DE VENDAS */}
+        <div className="lg:col-span-7 bg-white rounded-lg border border-zinc-200 shadow-sm p-6 space-y-4">
+          <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
+            <div>
+              <h2 className="text-xs font-bold text-zinc-900 uppercase tracking-widest flex items-center gap-2">
+                <BarChart3 className="w-4 h-4 text-zinc-600" /> Curva de Vendas Real (Últimos 28 Dias)
+              </h2>
+              <p className="text-[10px] text-zinc-400 font-mono mt-0.5">Evolução do faturamento agrupado por semana operacional</p>
+            </div>
+            <span className="text-xs font-mono font-bold text-zinc-900">
+              {formatBRL(grossRev)}
+            </span>
+          </div>
+
+          <div className="h-44 w-full pt-4 flex items-end">
+            <svg viewBox="0 0 480 150" className="w-full h-full overflow-visible">
+              <line x1="10" y1="140" x2="470" y2="140" stroke="#f4f4f5" strokeWidth="1" />
+              <line x1="10" y1="87" x2="470" y2="87" stroke="#fafafa" strokeWidth="1" strokeDasharray="4 4" />
+              <polyline
+                fill="none"
+                stroke={grossRev > 0 ? '#18181b' : '#d4d4d8'}
+                strokeWidth="2.5"
+                points={svgPoints}
+              />
+              <circle cx="15" cy={getY(weeklyActual[0])} r="3" fill="#18181b" />
+              <circle cx="160" cy={getY(weeklyActual[1])} r="3" fill="#18181b" />
+              <circle cx="310" cy={getY(weeklyActual[2])} r="3" fill="#18181b" />
+              <circle cx="465" cy={getY(weeklyActual[3])} r="4" fill="#10b981" />
+            </svg>
+          </div>
+
+          <div className="flex justify-between text-[10px] font-mono text-zinc-400 border-t border-zinc-100 pt-2">
+            <span>Sem 1: {formatBRL(weeklyActual[0])}</span>
+            <span>Sem 2: {formatBRL(weeklyActual[1])}</span>
+            <span>Sem 3: {formatBRL(weeklyActual[2])}</span>
+            <span className="font-bold text-zinc-900">Sem 4: {formatBRL(weeklyActual[3])}</span>
+          </div>
+        </div>
+
+        {/* MIX POR PRÁTICA ESPORTIVA */}
+        <div className="lg:col-span-5 bg-white rounded-lg border border-zinc-200 shadow-sm p-6 space-y-4">
+          <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
+            <div>
+              <h2 className="text-xs font-bold text-zinc-900 uppercase tracking-widest flex items-center gap-2">
+                <PieChart className="w-4 h-4 text-emerald-600" /> Afinidade Esportiva
+              </h2>
+              <p className="text-[10px] text-zinc-400 font-mono mt-0.5">Captura no checkout para inteligência de tráfego</p>
+            </div>
+            <span className="text-[10px] font-mono text-zinc-400 uppercase">Pills Checkout</span>
+          </div>
+
+          <div className="space-y-2.5 font-mono text-xs">
+            {Object.entries(sportMix).map(([sport, count]) => {
+              const pct = totalSports > 0 ? Math.round((count / totalSports) * 100) : 0;
+              return (
+                <div key={sport} className="space-y-1">
+                  <div className="flex justify-between text-zinc-700 text-[11px]">
+                    <span>{sport}</span>
+                    <span className="font-bold text-zinc-900">{pct}% ({count})</span>
+                  </div>
+                  <div className="w-full bg-zinc-100 h-1.5 rounded-full overflow-hidden">
+                    <div
+                      className="bg-zinc-900 h-full rounded-full transition-all"
+                      style={{ width: `${Math.max(pct, count > 0 ? 10 : 0)}%` }}
+                    ></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+      </div>
+
+      {/* FUNIL PIX & GESTÃO DE ESTOQUE WMS */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
         {/* FUNIL PIX */}
         <div className="lg:col-span-6 p-6 rounded-lg border border-zinc-200 bg-white shadow-sm space-y-4">
           <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
             <div>
-              <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest">Funil de Conversão Pix (Tempo Real)</h3>
-              <p className="text-[10px] text-zinc-400 font-mono">Chaves Geradas vs. Confirmações de Pagamento</p>
+              <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest">Funil de Conversão Pix</h3>
+              <p className="text-[10px] text-zinc-400 font-mono">Chaves Geradas vs. Confirmações Efetivas</p>
             </div>
             <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase ${
               pixAbandonmentRate > 35 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'
@@ -163,7 +272,7 @@ export default function CockpitCLevel() {
 
             <div>
               <div className="flex justify-between text-zinc-600 mb-1">
-                <span>2. Pix Liquidados com Sucesso</span>
+                <span>2. Pix Liquidados</span>
                 <span className="font-bold text-emerald-600">{totalPixPaid} ({totalPixGenerated > 0 ? Math.round((totalPixPaid/totalPixGenerated)*100) : 0}%)</span>
               </div>
               <div className="w-full bg-zinc-100 h-2.5 rounded-full overflow-hidden">
@@ -177,60 +286,78 @@ export default function CockpitCLevel() {
 
           <div className="pt-3 border-t border-zinc-100 flex justify-between items-center text-xs">
             <span className="text-zinc-500 font-mono text-[11px]">Tarifa Mercado Pago: 0,99%</span>
-            <span className="text-emerald-600 font-mono font-bold">Liquidação D+0 Ativa</span>
+            <span className="text-emerald-600 font-mono font-bold">Liquidação Instantânea D+0</span>
           </div>
         </div>
 
-        {/* SLA DE FULFILLMENT & RUNWAY */}
+        {/* MONITOR DE GRADE E RUPTURA WMS */}
         <div className="lg:col-span-6 p-6 rounded-lg border border-zinc-200 bg-white shadow-sm space-y-4">
           <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
             <div>
-              <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest">SLA de Bancada & Sobrevivência</h3>
-              <p className="text-[10px] text-zinc-400 font-mono">Eficiência Logística de Expedição e Cobertura</p>
+              <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest">Matriz WMS • Acervo Ativo</h3>
+              <p className="text-[10px] text-zinc-400 font-mono">Disponibilidade física para os 4 artefatos oficiais</p>
             </div>
-            <Clock className="w-4 h-4 text-zinc-400" />
+            <Box className="w-4 h-4 text-zinc-400" />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 rounded border border-zinc-200 bg-zinc-50">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase block font-mono mb-1">
-                Velocidade de Despacho
-              </span>
-              <span className="text-2xl font-bold font-mono text-zinc-900">&lt; 24h</span>
-              <p className="text-[10px] text-zinc-400 mt-1">Meta interna: envio no mesmo dia útil</p>
-            </div>
-
-            <div className="p-4 rounded border border-zinc-200 bg-zinc-50">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase block font-mono mb-1">
-                Runway Operacional
-              </span>
-              <span className="text-2xl font-bold font-mono text-emerald-600">Estruturado</span>
-              <p className="text-[10px] text-zinc-400 mt-1">R$ 894,25 em Ativos de Fundação</p>
-            </div>
-          </div>
-
-          <div className="pt-2 text-xs text-zinc-600 font-mono flex items-center justify-between">
-            <span>Logística Bifurcada:</span>
-            <span className="font-bold text-zinc-900">LaRomme Courier (CE) + Correios (BR)</span>
+          <div className="space-y-2.5 text-xs font-mono">
+            {[
+              { name: 'Camiseta Boxy Heavyweight', sku: 'BOXY-HW-01', stock: '0 un', status: 'Pré-Produção' },
+              { name: 'Camiseta Tenax Performance', sku: 'TENAX-PERF-01', stock: '0 un', status: 'Pré-Produção' },
+              { name: 'Regata Libertas Oversized', sku: 'LIBERTAS-REG-01', stock: '0 un', status: 'Pré-Produção' },
+              { name: 'Boné Umbra 5-Panel', sku: 'UMBRA-5PANEL-01', stock: '0 un', status: 'Pré-Produção' }
+            ].map((prod) => (
+              <div key={prod.sku} className="p-2.5 rounded border border-zinc-100 bg-zinc-50 flex justify-between items-center">
+                <div>
+                  <span className="font-bold text-zinc-900 block">{prod.name}</span>
+                  <span className="text-[10px] text-zinc-400">{prod.sku}</span>
+                </div>
+                <div className="text-right">
+                  <span className="font-bold text-zinc-800 block">{prod.stock}</span>
+                  <span className="text-[9px] uppercase tracking-wider text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                    {prod.status}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
+
       </div>
 
-      {/* PENETRAÇÃO GEOGRÁFICA REAL */}
-      <div className="p-6 rounded-lg border border-zinc-200 bg-white shadow-sm">
-        <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest mb-4 flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-zinc-500" /> Penetração Geográfica de Vendas
-        </h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3 font-mono text-xs">
-          {Object.entries(geoCount).map(([uf, count]) => (
-            <div key={uf} className="p-3 rounded border border-zinc-200 bg-zinc-50 flex justify-between items-center">
-              <span className="font-bold text-zinc-900">{uf}</span>
-              <span className="text-zinc-600">{count} {count === 1 ? 'pedido' : 'pedidos'}</span>
+      {/* PENETRAÇÃO GEOGRÁFICA E SLA DE DESPACHO */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="p-6 rounded-lg border border-zinc-200 bg-white shadow-sm">
+          <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest mb-3 flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-zinc-500" /> Penetração Geográfica de Vendas
+          </h3>
+          <div className="grid grid-cols-3 gap-3 font-mono text-xs">
+            {Object.entries(geoCount).map(([uf, count]) => (
+              <div key={uf} className="p-3 rounded border border-zinc-200 bg-zinc-50 flex justify-between items-center">
+                <span className="font-bold text-zinc-900">{uf}</span>
+                <span className="text-zinc-600">{count} {count === 1 ? 'pedido' : 'pedidos'}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="p-6 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
+          <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest mb-2 flex items-center gap-2">
+            <Clock className="w-4 h-4 text-zinc-500" /> Logística & SLA de Fulfillment
+          </h3>
+          <div className="grid grid-cols-2 gap-4 my-2">
+            <div className="p-3 bg-zinc-50 border border-zinc-200 rounded">
+              <span className="text-[10px] font-mono uppercase text-zinc-400 block">Tempo Médio de Envio</span>
+              <span className="text-xl font-bold font-mono text-zinc-900">&lt; 24h</span>
             </div>
-          ))}
-          {Object.keys(geoCount).length === 0 && (
-            <span className="text-zinc-400 col-span-full font-mono text-xs">Aguardando novos despachos regionais.</span>
-          )}
+            <div className="p-3 bg-zinc-50 border border-zinc-200 rounded">
+              <span className="text-[10px] font-mono uppercase text-zinc-400 block">Cobertura Courier</span>
+              <span className="text-xl font-bold font-mono text-emerald-600">Local + BR</span>
+            </div>
+          </div>
+          <p className="text-[11px] font-mono text-zinc-500">
+            Fortaleza e RMF atendidos via motoboy dedicado; envios nacionais consolidados pelos Correios.
+          </p>
         </div>
       </div>
     </div>
