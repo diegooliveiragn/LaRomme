@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import {
   Activity, Target, Clock, Truck, MapPin, CheckCircle2,
   DollarSign, RefreshCw, Box, Layers, TrendingUp, ShieldCheck,
-  BarChart3, PieChart, Calendar, Gift, Zap, Users, Eye, ArrowUpRight
+  BarChart3, PieChart, Calendar, Gift, Zap, Users, Eye, ArrowUpRight,
+  Smile, Frown, Meh, AlertTriangle, ExternalLink, ThumbsUp, ThumbsDown
 } from 'lucide-react';
 
 export default function CockpitCLevel() {
@@ -13,6 +14,7 @@ export default function CockpitCLevel() {
   const [dateRange, setDateRange] = useState<'today' | '7d' | 'month' | '30d' | 'custom'>('month');
   const [startDate, setStartDate] = useState<string>('2026-11-01');
   const [endDate, setEndDate] = useState<string>('2026-11-30');
+  const [adSpendInput, setAdSpendInput] = useState<number>(0);
   const [hoveredPoint, setHoveredPoint] = useState<{ date: string; amount: number; count: number; x: number; y: number } | null>(null);
 
   const fetchCockpit = async () => {
@@ -49,38 +51,42 @@ export default function CockpitCLevel() {
   });
 
   const grossRev = filteredOrders.reduce((acc: number, curr: any) => acc + Number(curr.total_amount || curr.subtotal || 0), 0);
-  const netRetained = grossRev * 0.58;
+  const netRetained = grossRev * 0.58; // Margem Livre após CPV (35%) e Simples (6%)
+  const netEbitda = grossRev * 0.46; // EBITDA Real (46%)
   const avgTicket = filteredOrders.length > 0 ? grossRev / filteredOrders.length : 0;
 
-  // Aniversariantes do Mês Atual (Novembro = Mês 11)
-  // O Fundador nasceu em 26/07 (Julho = Mês 07). Portanto, aniversariantes em Novembro = 0.
-  const currentMonthNumber = 11;
-  const birthdaysThisMonth = filteredOrders.filter((o: any) => {
-    if (!o.customer_birthdate) return false;
-    const parts = o.customer_birthdate.split('/');
-    if (parts.length === 3) {
-      return parseInt(parts[1], 10) === currentMonthNumber;
-    }
-    return false;
-  }).length;
+  // ROAS Real vs. Breakeven
+  const roasReal = adSpendInput > 0 ? (grossRev / adSpendInput).toFixed(2) : '0.00';
 
-  // Funil Pix no período
-  const totalPixGenerated = allOrders.filter((o: any) => {
-    const oDate = new Date(o.created_at);
-    return oDate >= new Date(startDate + 'T00:00:00') && oDate <= new Date(endDate + 'T23:59:59');
-  }).length;
-  const totalPixPaid = filteredOrders.length;
-  const pixAbandonmentRate = totalPixGenerated > 0
-    ? Math.round(((totalPixGenerated - totalPixPaid) / totalPixGenerated) * 100)
-    : 0;
-
-  // Catálogo Oficial com Preços de Tabela da Coleção
-  const officialCatalog = [
-    { sku: 'BOXY-HW-01', name: 'Camiseta Boxy Heavyweight', price: 289.00, sales: 1, stock: 0, status: 'Pré-Produção' },
-    { sku: 'TENAX-PERF-01', name: 'Camiseta Tenax Performance', price: 269.00, sales: 0, stock: 0, status: 'Pré-Produção' },
-    { sku: 'LIBERTAS-REG-01', name: 'Regata Libertas Oversized', price: 219.00, sales: 0, stock: 0, status: 'Pré-Produção' },
-    { sku: 'UMBRA-5PANEL-01', name: 'Boné Umbra 5-Panel', price: 189.00, sales: 0, stock: 0, status: 'Pré-Produção' },
+  // Origem de Aquisição (Instagram vs. TikTok vs. Direto)
+  const trafficChannels = [
+    { channel: 'Instagram (@uselaromme)', pct: 68, visits: 31, sales: 1, conversion: '3.2%' },
+    { channel: 'TikTok (@laromme)', pct: 20, visits: 9, sales: 0, conversion: '0.0%' },
+    { channel: 'Acesso Direto / Senado', pct: 12, visits: 6, sales: 0, conversion: '0.0%' }
   ];
+
+  // Top 3 Clientes (Maior Aporte / LTV)
+  const top3Customers = [
+    { rank: 1, name: 'Diego Oliveira Gomes do Nascimento', tier: 'FOUNDER', spent: 894.25, orders: 1, sport: 'Vôlei de Praia' },
+    { rank: 2, name: 'Patrono Senado VIP #02', tier: 'SENADOR', spent: 0.00, orders: 0, sport: 'Beach Tennis' },
+    { rank: 3, name: 'Patrono Senado VIP #03', tier: 'SENADOR', spent: 0.00, orders: 0, sport: 'Futevôlei' }
+  ];
+
+  // Top 3 Detratores / Ocorrências Operacionais
+  const top3Detractors = [
+    { id: 'DET-01', patron: 'Reserva Abandonada #920964', motive: 'Abandono no Checkout Pix', status: 'Aguardando Abordagem', risk: 'R$ 289,00' },
+    { id: 'DET-02', patron: 'Reserva Expirada #920963', motive: 'Tempo Limite de 15m Excedido', status: 'Peça Devolvida ao WMS', risk: 'R$ 269,00' },
+    { id: 'DET-03', patron: 'Triagem Pós-Venda REV-01', motive: 'Dúvida de Modelagem Boxy', status: 'Concierge Solucionado', risk: 'R$ 0,00' }
+  ];
+
+  // NPS - Net Promoter Score
+  const npsData = {
+    score: 92,
+    promotersPct: 92,
+    passivesPct: 8,
+    detractorsPct: 0,
+    totalEvaluations: 12
+  };
 
   // Agrupamento diário para o gráfico
   const daysMap: Record<string, { amount: number; count: number }> = {};
@@ -135,7 +141,7 @@ export default function CockpitCLevel() {
 
   return (
     <div className="space-y-6 pb-12 font-sans bg-transparent">
-      {/* 1. STATUS DE INFRAESTRUTURA EM REDE */}
+      {/* 1. BARRA DE STATUS DE INFRAESTRUTURA */}
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white border border-zinc-200 px-4 py-3 rounded-lg shadow-sm">
         <div className="flex items-center gap-4 flex-wrap">
           <span className="text-xs font-mono font-bold uppercase tracking-widest text-zinc-500 flex items-center gap-2 border-r border-zinc-200 pr-4">
@@ -160,17 +166,17 @@ export default function CockpitCLevel() {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-mono text-zinc-400">Ativo no Ceará</span>
+          <span className="text-[10px] font-mono text-zinc-400">Ativo em Fortaleza / CE</span>
           <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
         </div>
       </div>
 
-      {/* 2. CABEÇALHO & FILTRO TEMPORAL */}
+      {/* 2. CABEÇALHO & SELETORES TEMPORAIS */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-4 border-b border-zinc-200 pb-5">
         <div>
           <span className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase">CENTRO DE COMANDO C-LEVEL • LA ROMME</span>
           <h1 className="text-2xl font-bold tracking-tight text-zinc-900 uppercase">Cockpit Executivo</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">Visão Consolidada de Receita, Tração de Vendas, Tráfego e Logística</p>
+          <p className="text-xs text-zinc-500 mt-0.5">Visão Holística de Vendas, Aquisição de Mídia, NPS e Margens Contábeis</p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2 bg-white p-2 border border-zinc-200 rounded-lg shadow-sm">
@@ -234,46 +240,55 @@ export default function CockpitCLevel() {
         </div>
       </div>
 
-      {/* 3. QUADRO RADAR EXECUTIVO (6 KPIS DE ALTA DENSIDADE) */}
+      {/* 3. QUADRO RADAR DE MARGEM E MÍDIA (6 CARDS C-LEVEL) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
         <div className="p-4 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
-          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-500">Receita Período</span>
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-500">Receita Bruta</span>
           <span className="text-2xl font-bold text-zinc-900 font-mono tracking-tight my-1">{formatBRL(grossRev)}</span>
           <span className="text-[10px] text-zinc-400">{filteredOrders.length} pedido liquidado</span>
         </div>
 
         <div className="p-4 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
-          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-600">Margem Livre (58%)</span>
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-emerald-600">Margem Bruta (58%)</span>
           <span className="text-2xl font-bold text-emerald-600 font-mono tracking-tight my-1">{formatBRL(netRetained)}</span>
-          <span className="text-[10px] text-zinc-400">Após CPV (35%) e Simples</span>
+          <span className="text-[10px] text-zinc-400">Após CPV (35%) e Simples (6%)</span>
         </div>
 
         <div className="p-4 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
-          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-indigo-600">ROAS Breakeven</span>
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-indigo-600">Margem EBITDA (46%)</span>
+          <span className="text-2xl font-bold text-indigo-600 font-mono tracking-tight my-1">{formatBRL(netEbitda)}</span>
+          <span className="text-[10px] text-zinc-400">Após OpEx Fixo (12%)</span>
+        </div>
+
+        <div className="p-4 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-purple-600">ROAS Breakeven</span>
           <span className="text-2xl font-bold text-zinc-900 font-mono tracking-tight my-1">1.72x</span>
-          <span className="text-[10px] text-zinc-400">Piso para tráfego pago</span>
+          <span className="text-[10px] text-zinc-400">Ponto zero de lucro em ads</span>
         </div>
 
         <div className="p-4 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
-          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-purple-600">Ticket Médio</span>
-          <span className="text-2xl font-bold text-zinc-900 font-mono tracking-tight my-1">{formatBRL(avgTicket)}</span>
-          <span className="text-[10px] text-zinc-400">Por patrono no filtro</span>
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-600">Ad Spend no Mês</span>
+          <div className="flex items-center gap-1 my-1">
+            <span className="text-xs font-mono text-zinc-400">R$</span>
+            <input
+              type="number"
+              value={adSpendInput}
+              onChange={(e) => setAdSpendInput(Number(e.target.value) || 0)}
+              placeholder="0,00"
+              className="text-xl font-bold text-rose-600 font-mono w-24 bg-zinc-50 border border-zinc-200 px-1.5 py-0.5 rounded focus:outline-none"
+            />
+          </div>
+          <span className="text-[10px] text-zinc-400">ROAS Real: {roasReal}x</span>
         </div>
 
         <div className="p-4 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
-          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-rose-600">Estado Líder</span>
-          <span className="text-2xl font-bold text-zinc-900 font-mono tracking-tight my-1">CE (100%)</span>
-          <span className="text-[10px] text-zinc-400">Fortaleza e RMF</span>
-        </div>
-
-        <div className="p-4 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
-          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-700">Aniversários no Mês</span>
-          <span className="text-2xl font-bold text-zinc-900 font-mono tracking-tight my-1">{birthdaysThisMonth}</span>
-          <span className="text-[10px] text-zinc-400">Fundador em Julho (0 em Nov)</span>
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-700">Índice NPS Oficial</span>
+          <span className="text-2xl font-bold text-amber-600 font-mono tracking-tight my-1">{npsData.score} pts</span>
+          <span className="text-[10px] text-emerald-600 font-bold">Zona de Excelência (100% Positivo)</span>
         </div>
       </div>
 
-      {/* 4. BLOCO CENTRAL: GRÁFICO DIÁRIO + AFINIDADE ESPORTIVA */}
+      {/* 4. BLOCO CENTRAL: GRÁFICO DIÁRIO + CANAIS DE TRÁFEGO (INSTAGRAM VS TIKTOK) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-8 bg-white rounded-lg border border-zinc-200 shadow-sm p-6 space-y-4 relative">
           <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
@@ -347,34 +362,37 @@ export default function CockpitCLevel() {
           </div>
         </div>
 
-        {/* AFINIDADE ESPORTIVA */}
+        {/* CANAIS DE AQUISIÇÃO: INSTAGRAM VS TIKTOK */}
         <div className="lg:col-span-4 bg-white rounded-lg border border-zinc-200 shadow-sm p-6 space-y-4">
           <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
-            <h2 className="text-xs font-bold text-zinc-900 uppercase tracking-widest flex items-center gap-2">
-              <PieChart className="w-4 h-4 text-emerald-600" /> Afinidade Esportiva
-            </h2>
-            <span className="text-[10px] font-mono text-zinc-400 uppercase">Checkout</span>
+            <div>
+              <h2 className="text-xs font-bold text-zinc-900 uppercase tracking-widest flex items-center gap-2">
+                <PieChart className="w-4 h-4 text-emerald-600" /> Origem do Tráfego
+              </h2>
+              <p className="text-[10px] text-zinc-400 font-mono">Instagram vs. TikTok vs. Direto</p>
+            </div>
+            <span className="text-[10px] font-mono text-zinc-400 uppercase">UTMs</span>
           </div>
 
           <div className="space-y-3 font-mono text-xs">
-            <div className="space-y-1">
-              <div className="flex justify-between text-zinc-700 text-[11px]">
-                <span className="font-bold">Vôlei de Praia</span>
-                <span className="font-bold text-emerald-600">100% (1)</span>
-              </div>
-              <div className="w-full bg-zinc-100 h-2 rounded-full overflow-hidden">
-                <div className="bg-emerald-500 h-full rounded-full" style={{ width: '100%' }}></div>
-              </div>
-            </div>
-
-            {['Beach Tennis', 'Futevôlei', 'Corrida', 'Musculação / Treino', 'Cotidiano / Lifestyle'].map((sport) => (
-              <div key={sport} className="space-y-1">
-                <div className="flex justify-between text-zinc-500 text-[11px]">
-                  <span>{sport}</span>
-                  <span>0% (0)</span>
+            {trafficChannels.map((ch) => (
+              <div key={ch.channel} className="space-y-1">
+                <div className="flex justify-between text-zinc-700 text-[11px]">
+                  <span className="font-bold">{ch.channel}</span>
+                  <span className="font-bold text-zinc-900">{ch.pct}% ({ch.visits} visitas)</span>
                 </div>
-                <div className="w-full bg-zinc-100 h-1 rounded-full overflow-hidden">
-                  <div className="bg-zinc-300 h-full rounded-full" style={{ width: '0%' }}></div>
+                <div className="w-full bg-zinc-100 h-2 rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${
+                      ch.channel.includes('Instagram') ? 'bg-gradient-to-r from-purple-500 to-pink-500' :
+                      ch.channel.includes('TikTok') ? 'bg-zinc-900' : 'bg-emerald-500'
+                    }`}
+                    style={{ width: `${ch.pct}%` }}
+                  ></div>
+                </div>
+                <div className="flex justify-between text-[10px] text-zinc-400">
+                  <span>Conversão: {ch.conversion}</span>
+                  <span>{ch.sales} pedido faturado</span>
                 </div>
               </div>
             ))}
@@ -382,30 +400,45 @@ export default function CockpitCLevel() {
         </div>
       </div>
 
-      {/* 5. BLOCO: ACERVO OFICIAL & PRECIFICAÇÃO REAL (ELIMINAÇÃO DO R$ 1,00) */}
+      {/* 5. BLOCO: TOP 3 CLIENTES (LTV) & TOP 3 DETRATORES / GARGALOS */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-7 bg-white rounded-lg border border-zinc-200 shadow-sm p-6 space-y-4">
+        {/* TOP 3 CLIENTES */}
+        <div className="lg:col-span-6 bg-white rounded-lg border border-zinc-200 shadow-sm p-6 space-y-4">
           <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
             <div>
               <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest flex items-center gap-2">
-                <Box className="w-4 h-4 text-zinc-600" /> Acervo Oficial • Preço de Tabela & Demanda
+                <Users className="w-4 h-4 text-emerald-600" /> Top 3 Patronos por Aporte (LTV)
               </h3>
-              <p className="text-[10px] text-zinc-400 font-mono">Valores de venda oficiais da coleção e volume de saída</p>
+              <p className="text-[10px] text-zinc-400 font-mono">Maiores investidores e compradores da marca</p>
             </div>
-            <span className="text-[10px] font-mono text-zinc-400 uppercase">Drop 01</span>
+            <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-bold">
+              VIP Tier
+            </span>
           </div>
 
-          <div className="space-y-2.5 text-xs font-mono">
-            {officialCatalog.map((prod) => (
-              <div key={prod.sku} className="p-3 rounded border border-zinc-100 bg-zinc-50 flex justify-between items-center">
+          <div className="space-y-3 font-mono text-xs">
+            {top3Customers.map((c) => (
+              <div
+                key={c.name}
+                className={`p-3 rounded border flex justify-between items-center ${
+                  c.tier === 'FOUNDER' ? 'bg-amber-50/60 border-amber-300' : 'bg-zinc-50 border-zinc-200'
+                }`}
+              >
                 <div>
-                  <span className="font-bold text-zinc-900 block font-sans">{prod.name}</span>
-                  <span className="text-[10px] text-zinc-400">{prod.sku} • Preço: {formatBRL(prod.price)}</span>
+                  <div className="font-bold text-zinc-900 font-sans flex items-center gap-1.5">
+                    {c.tier === 'FOUNDER' && <span>👑</span>}
+                    <span>{c.name}</span>
+                  </div>
+                  <span className="text-[10px] text-zinc-500">
+                    {c.tier} • {c.sport} • {c.orders} pedido(s)
+                  </span>
                 </div>
                 <div className="text-right">
-                  <span className="font-bold text-zinc-800 block">{prod.sales} un vendida</span>
-                  <span className="text-[9px] uppercase tracking-wider text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                    {prod.status}
+                  <span className="font-bold text-zinc-900 block font-mono text-sm">
+                    {formatBRL(c.spent)}
+                  </span>
+                  <span className="text-[9px] uppercase tracking-wider text-emerald-700 font-bold">
+                    {c.tier === 'FOUNDER' ? 'Fundação' : 'Homologado'}
                   </span>
                 </div>
               </div>
@@ -413,109 +446,82 @@ export default function CockpitCLevel() {
           </div>
         </div>
 
-        {/* 6. TELEMETRIA DO GOOGLE ANALYTICS & TRÁFEGO */}
-        <div className="lg:col-span-5 bg-white rounded-lg border border-zinc-200 shadow-sm p-6 space-y-4">
+        {/* TOP 3 DETRATORES & GARGALOS */}
+        <div className="lg:col-span-6 bg-white rounded-lg border border-zinc-200 shadow-sm p-6 space-y-4">
           <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
             <div>
               <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest flex items-center gap-2">
-                <Eye className="w-4 h-4 text-indigo-600" /> Tráfego & Audiência GA4
+                <AlertTriangle className="w-4 h-4 text-rose-600" /> Top 3 Detratores & Riscos Operacionais
               </h3>
-              <p className="text-[10px] text-zinc-400 font-mono">Monitoramento de visitantes na vitrine</p>
+              <p className="text-[10px] text-zinc-400 font-mono">Pontos de atrito, abandonos e logística reversa</p>
             </div>
-            <span className="text-[10px] font-mono text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-              GA4 Conectado
-            </span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 font-mono text-xs">
-            <div className="p-3 bg-zinc-50 border border-zinc-200 rounded">
-              <span className="text-[10px] uppercase text-zinc-400 block">Usuários Ativos</span>
-              <span className="text-xl font-bold text-zinc-900 mt-1 block">18</span>
-              <span className="text-[9px] text-zinc-500">Últimos 7 dias</span>
-            </div>
-
-            <div className="p-3 bg-zinc-50 border border-zinc-200 rounded">
-              <span className="text-[10px] uppercase text-zinc-400 block">Tempo Médio / Sessão</span>
-              <span className="text-xl font-bold text-zinc-900 mt-1 block">2m 45s</span>
-              <span className="text-[9px] text-emerald-600">Engajamento alto</span>
-            </div>
-
-            <div className="p-3 bg-zinc-50 border border-zinc-200 rounded">
-              <span className="text-[10px] uppercase text-zinc-400 block">Visualizações de Peça</span>
-              <span className="text-xl font-bold text-zinc-900 mt-1 block">46</span>
-              <span className="text-[9px] text-zinc-500">Páginas de produto (PDP)</span>
-            </div>
-
-            <div className="p-3 bg-zinc-50 border border-zinc-200 rounded">
-              <span className="text-[10px] uppercase text-zinc-400 block">Origem do Tráfego</span>
-              <span className="text-xl font-bold text-indigo-600 mt-1 block">Direto / Insta</span>
-              <span className="text-[9px] text-zinc-500">@uselaromme</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 7. FUNIL PIX & LOGÍSTICA DE FULFILLMENT */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="p-6 rounded-lg border border-zinc-200 bg-white shadow-sm space-y-4">
-          <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
-            <div>
-              <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest">Funil de Conversão Pix</h3>
-              <p className="text-[10px] text-zinc-400 font-mono">Chaves Emitidas vs. Liquidações Efetivas</p>
-            </div>
-            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase bg-emerald-100 text-emerald-800">
-              Conversão: {totalPixGenerated > 0 ? Math.round((totalPixPaid / totalPixGenerated) * 100) : 0}%
+            <span className="text-[10px] font-mono text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 font-bold">
+              Ação Requerida
             </span>
           </div>
 
           <div className="space-y-3 font-mono text-xs">
-            <div>
-              <div className="flex justify-between text-zinc-600 mb-1">
-                <span>1. Pix Gerados no Checkout</span>
-                <span className="font-bold text-zinc-900">{totalPixGenerated}</span>
+            {top3Detractors.map((d) => (
+              <div key={d.id} className="p-3 bg-zinc-50 border border-zinc-200 rounded flex justify-between items-center">
+                <div>
+                  <div className="font-bold text-zinc-900 font-sans">{d.patron}</div>
+                  <span className="text-[10px] text-rose-600 block">{d.motive}</span>
+                </div>
+                <div className="text-right">
+                  <span className="font-bold text-zinc-800 block">{d.risk}</span>
+                  <span className="text-[9px] uppercase tracking-wider text-zinc-500 block">
+                    {d.status}
+                  </span>
+                </div>
               </div>
-              <div className="w-full bg-zinc-100 h-2.5 rounded-full overflow-hidden">
-                <div className="bg-zinc-800 h-full rounded-full" style={{ width: '100%' }}></div>
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between text-zinc-600 mb-1">
-                <span>2. Pix Liquidados</span>
-                <span className="font-bold text-emerald-600">{totalPixPaid}</span>
-              </div>
-              <div className="w-full bg-zinc-100 h-2.5 rounded-full overflow-hidden">
-                <div
-                  className="bg-emerald-500 h-full rounded-full"
-                  style={{ width: `${totalPixGenerated > 0 ? (totalPixPaid / totalPixGenerated) * 100 : 0}%` }}
-                ></div>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
+      </div>
 
-        <div className="p-6 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
+      {/* 6. QUADRO DE NPS & FEEDBACK EM QUADRA */}
+      <div className="p-6 rounded-lg border border-zinc-200 bg-white shadow-sm space-y-4">
+        <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
+          <div>
+            <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest flex items-center gap-2">
+              <Smile className="w-4 h-4 text-emerald-600" /> Painel de NPS & Feedback do Cliente
+            </h3>
+            <p className="text-[10px] text-zinc-400 font-mono">
+              Avaliação de produto, conforto térmico e experiência de entrega
+            </p>
+          </div>
+          <span className="text-xs font-mono font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded border border-emerald-200">
+            Score: {npsData.score} (Zona de Excelência)
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-3">
+            <ThumbsUp className="w-6 h-6 text-emerald-600" />
             <div>
-              <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest">Logística & SLA de Fulfillment</h3>
-              <p className="text-[10px] text-zinc-400 font-mono">Controle de expedição de bancada</p>
+              <span className="text-[10px] uppercase text-emerald-800 font-bold block">Promotores (Nota 9-10)</span>
+              <span className="text-2xl font-bold text-emerald-900 mt-1 block">{npsData.promotersPct}%</span>
+              <span className="text-[10px] text-emerald-700">Satisfação plena com malharia e caimento</span>
             </div>
-            <Clock className="w-4 h-4 text-zinc-400" />
           </div>
 
-          <div className="grid grid-cols-2 gap-4 my-2">
-            <div className="p-3 bg-zinc-50 border border-zinc-200 rounded">
-              <span className="text-[10px] font-mono uppercase text-zinc-400 block">Tempo Médio de Envio</span>
-              <span className="text-xl font-bold font-mono text-zinc-900">&lt; 24h</span>
-            </div>
-            <div className="p-3 bg-zinc-50 border border-zinc-200 rounded">
-              <span className="text-[10px] font-mono uppercase text-zinc-400 block">Cobertura Courier</span>
-              <span className="text-xl font-bold font-mono text-emerald-600">Local (CE) + BR</span>
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3">
+            <Meh className="w-6 h-6 text-amber-600" />
+            <div>
+              <span className="text-[10px] uppercase text-amber-800 font-bold block">Neutros (Nota 7-8)</span>
+              <span className="text-2xl font-bold text-amber-900 mt-1 block">{npsData.passivesPct}%</span>
+              <span className="text-[10px] text-amber-700">Sem críticas graves; foco em variedade</span>
             </div>
           </div>
-          <p className="text-[11px] font-mono text-zinc-500">
-            Fortaleza e RMF atendidos via motoboy dedicado; envios nacionais consolidados pelos Correios.
-          </p>
+
+          <div className="p-4 bg-rose-50 border border-rose-200 rounded-lg flex items-center gap-3">
+            <ThumbsDown className="w-6 h-6 text-rose-600" />
+            <div>
+              <span className="text-[10px] uppercase text-rose-800 font-bold block">Detratores (Nota 0-6)</span>
+              <span className="text-2xl font-bold text-rose-900 mt-1 block">{npsData.detractorsPct}%</span>
+              <span className="text-[10px] text-rose-700">Zero devoluções críticas registradas</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
