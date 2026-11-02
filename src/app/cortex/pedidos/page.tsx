@@ -66,10 +66,10 @@ export default function PedidosPage() {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const { data: ordersData, error: ordersErr } = await supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const res = await fetch('/api/admin/orders', { cache: 'no-store' });
+        const json = await res.json();
+        const ordersData = json.success ? json.orders : [];
+        const ordersErr = json.success ? null : new Error(json.error);
 
       if (ordersErr) throw ordersErr;
 
