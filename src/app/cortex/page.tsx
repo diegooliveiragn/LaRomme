@@ -41,9 +41,9 @@ export default function CockpitCLevel() {
 
   // Pedidos liquidados e em esteira
   const paidOrders = orders.filter(
-    (o) => o.status === 'paid' || o.status === 'shipped' || o.status === 'delivered'
+    (o) => ['paid', 'approved', 'shipped', 'delivered'].includes(o.status) || o.status === 'shipped' || o.status === 'delivered'
   );
-  const inFulfillmentOrders = orders.filter((o) => o.status === 'paid');
+  const inFulfillmentOrders = orders.filter((o) => ['paid', 'approved', 'shipped', 'delivered'].includes(o.status));
   const deliveredOrders = orders.filter((o) => o.status === 'shipped' || o.status === 'delivered');
 
   // Métricas principais
