@@ -56,7 +56,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'O valor total do pedido precisa ser maior que zero.' }, { status: 400 });
     }
 
-    const orderShortId = `LR-${Math.floor(100000 + Math.random() * 900000)}`;
+    const numericShortId = Math.floor(100000 + Math.random() * 900000);
+    const orderShortId = `LR-`;
     const mpAccessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
     let pixData = null;
 
@@ -102,7 +103,7 @@ export async function POST(req: Request) {
 
     // 4. SALVA O PEDIDO NO BANCO
     const orderPayload = {
-      short_id: orderShortId,
+      short_id: numericShortId,
       status: 'pending',
       total_amount: totalAmount,
       subtotal: calculatedSubtotal,
@@ -162,11 +163,17 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({
-      success: true,
-      orderUuid: order.id,
-      orderShortId: order.short_id,
-      pix: pixData,
-    });
+        success: true,
+        orderId: order.id,
+        orderUuid: order.id,
+        orderShortId: order.short_id,
+        paymentId: pixData?.paymentId,
+        qrCode: pixData?.qrCode,
+        qrCodeBase64: pixData?.qrCodeBase64,
+        ticketUrl: pixData?.ticketUrl,
+        totalAmount: totalAmount,
+        pix: pixData,
+      });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: `Erro Crítico: ${err.message}` }, { status: 500 });
   }
