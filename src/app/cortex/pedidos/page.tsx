@@ -236,7 +236,7 @@ export default function PedidosPage() {
           <h1 className="font-serif text-3xl font-bold tracking-tight text-white uppercase flex items-center gap-3">
             Esteira Operacional de Galpão
           </h1>
-          <p className="text-xs text-slate-400 font-mono mt-1 font-bold">
+          <p className="text-xs text-zinc-500 font-mono mt-1 font-bold">
             Fluxo Granular: Separação Física, Embalagem e Despacho
           </p>
         </div>
@@ -261,14 +261,14 @@ export default function PedidosPage() {
 
       {/* KPIS DE FULFILLMENT */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-xl border bg-slate-900/60 border-slate-800 shadow-sm flex flex-col justify-between">
+        <div className="p-5 rounded-xl border bg-white border-zinc-200 shadow-sm flex flex-col justify-between">
           <div className="flex justify-between items-start mb-2">
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
               Na Bancada de Galpão
             </span>
             <Box className="w-4 h-4 text-amber-400" />
           </div>
-          <span className="text-3xl font-black text-white tabular-nums tracking-tight block font-mono">
+          <span className="text-3xl font-black text-zinc-900 tabular-nums tracking-tight block font-mono">
             {totalEmOperacao}
           </span>
           <span className="text-[11px] font-bold text-slate-500 mt-2 block">
@@ -306,14 +306,14 @@ export default function PedidosPage() {
           </span>
         </div>
 
-        <div className="p-5 rounded-xl border bg-slate-900/60 border-slate-800 shadow-sm flex flex-col justify-between">
+        <div className="p-5 rounded-xl border bg-white border-zinc-200 shadow-sm flex flex-col justify-between">
           <div className="flex justify-between items-start mb-2">
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
               Reservas em Aberto
             </span>
             <Clock className="w-4 h-4 text-rose-400" />
           </div>
-          <span className="text-3xl font-black text-rose-400 tabular-nums tracking-tight block font-mono">
+          <span className="text-3xl font-black text-rose-600 tabular-nums tracking-tight block font-mono">
             {pendingReservations.length}
           </span>
           <span className="text-[11px] font-bold text-slate-500 mt-2 block">
