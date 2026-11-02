@@ -11,7 +11,8 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { items, payer, address, shippingCost } = body;
+    const { items, payer, shippingCost } = body;
+    const address = body.address || body.shippingAddress || {};
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ success: false, error: 'Sacola vazia.' }, { status: 400 });

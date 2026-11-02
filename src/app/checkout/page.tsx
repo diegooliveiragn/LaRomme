@@ -9,7 +9,7 @@ import FadeIn from '@/components/FadeIn';
 function isValidCPF(cpf: string): boolean {
   const clean = cpf.replace(/\D/g, '');
   if (clean.length !== 11) return false;
-  if (/^(\d)\1{10}$/.test(clean)) return false; // Bloqueia 111.111.111-11, etc.
+  if (/^(\d)\1{10}$/.test(clean)) return false;
 
   let sum = 0;
   for (let i = 0; i < 9; i++) {
@@ -76,6 +76,11 @@ export default function CheckoutPage() {
   const [payer, setPayer] = useState({ fullName: '', email: '', cpf: '', phone: '' });
   const [address, setAddress] = useState({ cep: '', street: '', number: '', neighborhood: '', city: '', state: '' });
 
+  // ESTADOS DE ERRO INLINE
+  const [cpfError, setCpfError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+
   // MÁSCARA REATIVA CPF/CNPJ
   const maskCPFCNPJ = (value: string) => {
     const digits = value.replace(/\D/g, '').slice(0, 14);
@@ -92,6 +97,29 @@ export default function CheckoutPage() {
       .replace(/(\d{4})(\d)/, '$1-$2');
   };
 
+  const handleCpfBlur = () => {
+    const raw = payer.cpf.replace(/\D/g, '');
+    if (!raw) {
+      setCpfError('');
+      return;
+    }
+    if (raw.length === 11) {
+      if (!isValidCPF(raw)) {
+        setCpfError('CPF com dígitos verificadores matematicamente inválidos.');
+      } else {
+        setCpfError('');
+      }
+    } else if (raw.length === 14) {
+      if (!isValidCNPJ(raw)) {
+        setCpfError('CNPJ matematicamente inválido.');
+      } else {
+        setCpfError('');
+      }
+    } else {
+      setCpfError('Documento incompleto (necessário 11 dígitos para CPF).');
+    }
+  };
+
   // MÁSCARA REATIVA TELEFONE
   const maskPhone = (value: string) => {
     const digits = value.replace(/\D/g, '').slice(0, 11);
@@ -103,6 +131,23 @@ export default function CheckoutPage() {
     return digits
       .replace(/(\d{2})(\d)/, '($1) $2')
       .replace(/(\d{5})(\d)/, '$1-$2');
+  };
+
+  const handlePhoneBlur = () => {
+    const raw = payer.phone.replace(/\D/g, '');
+    if (raw && raw.length < 10) {
+      setPhoneError('Telefone incompleto. Inclua o DDD.');
+    } else {
+      setPhoneError('');
+    }
+  };
+
+  const handleEmailBlur = () => {
+    if (payer.email && !isValidEmail(payer.email)) {
+      setEmailError('Formato de e-mail inválido.');
+    } else {
+      setEmailError('');
+    }
   };
 
   // MÁSCARA REATIVA CEP
@@ -161,14 +206,13 @@ export default function CheckoutPage() {
     e.preventDefault();
     setErrorMsg('');
 
-    // SANITIZAÇÃO
+    // SANITIZAÇÃO COMPLETA
     const cleanName = payer.fullName.trim().replace(/\s+/g, ' ');
     const cleanEmail = payer.email.trim().toLowerCase();
     const cleanDoc = payer.cpf.replace(/\D/g, '');
     const cleanPhone = payer.phone.replace(/\D/g, '');
     const cleanCEP = address.cep.replace(/\D/g, '');
 
-    // VALIDAÇÕES RIGOROSAS
     if (!cleanName || cleanName.split(' ').length < 2) {
       setErrorMsg('Informe seu nome e sobrenome completos.');
       return;
@@ -180,15 +224,18 @@ export default function CheckoutPage() {
     if (cleanDoc.length === 11) {
       if (!isValidCPF(cleanDoc)) {
         setErrorMsg('O número de CPF informado é matematicamente inválido.');
+        setCpfError('CPF com dígitos verificadores matematicamente inválidos.');
         return;
       }
     } else if (cleanDoc.length === 14) {
       if (!isValidCNPJ(cleanDoc)) {
         setErrorMsg('O número de CNPJ informado é inválido.');
+        setCpfError('CNPJ matematicamente inválido.');
         return;
       }
     } else {
       setErrorMsg('Documento de identificação incompleto (CPF ou CNPJ).');
+      setCpfError('Documento incompleto.');
       return;
     }
 
@@ -208,6 +255,15 @@ export default function CheckoutPage() {
     setLoading(true);
 
     try {
+      const sanitizedAddress = {
+        cep: cleanCEP,
+        street: address.street.trim(),
+        number: address.number.trim(),
+        neighborhood: address.neighborhood.trim(),
+        city: address.city.trim(),
+        state: address.state.trim().toUpperCase()
+      };
+
       const payload = {
         items: items.map((i) => ({
           id: i.productId || i.id,
@@ -223,14 +279,9 @@ export default function CheckoutPage() {
           cpf: cleanDoc,
           phone: cleanPhone
         },
-        shippingAddress: {
-          cep: cleanCEP,
-          street: address.street.trim(),
-          number: address.number.trim(),
-          neighborhood: address.neighborhood.trim(),
-          city: address.city.trim(),
-          state: address.state.trim().toUpperCase()
-        }
+        address: sanitizedAddress,
+        shippingAddress: sanitizedAddress,
+        shippingCost: 0
       };
 
       const res = await fetch('/api/checkout', {
@@ -305,39 +356,65 @@ export default function CheckoutPage() {
                   01. Identificação
                 </h2>
                 <div className="space-y-3">
-                  <input
-                    type="text"
-                    required
-                    placeholder="NOME COMPLETO"
-                    value={payer.fullName}
-                    onChange={(e) => setPayer({ ...payer, fullName: e.target.value })}
-                    className="w-full bg-zinc-950 border border-zinc-800 p-3 text-zinc-200 placeholder-zinc-600 focus:border-white focus:outline-none transition-colors"
-                  />
-                  <input
-                    type="email"
-                    required
-                    placeholder="E-MAIL"
-                    value={payer.email}
-                    onChange={(e) => setPayer({ ...payer, email: e.target.value })}
-                    className="w-full bg-zinc-950 border border-zinc-800 p-3 text-zinc-200 placeholder-zinc-600 focus:border-white focus:outline-none transition-colors"
-                  />
+                  <div>
+                    <input
+                      type="text"
+                      required
+                      placeholder="NOME COMPLETO"
+                      value={payer.fullName}
+                      onChange={(e) => setPayer({ ...payer, fullName: e.target.value })}
+                      className="w-full bg-zinc-950 border border-zinc-800 p-3 text-zinc-200 placeholder-zinc-600 focus:border-white focus:outline-none transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="email"
+                      required
+                      placeholder="E-MAIL"
+                      value={payer.email}
+                      onChange={(e) => setPayer({ ...payer, email: e.target.value })}
+                      onBlur={handleEmailBlur}
+                      className={`w-full bg-zinc-950 border p-3 text-zinc-200 placeholder-zinc-600 focus:outline-none transition-colors ${
+                        emailError ? 'border-rose-600 focus:border-rose-500' : 'border-zinc-800 focus:border-white'
+                      }`}
+                    />
+                    {emailError && <p className="text-[10px] text-rose-400 mt-1 uppercase">{emailError}</p>}
+                  </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <input
-                      type="text"
-                      required
-                      placeholder="CPF / CNPJ"
-                      value={payer.cpf}
-                      onChange={(e) => setPayer({ ...payer, cpf: maskCPFCNPJ(e.target.value) })}
-                      className="w-full bg-zinc-950 border border-zinc-800 p-3 text-zinc-200 placeholder-zinc-600 focus:border-white focus:outline-none transition-colors"
-                    />
-                    <input
-                      type="text"
-                      required
-                      placeholder="TELEFONE / WHATSAPP"
-                      value={payer.phone}
-                      onChange={(e) => setPayer({ ...payer, phone: maskPhone(e.target.value) })}
-                      className="w-full bg-zinc-950 border border-zinc-800 p-3 text-zinc-200 placeholder-zinc-600 focus:border-white focus:outline-none transition-colors"
-                    />
+                    <div>
+                      <input
+                        type="text"
+                        required
+                        placeholder="CPF / CNPJ"
+                        value={payer.cpf}
+                        onChange={(e) => {
+                          setPayer({ ...payer, cpf: maskCPFCNPJ(e.target.value) });
+                          if (cpfError) setCpfError('');
+                        }}
+                        onBlur={handleCpfBlur}
+                        className={`w-full bg-zinc-950 border p-3 text-zinc-200 placeholder-zinc-600 focus:outline-none transition-colors ${
+                          cpfError ? 'border-rose-600 focus:border-rose-500' : 'border-zinc-800 focus:border-white'
+                        }`}
+                      />
+                      {cpfError && <p className="text-[10px] text-rose-400 mt-1 uppercase tracking-tight">{cpfError}</p>}
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        required
+                        placeholder="TELEFONE / WHATSAPP"
+                        value={payer.phone}
+                        onChange={(e) => {
+                          setPayer({ ...payer, phone: maskPhone(e.target.value) });
+                          if (phoneError) setPhoneError('');
+                        }}
+                        onBlur={handlePhoneBlur}
+                        className={`w-full bg-zinc-950 border p-3 text-zinc-200 placeholder-zinc-600 focus:outline-none transition-colors ${
+                          phoneError ? 'border-rose-600 focus:border-rose-500' : 'border-zinc-800 focus:border-white'
+                        }`}
+                      />
+                      {phoneError && <p className="text-[10px] text-rose-400 mt-1 uppercase tracking-tight">{phoneError}</p>}
+                    </div>
                   </div>
                 </div>
               </div>
