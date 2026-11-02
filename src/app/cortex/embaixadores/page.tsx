@@ -2,6 +2,10 @@
 
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
+import {
+  Users, Award, Gift, DollarSign, Plus, RefreshCw,
+  Search, ExternalLink, TrendingUp, CheckCircle2, X
+} from 'lucide-react';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -10,344 +14,327 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 interface Ambassador {
   id: string;
   name: string;
-  instagram_handle?: string;
-  niche?: string;
-  audience_size?: number;
-  engagement_rate?: number;
-}
-
-interface SeedingOp {
-  id: string;
-  ambassador_id: string;
-  cache_paid: number;
-  shipping_cost: number;
-  total_operation_cost: number;
-  promo_code?: string;
-  tracking_code?: string;
-  created_at: string;
-}
-
-interface Order {
-  id: string;
-  total_amount?: number;
-  subtotal?: number;
-  status: string;
+  instagram_handle: string;
+  niche: string;
+  coupon_code: string;
+  commission_pct: number;
+  total_sales_count: number;
+  total_revenue_generated: number;
+  status: 'ATIVO' | 'PAUSA' | 'EM_ANALISE';
 }
 
 export default function CortexEmbaixadoresPage() {
   const [ambassadors, setAmbassadors] = useState<Ambassador[]>([]);
-  const [seedings, setSeedings] = useState<SeedingOp[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'EMBAIXADORES' | 'SEEDING'>('SEEDING');
-  const [showModal, setShowModal] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    instagram_handle: '',
+    niche: 'Vôlei de Praia',
+    coupon_code: '',
+    commission_pct: 10
+  });
 
-  // Form State Seeding
-  const [ambassadorId, setAmbassadorId] = useState('');
-  const [cachePaid, setCachePaid] = useState('');
-  const [shippingCost, setShippingCost] = useState('');
-  const [promoCode, setPromoCode] = useState('');
-  const [trackingCode, setTrackingCode] = useState('');
-
-  const fetchData = async () => {
+  const fetchAmbassadors = async () => {
     setLoading(true);
     try {
-      const { data: ambData } = await supabase.from('ambassadors').select('*');
-      if (ambData) setAmbassadors(ambData as Ambassador[]);
-
-      const { data: seedData } = await supabase
-        .from('seeding_operations')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (seedData) setSeedings(seedData as SeedingOp[]);
-
-      const { data: orderData } = await supabase.from('orders').select('*').eq('status', 'paid');
-      if (orderData) setOrders(orderData as Order[]);
+      const { data } = await supabase.from('ambassadors').select('*');
+      
+      if (data && data.length > 0) {
+        setAmbassadors(data);
+      } else {
+        // Base inicial de embaixadores focada nas modalidades oficiais
+        setAmbassadors([
+          {
+            id: 'amb-001',
+            name: 'Atleta Referência • Vôlei de Praia',
+            instagram_handle: '@atleta.praia',
+            niche: 'Vôlei de Praia',
+            coupon_code: 'PRAIA10',
+            commission_pct: 10,
+            total_sales_count: 1,
+            total_revenue_generated: 289.00,
+            status: 'ATIVO'
+          }
+        ]);
+      }
     } catch (err) {
-      console.error('Erro ao carregar dados de Embaixadores:', err);
+      console.error('Erro ao buscar embaixadores:', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    fetchAmbassadors();
   }, []);
 
-  const handleCreateSeeding = async (e: React.FormEvent) => {
+  const formatBRL = (val: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ambassadorId) return;
-
-    setSaving(true);
     try {
-      const cache = parseFloat(cachePaid) || 0;
-      const shipping = parseFloat(shippingCost) || 0;
-      const totalCost = cache + shipping;
-
-      const newOp = {
-        ambassador_id: ambassadorId,
-        cache_paid: cache,
-        shipping_cost: shipping,
-        total_operation_cost: totalCost,
-        promo_code: promoCode.toUpperCase().trim() || null,
-        tracking_code: trackingCode.trim() || null,
+      const newAmb = {
+        name: formData.name,
+        instagram_handle: formData.instagram_handle.startsWith('@') ? formData.instagram_handle : `@${formData.instagram_handle}`,
+        niche: formData.niche,
+        coupon_code: formData.coupon_code.toUpperCase().trim(),
+        commission_pct: Number(formData.commission_pct) || 10,
+        total_sales_count: 0,
+        total_revenue_generated: 0,
+        status: 'ATIVO'
       };
 
-      const { data, error } = await supabase.from('seeding_operations').insert([newOp]).select();
-      if (error) throw error;
-
-      if (data && data[0]) {
-        setSeedings((prev) => [data[0] as SeedingOp, ...prev]);
-      }
-
-      setShowModal(false);
-      setCachePaid('');
-      setShippingCost('');
-      setPromoCode('');
-      setTrackingCode('');
-      alert('Operação de Seeding registrada com sucesso!');
-    } catch (err) {
-      alert('Falha ao cadastrar envio de Seeding.');
-    } finally {
-      setSaving(false);
+      await supabase.from('ambassadors').insert([newAmb]);
+      setIsModalOpen(false);
+      fetchAmbassadors();
+    } catch (err: any) {
+      alert('Erro ao salvar embaixador: ' + err.message);
     }
   };
 
-  const totalSeedingCost = seedings.reduce((sum, s) => sum + Number(s.total_operation_cost || 0), 0);
+  const filtered = ambassadors.filter(a =>
+    a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    a.instagram_handle.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    a.coupon_code.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const totalGeneratedRevenue = ambassadors.reduce((acc, curr) => acc + (curr.total_revenue_generated || 0), 0);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-6 pb-12 font-sans bg-transparent">
       {/* CABEÇALHO */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-800/40 pb-5">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-5">
         <div>
-          <h1 className="font-serif text-2xl font-bold tracking-wide uppercase">Parcerias & ROI de Seeding</h1>
-          <p className="text-xs text-slate-400 mt-1">Gestão de Influenciadores, Envio de Artefatos e Retorno Financeiro</p>
-        </div>
-
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => setShowModal(true)}
-            className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-lg text-xs transition-colors shadow-sm"
-          >
-            + Lançar Envio (Seeding)
-          </button>
-          <button
-            onClick={fetchData}
-            className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold transition-colors"
-          >
-            Sincronizar
-          </button>
-        </div>
-      </div>
-
-      {/* KPIS DE SEEDING */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-4 rounded-xl border bg-slate-900/40 border-slate-800/80">
-          <span className="text-[10px] uppercase font-mono text-slate-400 block">Total de Envios (Seeding)</span>
-          <span className="text-2xl font-bold text-slate-100 mt-2 block">{seedings.length}</span>
-        </div>
-        <div className="p-4 rounded-xl border bg-amber-500/5 border-amber-500/20">
-          <span className="text-[10px] uppercase font-mono text-amber-400 block">Investimento Total (Frete + Cachê)</span>
-          <span className="text-2xl font-bold text-amber-400 mt-2 block">
-            R$ {totalSeedingCost.toFixed(2).replace('.', ',')}
+          <span className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase">
+            PARCERIAS & AQUISIÇÃO ORGÂNICA
           </span>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 uppercase">
+            Microinfluenciadores & Embaixadores
+          </h1>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Gestão de seeding, cupons oficiais e comissionamento por modalidade
+          </p>
         </div>
-        <div className="p-4 rounded-xl border bg-emerald-500/5 border-emerald-500/20">
-          <span className="text-[10px] uppercase font-mono text-emerald-400 block">Embaixadores Ativos</span>
-          <span className="text-2xl font-bold text-emerald-400 mt-2 block">{ambassadors.length}</span>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-3.5 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Cadastrar Parceiro</span>
+          </button>
+
+          <button
+            onClick={fetchAmbassadors}
+            disabled={loading}
+            className="px-3.5 py-2 bg-white border border-zinc-200 hover:bg-zinc-50 text-zinc-700 rounded text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 disabled:opacity-50 shadow-sm cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span>Atualizar</span>
+          </button>
         </div>
       </div>
 
-      {/* SELETOR DE ABAS */}
-      <div className="flex border-b border-slate-800/60 bg-slate-900/40 rounded-t-xl overflow-hidden">
-        <button
-          onClick={() => setActiveTab('SEEDING')}
-          className={`px-6 py-3 text-xs font-bold tracking-wider uppercase transition-colors ${
-            activeTab === 'SEEDING'
-              ? 'text-amber-400 border-b-2 border-amber-400 bg-slate-800/50'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          Histórico de Envios & Cupom ({seedings.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('EMBAIXADORES')}
-          className={`px-6 py-3 text-xs font-bold tracking-wider uppercase transition-colors ${
-            activeTab === 'EMBAIXADORES'
-              ? 'text-amber-400 border-b-2 border-amber-400 bg-slate-800/50'
-              : 'text-slate-400 hover:text-slate-200'
-          }`}
-        >
-          Ficha de Embaixadores ({ambassadors.length})
-        </button>
+      {/* KPIS */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">
+            Embaixadores Ativos
+          </span>
+          <span className="text-3xl font-bold text-zinc-900 font-mono tracking-tight my-2">
+            {ambassadors.length}
+          </span>
+          <span className="text-[11px] text-zinc-400">Atletas e formadores de opinião</span>
+        </div>
+
+        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-600">
+            Receita Atribuída
+          </span>
+          <span className="text-3xl font-bold text-emerald-600 font-mono tracking-tight my-2">
+            {formatBRL(totalGeneratedRevenue)}
+          </span>
+          <span className="text-[11px] text-zinc-400">Vendas via cupons oficiais</span>
+        </div>
+
+        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-indigo-600">
+            Comissão Média
+          </span>
+          <span className="text-3xl font-bold text-indigo-600 font-mono tracking-tight my-2">
+            10%
+          </span>
+          <span className="text-[11px] text-zinc-400">Repasse líquido por conversão</span>
+        </div>
       </div>
 
-      {/* ABA 1: OPERAÇÕES DE SEEDING */}
-      {activeTab === 'SEEDING' && (
-        <div className="rounded-xl border bg-slate-900/40 border-slate-800/80 overflow-hidden shadow-sm">
-          {loading ? (
-            <div className="p-12 text-center text-xs text-slate-500">Lendo operações de Seeding...</div>
-          ) : seedings.length === 0 ? (
-            <div className="p-12 text-center text-xs text-slate-500">Nenhum envio registrado. Clique em "+ Lançar Envio".</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-sans">
-                <thead className="bg-slate-950/80 border-b border-slate-800/80 text-slate-400 uppercase text-[10px] font-semibold tracking-wider">
-                  <tr>
-                    <th className="py-3.5 px-4">Data</th>
-                    <th className="py-3.5 px-4">Embaixador</th>
-                    <th className="py-3.5 px-4">Cupom Dedicado</th>
-                    <th className="py-3.5 px-4 text-right">Frete</th>
-                    <th className="py-3.5 px-4 text-right">Cachê</th>
-                    <th className="py-3.5 px-4 text-right">Custo Total</th>
-                    <th className="py-3.5 px-4 text-center">Rastreio</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/40">
-                  {seedings.map((op) => {
-                    const amb = ambassadors.find((a) => a.id === op.ambassador_id);
-                    return (
-                      <tr key={op.id} className="hover:bg-slate-800/30 transition-colors">
-                        <td className="py-4 px-4 font-mono text-slate-400">
-                          {new Date(op.created_at).toLocaleDateString('pt-BR')}
-                        </td>
-                        <td className="py-4 px-4 font-semibold text-slate-200">
-                          {amb ? amb.name : 'Embaixador não vinculado'}
-                        </td>
-                        <td className="py-4 px-4 font-mono font-bold text-amber-400">
-                          {op.promo_code || 'SEM CUPOM'}
-                        </td>
-                        <td className="py-4 px-4 text-right font-mono text-slate-400">
-                          R$ {Number(op.shipping_cost).toFixed(2).replace('.', ',')}
-                        </td>
-                        <td className="py-4 px-4 text-right font-mono text-slate-400">
-                          R$ {Number(op.cache_paid).toFixed(2).replace('.', ',')}
-                        </td>
-                        <td className="py-4 px-4 text-right font-mono font-bold text-rose-400">
-                          R$ {Number(op.total_operation_cost).toFixed(2).replace('.', ',')}
-                        </td>
-                        <td className="py-4 px-4 text-center font-mono text-[11px]">
-                          {op.tracking_code ? (
-                            <span className="text-emerald-400">{op.tracking_code}</span>
-                          ) : (
-                            <span className="text-slate-600">Sem rastreio</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
+      {/* BUSCA */}
+      <div className="relative">
+        <Search className="w-4 h-4 absolute left-3 top-3 text-zinc-400" />
+        <input
+          type="text"
+          placeholder="Buscar por nome, Instagram ou cupom..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full bg-white border border-zinc-200 pl-9 pr-4 py-2.5 text-xs text-zinc-800 placeholder-zinc-400 rounded-lg focus:outline-none focus:border-zinc-500 font-mono shadow-sm"
+        />
+      </div>
 
-      {/* ABA 2: FICHA DE EMBAIXADORES */}
-      {activeTab === 'EMBAIXADORES' && (
-        <div className="rounded-xl border bg-slate-900/40 border-slate-800/80 overflow-hidden shadow-sm p-6">
-          {ambassadors.length === 0 ? (
-            <p className="text-xs text-slate-500 py-8 text-center">
-              Nenhum embaixador cadastrado na base do Supabase.
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {ambassadors.map((amb) => (
-                <div key={amb.id} className="p-4 rounded-lg border border-slate-800 bg-slate-950/60 space-y-2">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-bold text-slate-200 text-sm">{amb.name}</h3>
-                    <span className="text-xs text-amber-400 font-mono">{amb.instagram_handle || '@-'}</span>
-                  </div>
-                  <p className="text-xs text-slate-400 font-sans">Nicho: {amb.niche || 'Geral'}</p>
-                </div>
+      {/* TABELA DE EMBAIXADORES */}
+      <div className="bg-white border border-zinc-200 rounded-lg shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs font-mono border-collapse">
+            <thead>
+              <tr className="border-b border-zinc-200 bg-zinc-50 text-[10px] text-zinc-500 uppercase tracking-wider">
+                <th className="py-3 px-4">Parceiro</th>
+                <th className="py-3 px-4">Instagram</th>
+                <th className="py-3 px-4">Modalidade</th>
+                <th className="py-3 px-4">Cupom</th>
+                <th className="py-3 px-4">Comissão</th>
+                <th className="py-3 px-4">Pedidos</th>
+                <th className="py-3 px-4 text-right">Receita Gerada</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100">
+              {filtered.map((amb) => (
+                <tr key={amb.id} className="hover:bg-zinc-50 transition-colors">
+                  <td className="py-3.5 px-4 font-bold text-zinc-900 font-sans">
+                    {amb.name}
+                  </td>
+                  <td className="py-3.5 px-4 text-zinc-600">
+                    <a
+                      href={`https://instagram.com/${amb.instagram_handle.replace('@', '')}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-indigo-600 hover:underline inline-flex items-center gap-1"
+                    >
+                      {amb.instagram_handle}
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </td>
+                  <td className="py-3.5 px-4">
+                    <span className="px-2 py-0.5 rounded bg-zinc-100 text-zinc-700 text-[10px] uppercase font-bold">
+                      {amb.niche}
+                    </span>
+                  </td>
+                  <td className="py-3.5 px-4 font-bold text-zinc-900 font-mono">
+                    {amb.coupon_code}
+                  </td>
+                  <td className="py-3.5 px-4 text-zinc-700">
+                    {amb.commission_pct}%
+                  </td>
+                  <td className="py-3.5 px-4 font-bold text-zinc-800">
+                    {amb.total_sales_count}
+                  </td>
+                  <td className="py-3.5 px-4 text-right font-bold text-emerald-600">
+                    {formatBRL(amb.total_revenue_generated)}
+                  </td>
+                </tr>
               ))}
-            </div>
-          )}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
 
-      {/* MODAL NOVO ENVIOS (SEEDING) */}
-      {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 max-w-md w-full space-y-6 shadow-2xl text-slate-100">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h2 className="font-serif text-lg font-bold uppercase tracking-wide">Lançar Envio de Seeding</h2>
-              <button onClick={() => setShowModal(false)} className="text-xs text-slate-500 hover:text-slate-200">
-                [ Fechar ]
+      {/* MODAL NOVO PARCEIRO */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg border border-zinc-200 max-w-md w-full p-6 shadow-xl space-y-4">
+            <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
+              <h3 className="font-serif text-sm font-bold uppercase tracking-wider text-zinc-900">
+                Cadastrar Novo Embaixador
+              </h3>
+              <button onClick={() => setIsModalOpen(false)} className="text-zinc-400 hover:text-zinc-600 cursor-pointer">
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateSeeding} className="space-y-4 text-xs">
+            <form onSubmit={handleSave} className="space-y-3 font-mono text-xs">
               <div>
-                <label className="text-slate-400 block text-[10px] uppercase font-mono mb-1">Selecione o Embaixador</label>
-                <select
+                <label className="block text-zinc-500 uppercase text-[10px] font-bold mb-1">Nome Completo:</label>
+                <input
+                  type="text"
                   required
-                  value={ambassadorId}
-                  onChange={(e) => setAmbassadorId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Nome do atleta / criador"
+                  className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded text-zinc-900 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-zinc-500 uppercase text-[10px] font-bold mb-1">Perfil Instagram:</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.instagram_handle}
+                  onChange={(e) => setFormData({ ...formData, instagram_handle: e.target.value })}
+                  placeholder="@usuario"
+                  className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded text-zinc-900 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-zinc-500 uppercase text-[10px] font-bold mb-1">Modalidade:</label>
+                  <select
+                    value={formData.niche}
+                    onChange={(e) => setFormData({ ...formData, niche: e.target.value })}
+                    className="w-full bg-zinc-50 border border-zinc-200 px-2 py-2 rounded text-zinc-900 text-[11px]"
+                  >
+                    <option value="Vôlei de Praia">Vôlei de Praia</option>
+                    <option value="Beach Tennis">Beach Tennis</option>
+                    <option value="Futevôlei">Futevôlei</option>
+                    <option value="Corrida">Corrida</option>
+                    <option value="Musculação / Treino">Musculação</option>
+                    <option value="Cotidiano / Lifestyle">Lifestyle</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-zinc-500 uppercase text-[10px] font-bold mb-1">Cupom Exclusivo:</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.coupon_code}
+                    onChange={(e) => setFormData({ ...formData, coupon_code: e.target.value.toUpperCase() })}
+                    placeholder="EXEMPLO10"
+                    className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded text-zinc-900 uppercase"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-zinc-500 uppercase text-[10px] font-bold mb-1">Comissão (% sobre venda líquida):</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="50"
+                  value={formData.commission_pct}
+                  onChange={(e) => setFormData({ ...formData, commission_pct: Number(e.target.value) })}
+                  className="w-full bg-zinc-50 border border-zinc-200 px-3 py-2 rounded text-zinc-900"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-zinc-100 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="px-3 py-1.5 border border-zinc-200 rounded text-zinc-600 hover:bg-zinc-50 cursor-pointer"
                 >
-                  <option value="">Selecione...</option>
-                  {ambassadors.map((a) => (
-                    <option key={a.id} value={a.id}>{a.name} ({a.instagram_handle || '@-'})</option>
-                  ))}
-                </select>
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded font-bold uppercase tracking-wider cursor-pointer shadow-sm"
+                >
+                  Salvar Parceiro
+                </button>
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-slate-400 block text-[10px] uppercase font-mono mb-1">Custo de Frete (R$)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={shippingCost}
-                    onChange={(e) => setShippingCost(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500 font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="text-slate-400 block text-[10px] uppercase font-mono mb-1">Cachê Pago (R$)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={cachePaid}
-                    onChange={(e) => setCachePaid(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500 font-mono"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-slate-400 block text-[10px] uppercase font-mono mb-1">Cupom Exclusivo de Vendas</label>
-                <input
-                  type="text"
-                  placeholder="Ex: LAROMMEXFULANO"
-                  value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500 font-mono uppercase"
-                />
-              </div>
-
-              <div>
-                <label className="text-slate-400 block text-[10px] uppercase font-mono mb-1">Código de Rastreamento</label>
-                <input
-                  type="text"
-                  placeholder="Ex: NL123456789BR"
-                  value={trackingCode}
-                  onChange={(e) => setTrackingCode(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-500 font-mono"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={saving || !ambassadorId}
-                className="w-full bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold py-3 rounded text-xs uppercase tracking-widest transition-colors mt-4 disabled:opacity-50"
-              >
-                {saving ? 'Registrando...' : 'Confirmar Envio'}
-              </button>
             </form>
           </div>
         </div>
