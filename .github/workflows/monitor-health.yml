@@ -1,0 +1,34 @@
+﻿name: Monitoramento de Disponibilidade Cortex
+
+on:
+  schedule:
+    - cron: '0 */3 * * *'
+  workflow_dispatch:
+
+jobs:
+  health-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verificar integridade do endpoint /api/health
+        run: |
+          RESPONSE=$(curl -s -w "\n%{http_code}" https://laromme.com.br/api/health)
+          HTTP_BODY=$(echo "$RESPONSE" | sed '$d')
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+
+          echo "Status retornado: $HTTP_STATUS"
+          echo "Corpo da resposta: $HTTP_BODY"
+
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "::error::Falha no health check da aplicação. Status retornado: $HTTP_STATUS"
+            exit 1
+          fi
+
+      - name: Validar disponibilidade da montra pública
+        run: |
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://laromme.com.br)
+          echo "Status da montra principal: $HTTP_STATUS"
+
+          if [ "$HTTP_STATUS" -ne 200 ]; then
+            echo "::error::A página principal não respondeu com código 200."
+            exit 1
+          fi
