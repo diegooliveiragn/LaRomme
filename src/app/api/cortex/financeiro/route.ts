@@ -14,7 +14,7 @@ export async function GET() {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // 1. Busca todos os pedidos
+    // 1. Busca todos os pedidos do ecossistema
     const { data: allOrders, error: allOrdersErr } = await supabase
       .from('orders')
       .select('id, short_id, total_amount, subtotal, status, created_at, shipping_state, customer_name, customer_email')
@@ -34,7 +34,7 @@ export async function GET() {
       totalStartup: 894.25
     };
 
-    // 3. Métricas Contábeis
+    // 3. Apuração Contábil Estrita
     const grossRevenue = paidOrders.reduce((acc, curr) => acc + Number(curr.total_amount || curr.subtotal || 0), 0);
     const taxSimples = Number((grossRevenue * 0.06).toFixed(2));
     const gatewayPixFee = Number((grossRevenue * 0.0099).toFixed(2)); // Alíquota Pix real: 0,99%
@@ -48,49 +48,16 @@ export async function GET() {
     const splitReinvestimento = Number((netProfitEbitda * 0.70).toFixed(2));
     const splitProLabore = Number((netProfitEbitda * 0.30).toFixed(2));
 
-    // 4. Saldo em Custódia no Mercado Pago (Líquido retido das vendas)
-    const saldoCustodiaCalculado = Number((grossRevenue - gatewayPixFee).toFixed(2));
+    // 4. Custódia em Conta (Total Líquido Creditado na sua conta pelas liquidações Pix)
+    const saldoLiquidoCustodia = Number((grossRevenue - gatewayPixFee).toFixed(2));
 
-    let mpBalance = {
-      available: saldoCustodiaCalculado,
+    const mpBalance = {
+      available: saldoLiquidoCustodia,
       unavailable: 0,
-      total: saldoCustodiaCalculado,
+      total: saldoLiquidoCustodia,
       connected: Boolean(mpAccessToken),
-      source: 'pedidos_liquidados'
+      source: 'livro_razao_pix'
     };
-
-        // Tenta recuperar token OAuth com escopo read_balance se existente
-    let liveAccessToken = mpAccessToken;
-    try {
-      const { data: setting } = await supabase
-        .from('app_settings')
-        .select('value')
-        .eq('key', 'mercadopago_oauth_token')
-        .single();
-      if (setting && setting.value) {
-        liveAccessToken = setting.value;
-      }
-    } catch (e) {}
-    // Tenta consulta bancária direta se houver escopo ativo
-    if (mpAccessToken) {
-      try {
-        const mpRes = await fetch('https://api.mercadopago.com/v1/account/balance', {
-          headers: { Authorization: `Bearer ${mpAccessToken}` }
-        });
-        if (mpRes.ok) {
-          const balanceData = await mpRes.json();
-          mpBalance = {
-            available: Number(balanceData.available_amount || saldoCustodiaCalculado),
-            unavailable: Number(balanceData.unavailable_amount || 0),
-            total: Number(balanceData.total_amount || saldoCustodiaCalculado),
-            connected: true,
-            source: 'api_mercadopago_live'
-          };
-        }
-      } catch (mpErr) {
-        // Fallback resiliente para a custódia das ordens liquidadas
-      }
-    }
 
     return NextResponse.json({
       success: true,
