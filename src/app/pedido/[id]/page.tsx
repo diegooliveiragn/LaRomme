@@ -69,7 +69,7 @@ export default function OrderDetailsPage({ params }: { params: { id: string } })
     );
   }
 
-  const isPaid = order?.status === 'paid' || order?.status === 'approved';
+  const isPaid = Boolean(order && ['approved', 'paid', 'shipped', 'delivered'].includes(order.status));
   const qrCodeBase64 = pixData?.qrCodeBase64;
   const qrCodeText = pixData?.qrCode;
 
