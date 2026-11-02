@@ -59,6 +59,18 @@ export async function GET() {
       source: 'pedidos_liquidados'
     };
 
+        // Tenta recuperar token OAuth com escopo read_balance se existente
+    let liveAccessToken = mpAccessToken;
+    try {
+      const { data: setting } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'mercadopago_oauth_token')
+        .single();
+      if (setting && setting.value) {
+        liveAccessToken = setting.value;
+      }
+    } catch (e) {}
     // Tenta consulta bancária direta se houver escopo ativo
     if (mpAccessToken) {
       try {
