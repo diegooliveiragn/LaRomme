@@ -1,4 +1,15 @@
-﻿import { NextResponse } from 'next/server';
+﻿function toTitleCasePt(name: string): string {
+  if (!name) return 'Patrono';
+  const particles = new Set(['de', 'da', 'do', 'das', 'dos', 'e']);
+  return name
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map((word, i) => (i > 0 && particles.has(word) ? word : word.charAt(0).toUpperCase() + word.slice(1)))
+    .join(' ');
+}
+
+import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -78,8 +89,8 @@ export async function POST(req: Request) {
             external_reference: String(numericShortId),
           payer: {
             email: payer.email.trim().toLowerCase(),
-            first_name: (payer.name || payer.fullName || 'Patrono').trim().split(' ')[0] || 'Patrono',
-            last_name: (payer.name || payer.fullName || 'LaRomme').trim().split(' ').slice(1).join(' ') || 'LaRomme',
+            first_name: toTitleCasePt(payer.name || payer.fullName || 'Patrono').split(' ')[0] || 'Patrono',
+            last_name: toTitleCasePt(payer.name || payer.fullName || 'LaRomme').split(' ').slice(1).join(' ') || 'LaRomme',
             identification: {
               type: cleanCpf.length > 11 ? 'CNPJ' : 'CPF',
               number: cleanCpf || '00000000000',
@@ -111,7 +122,7 @@ export async function POST(req: Request) {
       subtotal: calculatedSubtotal,
       shipping_cost: safeShippingCost,
       payment_method: 'pix',
-      customer_name: payer.fullName,
+      customer_name: toTitleCasePt(payer.fullName || payer.name || 'Patrono'),
       customer_email: payer.email.trim().toLowerCase(),
       customer_cpf: payer.cpf.replace(/\D/g, ''),
       customer_phone: payer.phone.replace(/\D/g, ''),
