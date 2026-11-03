@@ -2,7 +2,7 @@
 
 on:
   schedule:
-    - cron: '0 */3 * * *'
+    - cron: '0 12 * * *' # Executa apenas 1 vez ao dia (ao meio-dia) para não lotar a caixa de e-mail
   workflow_dispatch:
 
 jobs:
@@ -11,7 +11,7 @@ jobs:
     steps:
       - name: Verificar integridade do endpoint /api/health
         run: |
-          RESPONSE=$(curl -s -w "\n%{http_code}" https://laromme.com.br/api/health)
+          RESPONSE=$(curl -sL -w "\n%{http_code}" https://www.laromme.com.br/api/health)
           HTTP_BODY=$(echo "$RESPONSE" | sed '$d')
           HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
 
@@ -25,7 +25,7 @@ jobs:
 
       - name: Validar disponibilidade da montra pública
         run: |
-          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://laromme.com.br)
+          HTTP_STATUS=$(curl -sL -o /dev/null -w "%{http_code}" https://www.laromme.com.br)
           echo "Status da montra principal: $HTTP_STATUS"
 
           if [ "$HTTP_STATUS" -ne 200 ]; then
