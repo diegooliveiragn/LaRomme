@@ -109,7 +109,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
           3°44' S  38°31' W // LA ROMME
         </div>
         <div className="absolute left-6 bottom-16 text-[9px] font-mono tracking-widest text-white/5 uppercase hidden md:block">
-          ORIGO COLLECTION • ED. 01
+          ORIGO COLLECTION
         </div>
       </div>
 
@@ -139,7 +139,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                   alt={`${product.name} - Perspectiva ${idx + 1}`}
                   fill
                   priority={idx === 0}
-                  className="object-cover transition-transform duration-700 group-hover:scale-[1.01]"
+                  className="object-contain p-2 md:p-4 transition-transform duration-700 group-hover:scale-[1.02]"
                 />
                 <span className="absolute bottom-3 right-4 font-mono text-[9px] text-zinc-600 tracking-widest uppercase">
                   0{idx + 1} / 0{images.length}
@@ -218,7 +218,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
               </button>
 
               <div className="flex items-center justify-between text-[9px] font-mono text-zinc-500 uppercase tracking-wider pt-1">
-                <span>Edição Limitada</span>
+                <span>Engenharia Têxtil</span>
                 <span>Origem: Fortaleza (3°44'S 38°31'W)</span>
               </div>
             </div>
@@ -305,7 +305,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
                     src={other.defaultImages[0]}
                     alt={other.name}
                     fill
-                    className="object-cover grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
+                    className="object-contain p-2 grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-700"
                   />
                 </div>
                 <div className="flex justify-between items-baseline pt-1">
