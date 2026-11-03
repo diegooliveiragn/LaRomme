@@ -113,7 +113,7 @@ export default function ProductDetailPage({ params }: { params: { slug: string }
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 md:px-12 py-10 md:py-16 relative z-10 space-y-20">
+      <div className="max-w-7xl mx-auto px-6 md:px-12 pt-28 pb-16 md:pt-36 md:pb-24 relative z-10 space-y-20">
         
         {/* Navegação Sóbria */}
         <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
