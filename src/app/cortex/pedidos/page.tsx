@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Package, Truck, Clock, CheckCircle2, AlertCircle, RefreshCw,
   Search, ArrowRight, Box, Send, ShieldCheck, MapPin, Tag, Filter,
-  Printer
+  Printer, Layers
 } from 'lucide-react';
 
 export type MicroStatus =
@@ -56,7 +56,9 @@ export default function CortexPedidosPage() {
   const [trackingInputs, setTrackingInputs] = useState<Record<string, string>>({});
   const [actionStatus, setActionStatus] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [printOrder, setPrintOrder] = useState<Order | null>(null);
+  
+  // Controle de Impressão (individual ou lote)
+  const [printOrdersList, setPrintOrdersList] = useState<Order[]>([]);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -92,11 +94,39 @@ export default function CortexPedidosPage() {
     fetchOrders();
   }, []);
 
-  const handlePrintThermal = (order: Order) => {
-    setPrintOrder(order);
+  const isLocalFortaleza = (order: Order) => {
+    const city = (order.shipping_city || '').toLowerCase();
+    const state = (order.shipping_state || '').toUpperCase();
+    const cep = (order.shipping_cep || '').replace(/\D/g, '');
+    return city.includes('fortaleza') || state === 'CE' || (cep.startsWith('60') || cep.startsWith('61'));
+  };
+
+  // Impressão individual
+  const handlePrintSingle = (order: Order) => {
+    setPrintOrdersList([order]);
     setTimeout(() => {
       window.print();
     }, 150);
+  };
+
+  // Impressão em lote: apenas pedidos aprovados ou em separação
+  const handlePrintBatch = () => {
+    const pendingOrders = orders.filter(o => 
+      o.fulfillment_substatus === 'PAGAMENTO_APROVADO' || 
+      o.fulfillment_substatus === 'EM_SEPARACAO' ||
+      o.status === 'approved' ||
+      o.status === 'paid'
+    );
+
+    if (pendingOrders.length === 0) {
+      alert('Não há pedidos pendentes de empacotamento no momento.');
+      return;
+    }
+
+    setPrintOrdersList(pendingOrders);
+    setTimeout(() => {
+      window.print();
+    }, 200);
   };
 
   const handleUpdateStatus = async (orderId: string, nextStatus: MicroStatus) => {
@@ -147,20 +177,13 @@ export default function CortexPedidosPage() {
           tracking_code: tracking,
           status: 'shipped' 
         } : o));
-        setActionStatus(`Pedido #${order.short_id || order.id.slice(0, 8)} despachado com sucesso.`);
+        setActionStatus(`Pedido #${order.short_id || order.id.slice(0, 8)} despachado.`);
       }
     } catch (err) {
       console.error(err);
     } finally {
       setProcessingId(null);
     }
-  };
-
-  const isLocalFortaleza = (order: Order) => {
-    const city = (order.shipping_city || '').toLowerCase();
-    const state = (order.shipping_state || '').toUpperCase();
-    const cep = (order.shipping_cep || '').replace(/\D/g, '');
-    return city.includes('fortaleza') || state === 'CE' || (cep.startsWith('60') || cep.startsWith('61'));
   };
 
   const filteredOrders = orders.filter(o => {
@@ -173,64 +196,74 @@ export default function CortexPedidosPage() {
     return matchesSearch && matchesStage;
   });
 
+  const pendingBatchCount = orders.filter(o => 
+    o.fulfillment_substatus === 'PAGAMENTO_APROVADO' || 
+    o.fulfillment_substatus === 'EM_SEPARACAO' ||
+    o.status === 'approved' ||
+    o.status === 'paid'
+  ).length;
+
   return (
     <>
-      {/* TELA PRINCIPAL DO CORTEX (OCULTA NA IMPRESSÃO TÉRMICA) */}
-      <div className="min-h-screen bg-black text-white p-6 md:p-10 font-sans selection:bg-zinc-800 print:hidden">
-        <div className="max-w-6xl mx-auto space-y-8">
+      {/* TELA EXECUTIVA DO CORTEX (PADRÃO LIGHT MODE OFICIAL) */}
+      <div className="min-h-screen bg-[#fafafa] text-zinc-900 p-6 md:p-10 font-sans selection:bg-zinc-200 print:hidden">
+        <div className="max-w-6xl mx-auto space-y-6">
           
-          {/* Cabeçalho */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-zinc-800 pb-6 gap-4">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-zinc-200 pb-5 gap-4">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
-                  CORTEX OS // FULFILLMENT & EXPEDIÇÃO
+                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold">
+                  TERMINAL / PEDIDOS
                 </span>
-                <span className="text-[9px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded font-mono">
-                  ESTEIRA LOGÍSTICA
+                <span className="text-[10px] bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded font-mono font-bold">
+                  ● Banco Integrado
                 </span>
               </div>
-              <h1 className="text-2xl font-bold tracking-tight uppercase font-mono">
+              <h1 className="text-2xl font-bold tracking-tight uppercase font-sans text-zinc-950">
                 Bancada de Separação & Despacho
               </h1>
-              <p className="text-xs text-zinc-400 mt-1 font-mono">
-                Controle de montagem de caixas, geração de etiquetas térmicas e acionamento logístico.
+              <p className="text-xs text-zinc-500 mt-0.5">
+                Controle de montagem de caixas, geração de etiquetas térmicas e esteira de expedição.
               </p>
             </div>
 
             <div className="flex items-center gap-3">
+              {/* BOTÃO DE IMPRESSÃO EM LOTE */}
+              <button
+                onClick={handlePrintBatch}
+                className="inline-flex items-center gap-2 text-xs font-mono bg-zinc-900 hover:bg-black text-white px-4 py-2.5 rounded font-bold transition-all shadow-sm"
+              >
+                <Layers className="w-4 h-4 text-emerald-400" />
+                Imprimir Lote Pendente ({pendingBatchCount})
+              </button>
+
               <button
                 onClick={fetchOrders}
-                className="inline-flex items-center gap-1.5 text-xs font-mono text-zinc-400 hover:text-white px-3 py-2 border border-zinc-800 rounded transition-colors"
+                className="inline-flex items-center gap-1.5 text-xs font-mono text-zinc-700 hover:text-black bg-white hover:bg-zinc-50 px-3 py-2 border border-zinc-300 rounded font-semibold transition-colors"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
                 Sincronizar
               </button>
-              <Link
-                href="/cortex/estoque"
-                className="text-xs font-mono text-zinc-400 hover:text-white px-3 py-2 border border-zinc-800 rounded transition-colors"
-              >
-                ← WMS & Demanda
-              </Link>
             </div>
           </div>
 
           {actionStatus && (
-            <div className="p-3 bg-emerald-950/40 border border-emerald-800/80 rounded text-emerald-400 text-xs font-mono">
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded text-emerald-800 text-xs font-mono font-medium">
               ✓ {actionStatus}
             </div>
           )}
 
           {/* Filtros e Busca */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 font-mono text-xs">
-            <div className="relative w-full md:w-72">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-zinc-500" />
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-xs font-mono">
+            <div className="relative w-full md:w-80">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-zinc-400" />
               <input
                 type="text"
                 placeholder="Buscar por #ID, cliente ou e-mail..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+                className="w-full bg-white border border-zinc-300 rounded pl-8 pr-3 py-1.5 text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-500 shadow-sm"
               />
             </div>
 
@@ -239,10 +272,10 @@ export default function CortexPedidosPage() {
                 <button
                   key={stg}
                   onClick={() => setStageFilter(stg)}
-                  className={`px-2.5 py-1 rounded border text-[11px] transition-colors ${
+                  className={`px-3 py-1 rounded border text-[11px] font-bold transition-colors ${
                     stageFilter === stg
-                      ? 'border-white bg-white text-black font-bold'
-                      : 'border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                      ? 'border-zinc-900 bg-zinc-900 text-white'
+                      : 'border-zinc-300 bg-white text-zinc-600 hover:border-zinc-400 hover:text-zinc-900'
                   }`}
                 >
                   {stg.replace('_', ' ')}
@@ -251,10 +284,10 @@ export default function CortexPedidosPage() {
             </div>
           </div>
 
-          {/* Lista de Pedidos da Bancada */}
-          <div className="space-y-4 font-mono">
+          {/* Cards de Pedidos */}
+          <div className="space-y-4">
             {filteredOrders.length === 0 ? (
-              <div className="p-12 bg-zinc-950 border border-zinc-800 rounded text-center text-xs text-zinc-500">
+              <div className="p-12 bg-white border border-zinc-200 rounded-lg text-center text-xs text-zinc-500 font-mono">
                 {loading ? 'Consultando esteira de expedição...' : 'Nenhum pedido localizado nesta fase.'}
               </div>
             ) : (
@@ -263,72 +296,71 @@ export default function CortexPedidosPage() {
                 const sub = ord.fulfillment_substatus || 'PAGAMENTO_APROVADO';
 
                 return (
-                  <div key={ord.id} className="p-5 bg-zinc-950 border border-zinc-800 rounded-lg space-y-4">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-zinc-900 pb-3">
+                  <div key={ord.id} className="p-5 bg-white border border-zinc-200 rounded-lg shadow-sm space-y-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-zinc-100 pb-3">
                       <div className="flex items-center gap-3">
-                        <span className="text-base font-bold text-white tracking-wider">
+                        <span className="text-base font-bold text-zinc-950 font-mono">
                           #{ord.short_id || ord.id.slice(0, 8)}
                         </span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded border font-bold uppercase ${
+                        <span className={`text-[10px] px-2.5 py-0.5 rounded font-mono font-bold uppercase ${
                           sub === 'DESPACHADO' 
-                            ? 'border-emerald-500/40 text-emerald-400 bg-emerald-950/20'
-                            : 'border-amber-500/40 text-amber-400 bg-amber-950/20'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-amber-100 text-amber-800'
                         }`}>
                           {sub.replace('_', ' ')}
                         </span>
-                        <span className={`text-[10px] px-2 py-0.5 rounded border uppercase ${
+                        <span className={`text-[10px] px-2 py-0.5 rounded font-mono font-bold uppercase ${
                           isLocal
-                            ? 'border-blue-500/30 text-blue-400 bg-blue-950/20'
-                            : 'border-zinc-700 text-zinc-400 bg-zinc-900'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-zinc-100 text-zinc-700'
                         }`}>
                           {isLocal ? '⚡ MOTOBOY LOCAL' : '📦 CORREIOS / BRASIL'}
                         </span>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        {/* BOTÃO DA MINI IMPRESSORA TÉRMICA */}
                         <button
-                          onClick={() => handlePrintThermal(ord)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white text-xs font-bold rounded transition-colors"
+                          onClick={() => handlePrintSingle(ord)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-xs font-mono font-bold rounded border border-zinc-300 transition-colors"
                         >
-                          <Printer className="w-3.5 h-3.5 text-zinc-400" />
+                          <Printer className="w-3.5 h-3.5 text-zinc-600" />
                           Imprimir Térmica
                         </button>
 
-                        <span className="text-sm font-bold text-emerald-400 ml-2">
+                        <span className="text-sm font-bold text-emerald-600 font-mono ml-2">
                           R$ {ord.total_amount.toFixed(2)}
                         </span>
                       </div>
                     </div>
 
-                    {/* Dados do Patrono e Itens */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                    {/* Dados do Destinatário & Artefatos */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono">
                       <div>
-                        <span className="text-[10px] text-zinc-500 uppercase block">Patrono & Contato</span>
-                        <span className="text-white font-bold block uppercase">{ord.customer_name || 'Patrono'}</span>
-                        <span className="text-zinc-400 block">{ord.customer_email}</span>
+                        <span className="text-[10px] text-zinc-400 uppercase font-bold block">Patrono & Contato</span>
+                        <span className="text-zinc-950 font-bold block uppercase">{ord.customer_name || 'Patrono'}</span>
+                        <span className="text-zinc-600 block">{ord.customer_email}</span>
                         <span className="text-zinc-500 block">{ord.customer_phone || 'Sem telefone'}</span>
                       </div>
 
                       <div>
-                        <span className="text-[10px] text-zinc-500 uppercase block">Endereço de Custódia</span>
-                        <span className="text-zinc-300 block">
+                        <span className="text-[10px] text-zinc-400 uppercase font-bold block">Endereço de Custódia</span>
+                        <span className="text-zinc-800 block">
                           {ord.shipping_street ? `${ord.shipping_street}, ${ord.shipping_number}` : 'Endereço registrado no pedido'}
                         </span>
-                        <span className="text-zinc-400 block">
+                        <span className="text-zinc-600 block">
                           {ord.shipping_neighborhood ? `${ord.shipping_neighborhood} • ` : ''}{ord.shipping_city || 'Fortaleza'} - {ord.shipping_state || 'CE'}
                         </span>
-                        <span className="text-zinc-500 block font-mono">{ord.shipping_cep}</span>
+                        <span className="text-zinc-500 block">{ord.shipping_cep}</span>
                       </div>
 
                       <div>
-                        <span className="text-[10px] text-zinc-500 uppercase block">Artefatos para Separação</span>
+                        <span className="text-[10px] text-zinc-400 uppercase font-bold block">Artefatos para Separação</span>
                         <div className="space-y-1 mt-1">
                           {ord.order_items && ord.order_items.length > 0 ? (
                             ord.order_items.map((it, idx) => (
-                              <div key={idx} className="flex justify-between items-center text-zinc-300 bg-zinc-900/60 px-2 py-1 rounded">
+                              <div key={idx} className="flex justify-between items-center text-zinc-800 bg-zinc-50 px-2 py-1 rounded border border-zinc-200">
                                 <span className="font-bold">{it.quantity}x {it.product_name || it.name || 'Artefato'}</span>
-                                <span className="text-[10px] bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-400 uppercase">
+                                <span className="text-[10px] bg-zinc-200 px-1.5 py-0.5 rounded font-bold text-zinc-700 uppercase">
                                   Grade: {it.size || 'M'}
                                 </span>
                               </div>
@@ -340,14 +372,14 @@ export default function CortexPedidosPage() {
                       </div>
                     </div>
 
-                    {/* Esteira de Ações Operacionais */}
-                    <div className="pt-3 border-t border-zinc-900 flex flex-wrap items-center justify-between gap-3 text-xs">
+                    {/* Ações da Esteira */}
+                    <div className="pt-3 border-t border-zinc-100 flex flex-wrap items-center justify-between gap-3 text-xs font-mono">
                       <div className="flex items-center gap-2">
                         {sub === 'PAGAMENTO_APROVADO' && (
                           <button
                             onClick={() => handleUpdateStatus(ord.id, 'EM_SEPARACAO')}
                             disabled={processingId === ord.id}
-                            className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded font-bold transition-colors"
+                            className="px-3 py-1.5 bg-zinc-900 hover:bg-black text-white rounded font-bold transition-colors"
                           >
                             1. Iniciar Separação →
                           </button>
@@ -356,7 +388,7 @@ export default function CortexPedidosPage() {
                           <button
                             onClick={() => handleUpdateStatus(ord.id, 'EMBALANDO')}
                             disabled={processingId === ord.id}
-                            className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded font-bold transition-colors"
+                            className="px-3 py-1.5 bg-zinc-900 hover:bg-black text-white rounded font-bold transition-colors"
                           >
                             2. Caixas e Insumos Ok →
                           </button>
@@ -365,26 +397,26 @@ export default function CortexPedidosPage() {
                           <button
                             onClick={() => handleUpdateStatus(ord.id, 'PRONTO_COLETA')}
                             disabled={processingId === ord.id}
-                            className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded font-bold transition-colors"
+                            className="px-3 py-1.5 bg-zinc-900 hover:bg-black text-white rounded font-bold transition-colors"
                           >
                             3. Pronto para Despacho →
                           </button>
                         )}
                       </div>
 
-                      {/* Disparo de Despacho e Notificação */}
+                      {/* Despacho */}
                       <div className="flex items-center gap-2 w-full md:w-auto">
                         <input
                           type="text"
                           placeholder={isLocal ? "Nome Motoboy / Rota" : "Código Rastreio Correios"}
                           value={trackingInputs[ord.id] !== undefined ? trackingInputs[ord.id] : (ord.tracking_code || '')}
                           onChange={(e) => setTrackingInputs({ ...trackingInputs, [ord.id]: e.target.value })}
-                          className="bg-zinc-900 border border-zinc-800 rounded px-2.5 py-1 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500 font-mono w-48"
+                          className="bg-white border border-zinc-300 rounded px-2.5 py-1 text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-500 w-48 shadow-sm"
                         />
                         <button
                           onClick={() => handleDispatch(ord)}
                           disabled={processingId === ord.id}
-                          className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-black font-bold uppercase tracking-wider rounded text-[11px] transition-colors"
+                          className="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold uppercase tracking-wider rounded text-[11px] transition-colors"
                         >
                           {ord.fulfillment_substatus === 'DESPACHADO' ? 'Reenviar Rastreio' : 'Despachar'}
                         </button>
@@ -400,68 +432,75 @@ export default function CortexPedidosPage() {
         </div>
       </div>
 
-      {/* CUPOM TÉRMICO DE IMPRESSÃO (VISÍVEL APENAS NA MINI IMPRESSORA / PRINT) */}
-      {printOrder && (
-        <div className="hidden print:block print:w-[72mm] text-black bg-white p-2 font-mono text-[11px] leading-tight mx-auto">
-          <div className="text-center pb-2 border-b-2 border-dashed border-black">
-            <h1 className="text-base font-black tracking-widest uppercase">LAROMME</h1>
-            <p className="text-[9px] uppercase tracking-wider">Arquitetura de Vestuário • Fortaleza</p>
-            <p className="text-[8px] text-zinc-700">03°43'16"S 38°32'41"W</p>
-          </div>
-
-          <div className="py-2 border-b border-black flex justify-between items-center text-[10px]">
-            <div>
-              <span className="font-bold">PEDIDO:</span> #{printOrder.short_id || printOrder.id.slice(0, 8)}
-            </div>
-            <div>
-              {new Date(printOrder.created_at).toLocaleDateString('pt-BR')}
-            </div>
-          </div>
-
-          {/* Rota Logística */}
-          <div className="py-2 border-b border-black text-center">
-            <span className="font-black text-xs uppercase px-2 py-0.5 border border-black inline-block">
-              {isLocalFortaleza(printOrder) ? '⚡ MOTOBOY EXPRESS LOCAL' : '📦 CORREIOS / MELHOR ENVIO'}
-            </span>
-          </div>
-
-          {/* Dados do Destinatário */}
-          <div className="py-2 border-b border-black space-y-1">
-            <span className="font-bold text-[9px] uppercase block">DESTINATÁRIO (PATRONO):</span>
-            <p className="font-black text-xs uppercase">{printOrder.customer_name || 'PATRONO'}</p>
-            <p>{printOrder.shipping_street ? `${printOrder.shipping_street}, ${printOrder.shipping_number}` : 'Endereço cadastrado'}</p>
-            <p>{printOrder.shipping_neighborhood} • {printOrder.shipping_city || 'Fortaleza'} - {printOrder.shipping_state || 'CE'}</p>
-            <p className="font-black">CEP: {printOrder.shipping_cep}</p>
-            <p>TEL: {printOrder.customer_phone || 'Não informado'}</p>
-          </div>
-
-          {/* Itens para Conferência de Bancada */}
-          <div className="py-2 border-b-2 border-dashed border-black space-y-1.5">
-            <span className="font-bold text-[9px] uppercase block">CONFERÊNCIA DE BANCADA (PACKING):</span>
-            {printOrder.order_items && printOrder.order_items.length > 0 ? (
-              printOrder.order_items.map((it, idx) => (
-                <div key={idx} className="flex justify-between items-start text-[10px]">
-                  <span>[ ] {it.quantity}x {it.product_name || it.name || 'Artefato'}</span>
-                  <span className="font-black uppercase">TAM: {it.size || 'M'}</span>
-                </div>
-              ))
-            ) : (
-              <div className="flex justify-between items-start text-[10px]">
-                <span>[ ] 1x Artefato Drop 01</span>
-                <span className="font-black uppercase">TAM: M</span>
+      {/* CUPOM TÉRMICO (RENDERIZADO APENAS NA IMPRESSORA COM SUPORTE A LOTE) */}
+      {printOrdersList.length > 0 && (
+        <div className="hidden print:block print:w-[72mm] text-black bg-white font-mono text-[11px] leading-tight mx-auto">
+          {printOrdersList.map((printOrder, pIdx) => (
+            <div 
+              key={printOrder.id} 
+              className={`p-2 ${pIdx < printOrdersList.length - 1 ? 'print:break-after-page mb-6' : ''}`}
+            >
+              <div className="text-center pb-2 border-b-2 border-dashed border-black">
+                <h1 className="text-base font-black tracking-widest uppercase">LAROMME</h1>
+                <p className="text-[9px] uppercase tracking-wider">Arquitetura de Vestuário • Fortaleza</p>
+                <p className="text-[8px] text-zinc-700">03°43'16"S 38°32'41"W</p>
               </div>
-            )}
-            <div className="text-[9px] pt-1 text-zinc-700">
-              <span>[ ] Certificado de Custódia incluso</span>
-            </div>
-          </div>
 
-          {/* Rodapé do Cupom */}
-          <div className="pt-3 text-center space-y-1 text-[8px] uppercase">
-            <p className="font-bold">TOTAL: R$ {printOrder.total_amount.toFixed(2)} • LIQUIDADO</p>
-            <p>LaRomme Origo Collection</p>
-            <p>*** FIM DO COMPROVANTE ***</p>
-          </div>
+              <div className="py-2 border-b border-black flex justify-between items-center text-[10px]">
+                <div>
+                  <span className="font-bold">PEDIDO:</span> #{printOrder.short_id || printOrder.id.slice(0, 8)}
+                </div>
+                <div>
+                  {new Date(printOrder.created_at).toLocaleDateString('pt-BR')}
+                </div>
+              </div>
+
+              {/* Rota Logística */}
+              <div className="py-2 border-b border-black text-center">
+                <span className="font-black text-xs uppercase px-2 py-0.5 border border-black inline-block">
+                  {isLocalFortaleza(printOrder) ? '⚡ MOTOBOY EXPRESS LOCAL' : '📦 CORREIOS / MELHOR ENVIO'}
+                </span>
+              </div>
+
+              {/* Dados do Destinatário */}
+              <div className="py-2 border-b border-black space-y-1">
+                <span className="font-bold text-[9px] uppercase block">DESTINATÁRIO (PATRONO):</span>
+                <p className="font-black text-xs uppercase">{printOrder.customer_name || 'PATRONO'}</p>
+                <p>{printOrder.shipping_street ? `${printOrder.shipping_street}, ${printOrder.shipping_number}` : 'Endereço cadastrado'}</p>
+                <p>{printOrder.shipping_neighborhood} • {printOrder.shipping_city || 'Fortaleza'} - {printOrder.shipping_state || 'CE'}</p>
+                <p className="font-black">CEP: {printOrder.shipping_cep}</p>
+                <p>TEL: {printOrder.customer_phone || 'Não informado'}</p>
+              </div>
+
+              {/* Itens para Conferência de Bancada */}
+              <div className="py-2 border-b-2 border-dashed border-black space-y-1.5">
+                <span className="font-bold text-[9px] uppercase block">CONFERÊNCIA DE BANCADA (PACKING):</span>
+                {printOrder.order_items && printOrder.order_items.length > 0 ? (
+                  printOrder.order_items.map((it, idx) => (
+                    <div key={idx} className="flex justify-between items-start text-[10px]">
+                      <span>[ ] {it.quantity}x {it.product_name || it.name || 'Artefato'}</span>
+                      <span className="font-black uppercase">TAM: {it.size || 'M'}</span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="flex justify-between items-start text-[10px]">
+                    <span>[ ] 1x Artefato Drop 01</span>
+                    <span className="font-black uppercase">TAM: M</span>
+                  </div>
+                )}
+                <div className="text-[9px] pt-1 text-zinc-700">
+                  <span>[ ] Certificado de Custódia incluso</span>
+                </div>
+              </div>
+
+              {/* Rodapé do Cupom */}
+              <div className="pt-3 text-center space-y-1 text-[8px] uppercase">
+                <p className="font-bold">TOTAL: R$ {printOrder.total_amount.toFixed(2)} • LIQUIDADO</p>
+                <p>LaRomme Origo Collection</p>
+                <p>*** FIM DO COMPROVANTE ***</p>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </>
