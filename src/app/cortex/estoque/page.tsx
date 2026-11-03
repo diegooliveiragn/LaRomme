@@ -1,330 +1,231 @@
 ﻿'use client';
 
 import React, { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import { Box, RefreshCw, Loader2, Edit, Trash2, X, Package } from 'lucide-react';
+import Link from 'next/link';
+import { 
+  Boxes, 
+  TrendingUp, 
+  Users, 
+  AlertTriangle, 
+  ArrowRight, 
+  RefreshCw, 
+  CheckCircle2, 
+  Mail, 
+  Phone 
+} from 'lucide-react';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+interface DemandaItem {
+  id?: string;
+  product_slug: string;
+  size: string;
+  contact: string;
+  created_at: string;
+}
+
+const PRODUCT_PRICES: Record<string, { name: string; price: number }> = {
+  vestigium: { name: 'VESTIGIUM. (Algodão Boxy)', price: 229.90 },
+  tenax: { name: 'TENAX. (T-Shirt Poliamida)', price: 189.90 },
+  libertas: { name: 'LIBERTAS. (Regata Furadinha)', price: 149.90 },
+  umbra: { name: 'UMBRA. (Boné 5-Panel Ripstop)', price: 169.90 },
+};
 
 export default function CortexEstoquePage() {
-  const [products, setProducts] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<any | null>(null);
+  const [demands, setDemands] = useState<DemandaItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const [pStock, setPStock] = useState('0');
-  const [mStock, setMStock] = useState('0');
-  const [gStock, setGStock] = useState('0');
-  const [ggStock, setGgStock] = useState('0');
-
-  const fetchStock = async () => {
+  const fetchDemands = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('name', { ascending: true });
-
-      if (error) throw error;
-      setProducts(data || []);
-    } catch (err: any) {
-      console.error('Erro ao consultar WMS:', err.message);
+      const res = await fetch('/api/cortex/demanda-reprimida');
+      const data = await res.json();
+      if (data.success) {
+        setDemands(data.demands || []);
+      }
+    } catch (err) {
+      console.error('Erro ao consultar demanda reprimida:', err);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchStock();
+    fetchDemands();
   }, []);
 
-  const openAdjustModal = (item: any) => {
-    setEditingItem(item);
-    setPStock(String(item.stock_p || 0));
-    setMStock(String(item.stock_m || 0));
-    setGStock(String(item.stock_g || 0));
-    setGgStock(String(item.stock_gg || 0));
-    setIsModalOpen(true);
-  };
+  // Cálculos agregados
+  const totalSolicitacoes = demands.length;
 
-  const handleSaveStock = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingItem) return;
-
-    try {
-      const p = parseInt(pStock) || 0;
-      const m = parseInt(mStock) || 0;
-      const g = parseInt(gStock) || 0;
-      const gg = parseInt(ggStock) || 0;
-      const total = p + m + g + gg;
-
-      const res = await fetch('/api/cortex/products', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: editingItem.id,
-          stock_p: p,
-          stock_m: m,
-          stock_g: g,
-          stock_gg: gg,
-          stock: total
-        })
-      });
-
-      const json = await res.json();
-      if (!res.ok) throw new Error(json.error || 'Erro ao atualizar');
-
-      setIsModalOpen(false);
-      fetchStock();
-    } catch (err: any) {
-      alert(`Erro ao atualizar saldo: ${err.message}`);
-    }
-  };
-
-  const handleDeleteItem = async (id: string, name: string) => {
-    if (!confirm(`Remover "${name}" do controle de estoque e do catálogo?`)) return;
-    try {
-      const res = await fetch(`/api/cortex/products?id=${id}`, {
-        method: 'DELETE'
-      });
-      const json = await res.json();
-
-      if (!res.ok) {
-        throw new Error(json.error || 'Falha ao remover produto do banco');
-      }
-
-      setProducts(prev => prev.filter(p => p.id !== id));
-      alert(`"${name}" removido com sucesso.`);
-    } catch (err: any) {
-      alert(`Erro na exclusão: ${err.message}`);
-    }
-  };
-
-  const totalFisico = products.reduce((acc, p) => {
-    return acc + (p.stock_p || 0) + (p.stock_m || 0) + (p.stock_g || 0) + (p.stock_gg || 0);
+  const vgvLatente = demands.reduce((acc, curr) => {
+    const info = PRODUCT_PRICES[curr.product_slug] || { price: 180 };
+    return acc + info.price;
   }, 0);
 
+  // Agrupamento por produto e grade
+  const demandByProduct: Record<string, Record<string, number>> = {};
+  demands.forEach((d) => {
+    if (!demandByProduct[d.product_slug]) {
+      demandByProduct[d.product_slug] = {};
+    }
+    demandByProduct[d.product_slug][d.size] = (demandByProduct[d.product_slug][d.size] || 0) + 1;
+  });
+
   return (
-    <div className="space-y-8 animate-in fade-in duration-300 pb-12 font-sans">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-6">
-        <div>
-          <span className="text-xs font-mono uppercase tracking-[0.2em] text-zinc-500 font-bold block mb-1">
-            Galpão Central & Matriz WMS
-          </span>
-          <h1 className="font-serif text-3xl font-bold tracking-tight text-zinc-900 uppercase">
-            WMS & Controle de Estoque
-          </h1>
-          <p className="text-xs text-zinc-500 font-mono mt-1 font-bold">
-            Grade Dimensional e Registro de Entradas/Saídas Físicas
-          </p>
-        </div>
-
-        <button
-          onClick={fetchStock}
-          disabled={loading}
-          className="px-4 py-2 bg-white hover:bg-zinc-100 text-zinc-900 border border-zinc-300 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-2xs disabled:opacity-50"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>Sincronizar Saldo</span>
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-6 rounded-xl border bg-white border-zinc-200 shadow-2xs flex flex-col justify-between">
-          <span className="text-xs font-mono font-black uppercase tracking-wider text-zinc-500 block mb-2">
-            Total de Peças Físicas
-          </span>
-          <span className="text-3xl font-black text-zinc-900 tabular-nums tracking-tight block font-mono">
-            {totalFisico}
-          </span>
-          <span className="text-xs font-bold text-zinc-500 mt-2 block">
-            {totalFisico === 0 ? 'Nenhuma peça produzida no momento' : 'Unidades em galpão'}
-          </span>
-        </div>
-
-        <div className="p-6 rounded-xl border bg-white border-zinc-200 shadow-2xs flex flex-col justify-between">
-          <span className="text-xs font-mono font-black uppercase tracking-wider text-zinc-500 block mb-2">
-            Modelos Registrados
-          </span>
-          <span className="text-3xl font-black text-zinc-900 tabular-nums tracking-tight block font-mono">
-            {products.length}
-          </span>
-          <span className="text-xs font-bold text-zinc-500 mt-2 block">
-            SKUs aptos para corte e costura
-          </span>
-        </div>
-
-        <div className="p-6 rounded-xl border bg-white border-zinc-200 shadow-2xs flex flex-col justify-between">
-          <span className="text-xs font-mono font-black uppercase tracking-wider text-zinc-500 block mb-2">
-            Status Operacional
-          </span>
-          <span className="text-3xl font-black text-amber-600 tabular-nums tracking-tight block font-mono">
-            {totalFisico === 0 ? 'Pré-Produção' : 'Operação Ativa'}
-          </span>
-          <span className="text-xs font-bold text-zinc-500 mt-2 block">
-            {totalFisico === 0 ? 'Aguardando abertura de lote' : 'Prateleiras abastecidas'}
-          </span>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl border border-zinc-200 shadow-2xs overflow-hidden">
-        <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50/70 flex justify-between items-center">
-          <h2 className="text-xs font-black text-zinc-900 tracking-wider uppercase">
-            Matriz de Inventário Dimensional
-          </h2>
-          <span className="text-xs font-mono text-zinc-500 font-bold">{products.length} itens</span>
-        </div>
-
-        {loading ? (
-          <div className="p-16 text-center text-xs font-mono font-bold text-zinc-500 flex flex-col items-center gap-3">
-            <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
-            Consultando prateleiras...
+    <div className="min-h-screen bg-black text-white p-6 md:p-10 font-sans selection:bg-zinc-800">
+      <div className="max-w-6xl mx-auto space-y-8">
+        
+        {/* Cabeçalho */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-zinc-800 pb-6 gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
+                CORTEX OS // GESTÃO DE ACERVO
+              </span>
+              <span className="text-[9px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded font-mono">
+                WMS & DEMANDA
+              </span>
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight uppercase font-mono">
+              Demanda Reprimida & Ordens de Produção
+            </h1>
+            <p className="text-xs text-zinc-400 mt-1 font-mono">
+              Interesse retido na página de produto para balanceamento de grade no próximo corte.
+            </p>
           </div>
-        ) : products.length === 0 ? (
-          <div className="p-16 text-center text-xs font-mono font-bold text-zinc-500 flex flex-col items-center gap-3">
-            <Package className="w-10 h-10 text-zinc-300" />
-            Nenhum artefato configurado no WMS. Cadastre modelos no Catálogo.
-          </div>
-        ) : (
-          <div className="overflow-x-auto font-mono text-xs">
-            <table className="w-full text-left">
-              <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 uppercase tracking-wider text-[10px]">
-                <tr>
-                  <th className="px-6 py-3.5 font-bold">Artefato</th>
-                  <th className="px-4 py-3.5 font-bold text-center">P</th>
-                  <th className="px-4 py-3.5 font-bold text-center">M</th>
-                  <th className="px-4 py-3.5 font-bold text-center">G</th>
-                  <th className="px-4 py-3.5 font-bold text-center">GG</th>
-                  <th className="px-6 py-3.5 font-bold text-right">Saldo Físico</th>
-                  <th className="px-6 py-3.5 font-bold text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-zinc-100">
-                {products.map(p => {
-                  const pStk = p.stock_p || 0;
-                  const mStk = p.stock_m || 0;
-                  const gStk = p.stock_g || 0;
-                  const ggStk = p.stock_gg || 0;
-                  const total = pStk + mStk + gStk + ggStk;
 
-                  return (
-                    <tr key={p.id} className="hover:bg-zinc-50/60 transition-colors">
-                      <td className="px-6 py-4">
-                        <span className="font-bold text-zinc-900 block font-sans">{p.name}</span>
-                        <span className="text-[10px] text-zinc-400 uppercase">{p.sku_code || 'SEM SKU'}</span>
-                      </td>
-                      <td className="px-4 py-4 text-center font-bold text-zinc-700">{pStk}</td>
-                      <td className="px-4 py-4 text-center font-bold text-zinc-700">{mStk}</td>
-                      <td className="px-4 py-4 text-center font-bold text-zinc-700">{gStk}</td>
-                      <td className="px-4 py-4 text-center font-bold text-zinc-700">{ggStk}</td>
-                      <td className="px-6 py-4 text-right font-black text-sm text-zinc-900 bg-zinc-50/40 tabular-nums">
-                        {total} un.
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            onClick={() => openAdjustModal(p)}
-                            className="p-1.5 text-zinc-500 hover:text-zinc-900 rounded-lg hover:bg-zinc-100 transition-colors"
-                            title="Ajustar Grade"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteItem(p.id, p.name)}
-                            className="p-1.5 text-rose-500 hover:text-rose-700 rounded-lg hover:bg-rose-50 transition-colors"
-                            title="Excluir"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={fetchDemands}
+              className="inline-flex items-center gap-1.5 text-xs font-mono text-zinc-400 hover:text-white px-3 py-2 border border-zinc-800 rounded transition-colors"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              Atualizar
+            </button>
+            <Link
+              href="/cortex/supply"
+              className="text-xs font-mono text-zinc-400 hover:text-white px-3 py-2 border border-zinc-800 rounded transition-colors"
+            >
+              ← Supply Híbrido
+            </Link>
+          </div>
+        </div>
+
+        {/* Indicadores Principais */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono">
+          <div className="p-5 bg-zinc-950 border border-zinc-800 rounded-lg space-y-1">
+            <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">SOLICITAÇÕES RETIDAS</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-white">{totalSolicitacoes}</span>
+              <span className="text-xs text-zinc-400">patronos na fila</span>
+            </div>
+          </div>
+
+          <div className="p-5 bg-zinc-950 border border-zinc-800 rounded-lg space-y-1">
+            <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">VGV LATENTE ESTIMADO</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-emerald-400">R$ {vgvLatente.toFixed(2)}</span>
+              <span className="text-xs text-zinc-500">receita aguardando corte</span>
+            </div>
+          </div>
+
+          <div className="p-5 bg-zinc-950 border border-zinc-800 rounded-lg space-y-1">
+            <span className="text-[10px] text-zinc-500 uppercase tracking-wider block">DIRETRIZ DE OP</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-bold text-amber-400">
+                {Object.keys(demandByProduct).length > 0 ? `${Object.keys(demandByProduct).length} SKUs` : 'Grade Equilibrada'}
+              </span>
+              <span className="text-xs text-zinc-500">com intenção ativa</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Matriz de Recomendação de Corte */}
+        <div className="p-6 bg-zinc-950 border border-zinc-800 rounded-lg space-y-4 font-mono">
+          <div className="flex justify-between items-center border-b border-zinc-900 pb-3">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-white">
+              Balanço de Grade Sugerido para o Próximo Lote
+            </h2>
+            <span className="text-[10px] text-zinc-500">FORTALEZA, CE</span>
+          </div>
+
+          {Object.keys(demandByProduct).length === 0 ? (
+            <p className="text-xs text-zinc-500 py-6 text-center">
+              Nenhuma solicitação de grade esgotada registrada no momento. O acervo atende à procura actual.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Object.entries(demandByProduct).map(([slug, sizes]) => {
+                const prod = PRODUCT_PRICES[slug] || { name: slug.toUpperCase(), price: 0 };
+                const totalSlug = Object.values(sizes).reduce((a, b) => a + b, 0);
+
+                return (
+                  <div key={slug} className="p-4 bg-zinc-900/50 border border-zinc-800/80 rounded space-y-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-[10px] text-zinc-500 uppercase block">{slug}</span>
+                        <span className="text-xs font-bold text-white">{prod.name}</span>
+                      </div>
+                      <span className="text-xs font-bold text-emerald-400">{totalSlug} un</span>
+                    </div>
+
+                    <div className="flex gap-2 pt-2 border-t border-zinc-900">
+                      {Object.entries(sizes).map(([sz, qty]) => (
+                        <div key={sz} className="px-2.5 py-1 bg-zinc-950 border border-zinc-800 rounded text-center">
+                          <span className="text-[9px] text-zinc-500 block uppercase">{sz}</span>
+                          <span className="text-xs font-bold text-white">{qty}</span>
                         </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Registos de Contacto */}
+        <div className="p-6 bg-zinc-950 border border-zinc-800 rounded-lg space-y-4 font-mono">
+          <div className="flex justify-between items-center border-b border-zinc-900 pb-3">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-white">
+              Fila de Patronos Aguardando Notificação
+            </h2>
+            <span className="text-[10px] text-zinc-500">ÚLTIMOS ENVIOS</span>
+          </div>
+
+          {demands.length === 0 ? (
+            <p className="text-xs text-zinc-500 py-4 text-center">
+              Fila vazia.
+            </p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="text-[10px] text-zinc-500 border-b border-zinc-900 uppercase">
+                    <th className="py-2">Artefato</th>
+                    <th className="py-2">Grade</th>
+                    <th className="py-2">Canal / Contacto</th>
+                    <th className="py-2 text-right">Data de Registo</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-900 text-zinc-300">
+                  {demands.map((item, idx) => (
+                    <tr key={idx} className="hover:bg-zinc-900/40">
+                      <td className="py-2.5 font-bold text-white">
+                        {PRODUCT_PRICES[item.product_slug]?.name || item.product_slug}
+                      </td>
+                      <td className="py-2.5 text-zinc-400 uppercase">{item.size}</td>
+                      <td className="py-2.5 text-zinc-200">{item.contact}</td>
+                      <td className="py-2.5 text-right text-zinc-500 text-[11px]">
+                        {new Date(item.created_at).toLocaleDateString('pt-BR')}
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {isModalOpen && editingItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="bg-white border border-zinc-200 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 font-sans">
-            <div className="flex justify-between items-center border-b border-zinc-200 pb-3">
-              <div>
-                <span className="text-xs font-mono uppercase text-zinc-400 font-bold block">Ajuste de Estoque</span>
-                <h3 className="text-base font-black text-zinc-900 uppercase mt-0.5">{editingItem.name}</h3>
-              </div>
-              <button onClick={() => setIsModalOpen(false)} className="text-zinc-400 hover:text-zinc-700">
-                <X className="w-5 h-5" />
-              </button>
+                  ))}
+                </tbody>
+              </table>
             </div>
-
-            <form onSubmit={handleSaveStock} className="space-y-4 text-xs font-mono">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-zinc-600 block mb-1 font-bold">Saldo P</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={pStock}
-                    onChange={(e) => setPStock(e.target.value)}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 font-bold focus:outline-none focus:border-zinc-400"
-                  />
-                </div>
-                <div>
-                  <label className="text-zinc-600 block mb-1 font-bold">Saldo M</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={mStock}
-                    onChange={(e) => setMStock(e.target.value)}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 font-bold focus:outline-none focus:border-zinc-400"
-                  />
-                </div>
-                <div>
-                  <label className="text-zinc-600 block mb-1 font-bold">Saldo G</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={gStock}
-                    onChange={(e) => setGStock(e.target.value)}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 font-bold focus:outline-none focus:border-zinc-400"
-                  />
-                </div>
-                <div>
-                  <label className="text-zinc-600 block mb-1 font-bold">Saldo GG</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={ggStock}
-                    onChange={(e) => setGgStock(e.target.value)}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 font-bold focus:outline-none focus:border-zinc-400"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-zinc-200 flex justify-end gap-2 font-sans">
-                <button
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 border border-zinc-200 rounded-lg text-xs font-bold text-zinc-600 hover:bg-zinc-100"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-bold uppercase tracking-wider"
-                >
-                  Salvar Saldo
-                </button>
-              </div>
-            </form>
-          </div>
+          )}
         </div>
-      )}
+
+      </div>
     </div>
   );
 }
