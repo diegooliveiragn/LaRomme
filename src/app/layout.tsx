@@ -16,7 +16,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className="antialiased min-h-screen flex flex-col font-sans">
+      <body className="antialiased min-h-screen flex flex-col font-sans bg-black text-white selection:bg-zinc-800 selection:text-white">
         <SmoothScroll>
           <CartProvider>
             <AppLayoutWrapper>{children}</AppLayoutWrapper>
