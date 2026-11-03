@@ -1,9 +1,11 @@
 ﻿'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
   Package, Truck, Clock, CheckCircle2, AlertCircle, RefreshCw,
-  Search, ArrowRight, Box, Send, ShieldCheck, MapPin, Tag, Filter
+  Search, ArrowRight, Box, Send, ShieldCheck, MapPin, Tag, Filter,
+  Printer
 } from 'lucide-react';
 
 export type MicroStatus =
@@ -54,6 +56,7 @@ export default function CortexPedidosPage() {
   const [trackingInputs, setTrackingInputs] = useState<Record<string, string>>({});
   const [actionStatus, setActionStatus] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [printOrder, setPrintOrder] = useState<Order | null>(null);
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -69,20 +72,17 @@ export default function CortexPedidosPage() {
           else if (ord.status === 'shipped' || ord.tracking_code) substatus = 'DESPACHADO';
           else substatus = 'PAGAMENTO_APROVADO';
         }
-        ord.fulfillment_substatus = substatus;
-        return ord;
+        return {
+          ...ord,
+          fulfillment_substatus: substatus,
+          total_amount: Number(ord.total_amount || ord.total || 0),
+          order_items: ord.order_items || ord.items || []
+        };
       });
 
       setOrders(fullOrders);
-
-      const initialTracking: Record<string, string> = {};
-      fullOrders.forEach((o) => {
-        if (o.tracking_code) initialTracking[o.id] = o.tracking_code;
-      });
-      setTrackingInputs(initialTracking);
-    } catch (err: any) {
-      console.error('Erro ao buscar pedidos no admin:', err);
-      setActionStatus(`Erro ao carregar pedidos: ${err.message}`);
+    } catch (err) {
+      console.error('Erro ao buscar pedidos:', err);
     } finally {
       setLoading(false);
     }
@@ -92,353 +92,378 @@ export default function CortexPedidosPage() {
     fetchOrders();
   }, []);
 
-  const handleUpdateSubstatus = async (orderId: string, nextSubstatus: MicroStatus) => {
+  const handlePrintThermal = (order: Order) => {
+    setPrintOrder(order);
+    setTimeout(() => {
+      window.print();
+    }, 150);
+  };
+
+  const handleUpdateStatus = async (orderId: string, nextStatus: MicroStatus) => {
     setProcessingId(orderId);
-    setActionStatus(`Atualizando etapa para ${nextSubstatus.replace('_', ' ')}...`);
-
+    setActionStatus(null);
     try {
-      setOrders(prev => prev.map(o => o.id === orderId ? { ...o, fulfillment_substatus: nextSubstatus } : o));
-
-      // Atualiza via PATCH seguro na rota admin
-      const res = await fetch('/api/admin/orders', {
+      const res = await fetch(`/api/admin/orders`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          orderId,
-          status: nextSubstatus === 'DESPACHADO' ? 'shipped' : nextSubstatus === 'ENTREGUE' ? 'delivered' : 'approved',
-          fulfillment_substatus: nextSubstatus
-        }),
+          id: orderId,
+          fulfillment_substatus: nextStatus
+        })
       });
-
-      if (!res.ok) {
-        console.warn('Aviso: persistência remota reportou erro');
+      if (res.ok) {
+        setOrders(prev => prev.map(o => o.id === orderId ? { ...o, fulfillment_substatus: nextStatus } : o));
+        setActionStatus(`Status atualizado para: ${nextStatus}`);
       }
-
-      setActionStatus(`✓ Etapa atualizada: ${nextSubstatus.replace('_', ' ')}`);
-    } catch (err: any) {
-      console.error('Erro na transição:', err);
+    } catch (err) {
+      console.error(err);
     } finally {
       setProcessingId(null);
-      setTimeout(() => setActionStatus(null), 3000);
     }
   };
 
-  const handleDispatchOrder = async (order: Order) => {
-    const trackingCode = (trackingInputs[order.id] || '').trim();
-    if (!trackingCode) {
-      alert('Informe o código de rastreamento antes de confirmar o despacho.');
+  const handleDispatch = async (order: Order) => {
+    const tracking = trackingInputs[order.id] || order.tracking_code || '';
+    if (!tracking) {
+      alert('Informe o código de rastreamento ou identificação do motoboy.');
       return;
     }
-
     setProcessingId(order.id);
-    setActionStatus(`Processando despacho e enviando aviso para ${order.customer_email}...`);
-
     try {
       const res = await fetch('/api/crm/despacho', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          orderId: order.id,
-          trackingCode: trackingCode,
-        }),
+          order_id: order.id,
+          tracking_code: tracking,
+          customer_email: order.customer_email,
+          customer_name: order.customer_name
+        })
       });
-
-      const data = await res.json();
-      if (data.success) {
-        setActionStatus(`✓ Despacho registrado e e-mail enviado para ${order.customer_email}.`);
-        setOrders(prev => prev.map(o => o.id === order.id ? { ...o, status: 'shipped', tracking_code: trackingCode, fulfillment_substatus: 'DESPACHADO' } : o));
-      } else {
-        setActionStatus(`Erro: ${data.error || 'Falha ao processar despacho.'}`);
+      if (res.ok) {
+        setOrders(prev => prev.map(o => o.id === order.id ? { 
+          ...o, 
+          fulfillment_substatus: 'DESPACHADO', 
+          tracking_code: tracking,
+          status: 'shipped' 
+        } : o));
+        setActionStatus(`Pedido #${order.short_id || order.id.slice(0, 8)} despachado com sucesso.`);
       }
-    } catch (err: any) {
-      setActionStatus(`Erro de rede: ${err.message}`);
+    } catch (err) {
+      console.error(err);
     } finally {
       setProcessingId(null);
-      setTimeout(() => setActionStatus(null), 6000);
     }
   };
 
-  const getSubstatusBadge = (substatus?: MicroStatus) => {
-    switch (substatus) {
-      case 'PAGAMENTO_APROVADO':
-        return <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[11px] font-bold px-2.5 py-0.5 rounded uppercase">1. Aprovado</span>;
-      case 'EM_SEPARACAO':
-        return <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[11px] font-bold px-2.5 py-0.5 rounded uppercase">2. Em Separação</span>;
-      case 'EMBALANDO':
-        return <span className="bg-indigo-50 text-indigo-700 border border-indigo-200 text-[11px] font-bold px-2.5 py-0.5 rounded uppercase">3. Embalando</span>;
-      case 'PRONTO_COLETA':
-        return <span className="bg-purple-50 text-purple-700 border border-purple-200 text-[11px] font-bold px-2.5 py-0.5 rounded uppercase">4. Pronto p/ Coleta</span>;
-      case 'DESPACHADO':
-        return <span className="bg-blue-50 text-blue-700 border border-blue-200 text-[11px] font-bold px-2.5 py-0.5 rounded uppercase">5. Despachado</span>;
-      case 'ENTREGUE':
-        return <span className="bg-zinc-100 text-zinc-800 border border-zinc-300 text-[11px] font-bold px-2.5 py-0.5 rounded uppercase">6. Entregue</span>;
-      default:
-        return <span className="bg-zinc-100 text-zinc-600 border border-zinc-200 text-[11px] font-bold px-2.5 py-0.5 rounded uppercase">Pendente</span>;
-    }
+  const isLocalFortaleza = (order: Order) => {
+    const city = (order.shipping_city || '').toLowerCase();
+    const state = (order.shipping_state || '').toUpperCase();
+    const cep = (order.shipping_cep || '').replace(/\D/g, '');
+    return city.includes('fortaleza') || state === 'CE' || (cep.startsWith('60') || cep.startsWith('61'));
   };
 
-  const activeOrders = orders.filter((o) => o.status !== 'pending' && o.status !== 'cancelled');
-  const pendingReservations = orders.filter((o) => o.status === 'pending');
-
-  const filteredOrders = activeOrders.filter((ord) => {
-    const matchesStage = stageFilter === 'TODOS' || ord.fulfillment_substatus === stageFilter;
-    const matchesSearch =
-      (ord.customer_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (ord.customer_email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      String(ord.short_id || '').includes(searchTerm);
-    return matchesStage && matchesSearch;
+  const filteredOrders = orders.filter(o => {
+    const term = searchTerm.toLowerCase();
+    const matchesSearch = 
+      (o.short_id && o.short_id.toString().includes(term)) ||
+      (o.customer_name && o.customer_name.toLowerCase().includes(term)) ||
+      (o.customer_email && o.customer_email.toLowerCase().includes(term));
+    const matchesStage = stageFilter === 'TODOS' || o.fulfillment_substatus === stageFilter;
+    return matchesSearch && matchesStage;
   });
 
-  const totalEmOperacao = activeOrders.filter(o => o.fulfillment_substatus !== 'ENTREGUE' && o.fulfillment_substatus !== 'DESPACHADO').length;
-  const totalProntosEnvio = activeOrders.filter(o => o.fulfillment_substatus === 'PRONTO_COLETA').length;
-  const totalEmTransito = activeOrders.filter(o => o.fulfillment_substatus === 'DESPACHADO').length;
-
   return (
-    <div className="space-y-6 pb-12 font-sans bg-transparent">
-      {/* HEADER DA PÁGINA */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-200 pb-5">
-        <div>
-          <span className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase">LOGÍSTICA & FULFILLMENT</span>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 uppercase">
-            Esteira Operacional de Galpão
-          </h1>
-          <p className="text-xs text-zinc-500 mt-0.5">
-            Fluxo Granular: Separação Física, Embalagem e Despacho
-          </p>
-        </div>
+    <>
+      {/* TELA PRINCIPAL DO CORTEX (OCULTA NA IMPRESSÃO TÉRMICA) */}
+      <div className="min-h-screen bg-black text-white p-6 md:p-10 font-sans selection:bg-zinc-800 print:hidden">
+        <div className="max-w-6xl mx-auto space-y-8">
+          
+          {/* Cabeçalho */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-zinc-800 pb-6 gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
+                  CORTEX OS // FULFILLMENT & EXPEDIÇÃO
+                </span>
+                <span className="text-[9px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded font-mono">
+                  ESTEIRA LOGÍSTICA
+                </span>
+              </div>
+              <h1 className="text-2xl font-bold tracking-tight uppercase font-mono">
+                Bancada de Separação & Despacho
+              </h1>
+              <p className="text-xs text-zinc-400 mt-1 font-mono">
+                Controle de montagem de caixas, geração de etiquetas térmicas e acionamento logístico.
+              </p>
+            </div>
 
-        <button
-          onClick={fetchOrders}
-          disabled={loading}
-          className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 disabled:opacity-50 shadow-sm"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>Sincronizar Pedidos</span>
-        </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={fetchOrders}
+                className="inline-flex items-center gap-1.5 text-xs font-mono text-zinc-400 hover:text-white px-3 py-2 border border-zinc-800 rounded transition-colors"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+                Sincronizar
+              </button>
+              <Link
+                href="/cortex/estoque"
+                className="text-xs font-mono text-zinc-400 hover:text-white px-3 py-2 border border-zinc-800 rounded transition-colors"
+              >
+                ← WMS & Demanda
+              </Link>
+            </div>
+          </div>
+
+          {actionStatus && (
+            <div className="p-3 bg-emerald-950/40 border border-emerald-800/80 rounded text-emerald-400 text-xs font-mono">
+              ✓ {actionStatus}
+            </div>
+          )}
+
+          {/* Filtros e Busca */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 font-mono text-xs">
+            <div className="relative w-full md:w-72">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-zinc-500" />
+              <input
+                type="text"
+                placeholder="Buscar por #ID, cliente ou e-mail..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-zinc-950 border border-zinc-800 rounded pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500"
+              />
+            </div>
+
+            <div className="flex flex-wrap items-center gap-1.5">
+              {['TODOS', 'PAGAMENTO_APROVADO', 'EM_SEPARACAO', 'EMBALANDO', 'DESPACHADO'].map((stg) => (
+                <button
+                  key={stg}
+                  onClick={() => setStageFilter(stg)}
+                  className={`px-2.5 py-1 rounded border text-[11px] transition-colors ${
+                    stageFilter === stg
+                      ? 'border-white bg-white text-black font-bold'
+                      : 'border-zinc-800 text-zinc-400 hover:border-zinc-700'
+                  }`}
+                >
+                  {stg.replace('_', ' ')}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Lista de Pedidos da Bancada */}
+          <div className="space-y-4 font-mono">
+            {filteredOrders.length === 0 ? (
+              <div className="p-12 bg-zinc-950 border border-zinc-800 rounded text-center text-xs text-zinc-500">
+                {loading ? 'Consultando esteira de expedição...' : 'Nenhum pedido localizado nesta fase.'}
+              </div>
+            ) : (
+              filteredOrders.map((ord) => {
+                const isLocal = isLocalFortaleza(ord);
+                const sub = ord.fulfillment_substatus || 'PAGAMENTO_APROVADO';
+
+                return (
+                  <div key={ord.id} className="p-5 bg-zinc-950 border border-zinc-800 rounded-lg space-y-4">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-zinc-900 pb-3">
+                      <div className="flex items-center gap-3">
+                        <span className="text-base font-bold text-white tracking-wider">
+                          #{ord.short_id || ord.id.slice(0, 8)}
+                        </span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded border font-bold uppercase ${
+                          sub === 'DESPACHADO' 
+                            ? 'border-emerald-500/40 text-emerald-400 bg-emerald-950/20'
+                            : 'border-amber-500/40 text-amber-400 bg-amber-950/20'
+                        }`}>
+                          {sub.replace('_', ' ')}
+                        </span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded border uppercase ${
+                          isLocal
+                            ? 'border-blue-500/30 text-blue-400 bg-blue-950/20'
+                            : 'border-zinc-700 text-zinc-400 bg-zinc-900'
+                        }`}>
+                          {isLocal ? '⚡ MOTOBOY LOCAL' : '📦 CORREIOS / BRASIL'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {/* BOTÃO DA MINI IMPRESSORA TÉRMICA */}
+                        <button
+                          onClick={() => handlePrintThermal(ord)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-white text-xs font-bold rounded transition-colors"
+                        >
+                          <Printer className="w-3.5 h-3.5 text-zinc-400" />
+                          Imprimir Térmica
+                        </button>
+
+                        <span className="text-sm font-bold text-emerald-400 ml-2">
+                          R$ {ord.total_amount.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Dados do Patrono e Itens */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                      <div>
+                        <span className="text-[10px] text-zinc-500 uppercase block">Patrono & Contato</span>
+                        <span className="text-white font-bold block uppercase">{ord.customer_name || 'Patrono'}</span>
+                        <span className="text-zinc-400 block">{ord.customer_email}</span>
+                        <span className="text-zinc-500 block">{ord.customer_phone || 'Sem telefone'}</span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-zinc-500 uppercase block">Endereço de Custódia</span>
+                        <span className="text-zinc-300 block">
+                          {ord.shipping_street ? `${ord.shipping_street}, ${ord.shipping_number}` : 'Endereço registrado no pedido'}
+                        </span>
+                        <span className="text-zinc-400 block">
+                          {ord.shipping_neighborhood ? `${ord.shipping_neighborhood} • ` : ''}{ord.shipping_city || 'Fortaleza'} - {ord.shipping_state || 'CE'}
+                        </span>
+                        <span className="text-zinc-500 block font-mono">{ord.shipping_cep}</span>
+                      </div>
+
+                      <div>
+                        <span className="text-[10px] text-zinc-500 uppercase block">Artefatos para Separação</span>
+                        <div className="space-y-1 mt-1">
+                          {ord.order_items && ord.order_items.length > 0 ? (
+                            ord.order_items.map((it, idx) => (
+                              <div key={idx} className="flex justify-between items-center text-zinc-300 bg-zinc-900/60 px-2 py-1 rounded">
+                                <span className="font-bold">{it.quantity}x {it.product_name || it.name || 'Artefato'}</span>
+                                <span className="text-[10px] bg-zinc-800 px-1.5 py-0.5 rounded text-zinc-400 uppercase">
+                                  Grade: {it.size || 'M'}
+                                </span>
+                              </div>
+                            ))
+                          ) : (
+                            <span className="text-zinc-500">1x Artefato Drop 01</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Esteira de Ações Operacionais */}
+                    <div className="pt-3 border-t border-zinc-900 flex flex-wrap items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2">
+                        {sub === 'PAGAMENTO_APROVADO' && (
+                          <button
+                            onClick={() => handleUpdateStatus(ord.id, 'EM_SEPARACAO')}
+                            disabled={processingId === ord.id}
+                            className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded font-bold transition-colors"
+                          >
+                            1. Iniciar Separação →
+                          </button>
+                        )}
+                        {sub === 'EM_SEPARACAO' && (
+                          <button
+                            onClick={() => handleUpdateStatus(ord.id, 'EMBALANDO')}
+                            disabled={processingId === ord.id}
+                            className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded font-bold transition-colors"
+                          >
+                            2. Caixas e Insumos Ok →
+                          </button>
+                        )}
+                        {sub === 'EMBALANDO' && (
+                          <button
+                            onClick={() => handleUpdateStatus(ord.id, 'PRONTO_COLETA')}
+                            disabled={processingId === ord.id}
+                            className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded font-bold transition-colors"
+                          >
+                            3. Pronto para Despacho →
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Disparo de Despacho e Notificação */}
+                      <div className="flex items-center gap-2 w-full md:w-auto">
+                        <input
+                          type="text"
+                          placeholder={isLocal ? "Nome Motoboy / Rota" : "Código Rastreio Correios"}
+                          value={trackingInputs[ord.id] !== undefined ? trackingInputs[ord.id] : (ord.tracking_code || '')}
+                          onChange={(e) => setTrackingInputs({ ...trackingInputs, [ord.id]: e.target.value })}
+                          className="bg-zinc-900 border border-zinc-800 rounded px-2.5 py-1 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500 font-mono w-48"
+                        />
+                        <button
+                          onClick={() => handleDispatch(ord)}
+                          disabled={processingId === ord.id}
+                          className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-black font-bold uppercase tracking-wider rounded text-[11px] transition-colors"
+                        >
+                          {ord.fulfillment_substatus === 'DESPACHADO' ? 'Reenviar Rastreio' : 'Despachar'}
+                        </button>
+                      </div>
+                    </div>
+
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+        </div>
       </div>
 
-      {/* FEEDBACK STATUS BAR */}
-      {actionStatus && (
-        <div className="p-3.5 rounded bg-zinc-900 text-xs font-mono font-bold text-white flex items-center justify-between shadow">
-          <span>{actionStatus}</span>
-          <button onClick={() => setActionStatus(null)} className="text-zinc-400 hover:text-white ml-4">✕</button>
+      {/* CUPOM TÉRMICO DE IMPRESSÃO (VISÍVEL APENAS NA MINI IMPRESSORA / PRINT) */}
+      {printOrder && (
+        <div className="hidden print:block print:w-[72mm] text-black bg-white p-2 font-mono text-[11px] leading-tight mx-auto">
+          <div className="text-center pb-2 border-b-2 border-dashed border-black">
+            <h1 className="text-base font-black tracking-widest uppercase">LAROMME</h1>
+            <p className="text-[9px] uppercase tracking-wider">Arquitetura de Vestuário • Fortaleza</p>
+            <p className="text-[8px] text-zinc-700">03°43'16"S 38°32'41"W</p>
+          </div>
+
+          <div className="py-2 border-b border-black flex justify-between items-center text-[10px]">
+            <div>
+              <span className="font-bold">PEDIDO:</span> #{printOrder.short_id || printOrder.id.slice(0, 8)}
+            </div>
+            <div>
+              {new Date(printOrder.created_at).toLocaleDateString('pt-BR')}
+            </div>
+          </div>
+
+          {/* Rota Logística */}
+          <div className="py-2 border-b border-black text-center">
+            <span className="font-black text-xs uppercase px-2 py-0.5 border border-black inline-block">
+              {isLocalFortaleza(printOrder) ? '⚡ MOTOBOY EXPRESS LOCAL' : '📦 CORREIOS / MELHOR ENVIO'}
+            </span>
+          </div>
+
+          {/* Dados do Destinatário */}
+          <div className="py-2 border-b border-black space-y-1">
+            <span className="font-bold text-[9px] uppercase block">DESTINATÁRIO (PATRONO):</span>
+            <p className="font-black text-xs uppercase">{printOrder.customer_name || 'PATRONO'}</p>
+            <p>{printOrder.shipping_street ? `${printOrder.shipping_street}, ${printOrder.shipping_number}` : 'Endereço cadastrado'}</p>
+            <p>{printOrder.shipping_neighborhood} • {printOrder.shipping_city || 'Fortaleza'} - {printOrder.shipping_state || 'CE'}</p>
+            <p className="font-black">CEP: {printOrder.shipping_cep}</p>
+            <p>TEL: {printOrder.customer_phone || 'Não informado'}</p>
+          </div>
+
+          {/* Itens para Conferência de Bancada */}
+          <div className="py-2 border-b-2 border-dashed border-black space-y-1.5">
+            <span className="font-bold text-[9px] uppercase block">CONFERÊNCIA DE BANCADA (PACKING):</span>
+            {printOrder.order_items && printOrder.order_items.length > 0 ? (
+              printOrder.order_items.map((it, idx) => (
+                <div key={idx} className="flex justify-between items-start text-[10px]">
+                  <span>[ ] {it.quantity}x {it.product_name || it.name || 'Artefato'}</span>
+                  <span className="font-black uppercase">TAM: {it.size || 'M'}</span>
+                </div>
+              ))
+            ) : (
+              <div className="flex justify-between items-start text-[10px]">
+                <span>[ ] 1x Artefato Drop 01</span>
+                <span className="font-black uppercase">TAM: M</span>
+              </div>
+            )}
+            <div className="text-[9px] pt-1 text-zinc-700">
+              <span>[ ] Certificado de Custódia incluso</span>
+            </div>
+          </div>
+
+          {/* Rodapé do Cupom */}
+          <div className="pt-3 text-center space-y-1 text-[8px] uppercase">
+            <p className="font-bold">TOTAL: R$ {printOrder.total_amount.toFixed(2)} • LIQUIDADO</p>
+            <p>LaRomme Origo Collection</p>
+            <p>*** FIM DO COMPROVANTE ***</p>
+          </div>
         </div>
       )}
-
-      {/* KPIS DE FULFILLMENT */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">
-              Na Bancada de Galpão
-            </span>
-            <Box className="w-4 h-4 text-amber-500" />
-          </div>
-          <div className="text-3xl font-bold text-zinc-900 tracking-tight font-mono">{totalEmOperacao}</div>
-          <p className="text-[11px] text-zinc-400 mt-1">Em separação e embalagem</p>
-        </div>
-
-        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">
-              Prontos para Coleta
-            </span>
-            <Package className="w-4 h-4 text-purple-600" />
-          </div>
-          <div className="text-3xl font-bold text-zinc-900 tracking-tight font-mono">{totalProntosEnvio}</div>
-          <p className="text-[11px] text-zinc-400 mt-1">Aguardando veículo de coleta</p>
-        </div>
-
-        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">
-              Em Trânsito (Correios)
-            </span>
-            <Truck className="w-4 h-4 text-blue-600" />
-          </div>
-          <div className="text-3xl font-bold text-zinc-900 tracking-tight font-mono">{totalEmTransito}</div>
-          <p className="text-[11px] text-zinc-400 mt-1">Com código de rastreamento</p>
-        </div>
-
-        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">
-              Reservas em Aberto
-            </span>
-            <Clock className="w-4 h-4 text-rose-500" />
-          </div>
-          <div className="text-3xl font-bold text-zinc-900 tracking-tight font-mono">{pendingReservations.length}</div>
-          <p className="text-[11px] text-zinc-400 mt-1">Aguardando liquidação Pix</p>
-        </div>
-      </div>
-
-      {/* FILTROS E BUSCA */}
-      <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between pt-2">
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 md:pb-0 text-xs font-medium">
-          {[
-            { key: 'TODOS', label: 'Todos' },
-            { key: 'PAGAMENTO_APROVADO', label: '1. Aprovados' },
-            { key: 'EM_SEPARACAO', label: '2. Em Separação' },
-            { key: 'EMBALANDO', label: '3. Embalando' },
-            { key: 'PRONTO_COLETA', label: '4. Pronto p/ Coleta' },
-            { key: 'DESPACHADO', label: '5. Despachados' },
-            { key: 'ENTREGUE', label: '6. Entregues' },
-          ].map((stage) => (
-            <button
-              key={stage.key}
-              onClick={() => setStageFilter(stage.key)}
-              className={`px-3 py-1.5 rounded text-xs font-semibold uppercase tracking-wider transition-all shrink-0 ${
-                stageFilter === stage.key
-                  ? 'bg-zinc-900 text-white shadow-sm'
-                  : 'bg-white text-zinc-600 hover:text-zinc-900 border border-zinc-200'
-              }`}
-            >
-              {stage.label}
-            </button>
-          ))}
-        </div>
-
-        <div className="relative min-w-[260px]">
-          <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Buscar pedido ou patrono..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-1.5 bg-white border border-zinc-200 rounded text-xs text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-zinc-500 shadow-sm"
-          />
-        </div>
-      </div>
-
-      {/* LISTAGEM DE PEDIDOS */}
-      <div className="space-y-3">
-        {loading ? (
-          <div className="p-12 text-center text-xs text-zinc-400 font-mono bg-white border border-zinc-200 rounded">
-            Carregando ordens de galpão...
-          </div>
-        ) : filteredOrders.length === 0 ? (
-          <div className="p-12 text-center text-xs text-zinc-400 font-mono bg-white border border-zinc-200 rounded">
-            Nenhum pedido localizado nesta etapa.
-          </div>
-        ) : (
-          filteredOrders.map((ord) => (
-            <div
-              key={ord.id}
-              className="p-5 rounded-lg border border-zinc-200 bg-white hover:border-zinc-300 transition-all shadow-sm space-y-4"
-            >
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-zinc-100 pb-3">
-                <div className="flex items-center gap-3">
-                  <span className="font-mono font-bold text-sm text-zinc-900">
-                    #{ord.short_id || ord.id.slice(0, 8)}
-                  </span>
-                  <span className="text-zinc-700 text-xs font-medium capitalize">
-                    {ord.customer_name || 'Patrono Anônimo'}
-                  </span>
-                  {getSubstatusBadge(ord.fulfillment_substatus)}
-                  <span className="text-[11px] font-mono text-zinc-400">
-                    {new Date(ord.created_at).toLocaleDateString('pt-BR')} às {new Date(ord.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                  </span>
-                </div>
-
-                <div className="text-right">
-                  <span className="text-[10px] font-mono text-zinc-400 block uppercase">Total Pago</span>
-                  <span className="text-sm font-bold font-mono text-zinc-900">
-                    R$ {Number(ord.total_amount || 0).toFixed(2).replace('.', ',')}
-                  </span>
-                </div>
-              </div>
-
-              {/* ENDEREÇO E ITENS */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs text-zinc-600">
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                  <span>
-                    {ord.shipping_street ? `${ord.shipping_street}, ${ord.shipping_number}` : 'Endereço registrado'} • {ord.shipping_neighborhood || ''} • {ord.shipping_city || ''} - {ord.shipping_state || ''} ({ord.shipping_cep || ''})
-                  </span>
-                </div>
-
-                {/* BOTÕES DE ETAPAS */}
-                <div className="flex items-center gap-2 shrink-0">
-                  {ord.fulfillment_substatus === 'PAGAMENTO_APROVADO' && (
-                    <button
-                      onClick={() => handleUpdateSubstatus(ord.id, 'EM_SEPARACAO')}
-                      disabled={processingId === ord.id}
-                      className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm"
-                    >
-                      <Box className="w-3.5 h-3.5" />
-                      <span>Iniciar Separação</span>
-                    </button>
-                  )}
-
-                  {ord.fulfillment_substatus === 'EM_SEPARACAO' && (
-                    <button
-                      onClick={() => handleUpdateSubstatus(ord.id, 'EMBALANDO')}
-                      disabled={processingId === ord.id}
-                      className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm"
-                    >
-                      <Package className="w-3.5 h-3.5" />
-                      <span>Concluir Embalagem</span>
-                    </button>
-                  )}
-
-                  {ord.fulfillment_substatus === 'EMBALANDO' && (
-                    <button
-                      onClick={() => handleUpdateSubstatus(ord.id, 'PRONTO_COLETA')}
-                      disabled={processingId === ord.id}
-                      className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm"
-                    >
-                      <Truck className="w-3.5 h-3.5" />
-                      <span>Pronto p/ Coleta</span>
-                    </button>
-                  )}
-
-                  {ord.fulfillment_substatus === 'PRONTO_COLETA' && (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        placeholder="Código de Rastreio..."
-                        value={trackingInputs[ord.id] || ''}
-                        onChange={(e) => setTrackingInputs(prev => ({ ...prev, [ord.id]: e.target.value }))}
-                        className="bg-white border border-zinc-300 rounded px-3 py-1.5 text-xs font-mono text-zinc-900 placeholder-zinc-400 focus:outline-none focus:border-emerald-600 shadow-sm"
-                      />
-                      <button
-                        onClick={() => handleDispatchOrder(ord)}
-                        disabled={processingId === ord.id}
-                        className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-sm"
-                      >
-                        <Send className="w-3.5 h-3.5" />
-                        <span>Despachar</span>
-                      </button>
-                    </div>
-                  )}
-
-                  {ord.fulfillment_substatus === 'DESPACHADO' && (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded font-semibold">
-                        Rastreio: {ord.tracking_code || 'MOTOBOY-01'}
-                      </span>
-                      <button
-                        onClick={() => handleUpdateSubstatus(ord.id, 'ENTREGUE')}
-                        disabled={processingId === ord.id}
-                        className="px-3 py-1 bg-zinc-800 hover:bg-zinc-900 text-white rounded text-xs font-bold uppercase tracking-wider transition-all"
-                      >
-                        Confirmar Entrega
-                      </button>
-                    </div>
-                  )}
-
-                  {ord.fulfillment_substatus === 'ENTREGUE' && (
-                    <span className="text-xs font-mono text-zinc-500 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                      Ordem Concluída
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
+    </>
   );
 }
