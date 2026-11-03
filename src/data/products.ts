@@ -40,16 +40,16 @@ export const PRODUCTS: Product[] = [
         name: "BORDÔ",
         hex: "#4A1D24",
         images: [
-          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-VESTIGIUM-FRENTE.png",
-          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-VESTIGIUM-COSTAS.png",
-          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-DETALHE-GOLA3.png"
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/boxy%20vinho%20escuro%20-%20frente.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/boxy%20vinho%20escuro.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/detalhe%20gola%203.jpg"
         ]
       }
     ],
     defaultImages: [
-      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-VESTIGIUM-FRENTE.png",
-      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-VESTIGIUM-COSTAS.png",
-      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-DETALHE-GOLA3.png"
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/boxy%20vinho%20escuro%20-%20frente.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/boxy%20vinho%20escuro.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/detalhe%20gola%203.jpg"
     ],
     technicalSpecs: {
       fabric: "100% Algodão nobre encorpado com acabamento estonado.",
@@ -72,16 +72,16 @@ export const PRODUCTS: Product[] = [
         name: "PRETO",
         hex: "#0A0A0A",
         images: [
-          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-TENAX-FRENTE.png",
-          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-TENAX-COSTAS.png",
-          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-DETALHE-GOLA1.png"
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/camisa%20preta.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/camisa%20preta%20-%20costas.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/detalhe%20gola%201.jpg"
         ]
       }
     ],
     defaultImages: [
-      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-TENAX-FRENTE.png",
-      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-TENAX-COSTAS.png",
-      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-DETALHE-GOLA1.png"
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/camisa%20preta.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/camisa%20preta%20-%20costas.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/detalhe%20gola%201.jpg"
     ],
     technicalSpecs: {
       fabric: "Malha técnica de poliamida com elastano e dispersão térmica.",
@@ -104,16 +104,16 @@ export const PRODUCTS: Product[] = [
         name: "PRETO",
         hex: "#0A0A0A",
         images: [
-          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-LIBERTAS-FRENTE.png",
-          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-LIBERTAS-COSTAS.png",
-          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-DETALHE-GOLA2.png"
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/regata%20preta%20libertas.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/regata%20preta%20libertas%20-%20costas.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/detalhe%20gola%202.jpg"
         ]
       }
     ],
     defaultImages: [
-      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-LIBERTAS-FRENTE.png",
-      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-LIBERTAS-COSTAS.png",
-      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-DETALHE-GOLA2.png"
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/regata%20preta%20libertas.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/regata%20preta%20libertas%20-%20costas.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/detalhe%20gola%202.jpg"
     ],
     technicalSpecs: {
       fabric: "Malha de poliamida com microfuros para troca de ar constante.",
@@ -137,16 +137,16 @@ export const PRODUCTS: Product[] = [
         name: "PRETO",
         hex: "#0A0A0A",
         images: [
-          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-BONE-UMBRA-FRENTE.png",
-          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-BONE-UMBRA-LATERAL.png",
-          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-BONE-UMBRA-COSTAS.png"
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%20preto%205%20panel%20-%20frente.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%20preto%205%20panel%20-%20lado.png",
+          "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%20preto%205%20panel.png"
         ]
       }
     ],
     defaultImages: [
-      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-BONE-UMBRA-FRENTE.png",
-      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-BONE-UMBRA-LATERAL.png",
-      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/LAROMME-BONE-UMBRA-COSTAS.png"
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%20preto%205%20panel%20-%20frente.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%20preto%205%20panel%20-%20lado.png",
+      "https://ekljqqdhrltlydomfeua.supabase.co/storage/v1/object/public/Drop%201/bone%20preto%205%20panel.png"
     ],
     technicalSpecs: {
       fabric: "Ripstop sintético com perfurações técnicas a laser nas laterais.",
