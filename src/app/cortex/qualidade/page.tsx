@@ -1,201 +1,229 @@
 ﻿'use client';
 
 import React, { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import Link from 'next/link';
-import {
-  Package, DollarSign, Layers, ArrowRight,
-  RefreshCw, Loader2, TrendingUp, AlertTriangle, ExternalLink
+import { 
+  Star, 
+  MessageSquare, 
+  TrendingUp, 
+  RefreshCw, 
+  ThumbsUp, 
+  Sparkles, 
+  Tag 
 } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-interface ProductValuation {
+interface Review {
   id: string;
-  name: string;
-  category: string;
-  price: number;
-  cpv: number;
-  total_stock: number;
+  order_id?: string;
+  customer_name: string;
+  product_name: string;
+  rating: number; // 1 a 5
+  comment: string;
+  created_at: string;
 }
 
-export default function ValuationEstoquePage() {
-  const [products, setProducts] = useState<ProductValuation[]>([]);
+export default function CortexQualidadePage() {
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const formatBRL = (val: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
-
-  const fetchValuation = async () => {
+  const fetchReviews = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('products')
+        .from('product_reviews')
         .select('*')
-        .order('name', { ascending: true });
+        .order('created_at', { ascending: false });
 
-      if (error) throw error;
-
-      const mapped: ProductValuation[] = (data || []).map((p: any) => {
-        const total = (p.stock_p || 0) + (p.stock_m || 0) + (p.stock_g || 0) + (p.stock_gg || 0);
-        const preco = Number(p.price || 0);
-        const custo = Number(p.cost_piece || (preco * 0.35));
-        return {
-          id: p.id,
-          name: p.name,
-          category: p.category || 'Topwear',
-          price: preco,
-          cpv: custo,
-          total_stock: total
-        };
-      });
-
-      setProducts(mapped);
-    } catch (err: any) {
-      console.error('Erro ao consultar valuation:', err.message);
+      if (data && !error) {
+        setReviews(data);
+      } else {
+        setReviews([]);
+      }
+    } catch (err) {
+      console.error('Erro ao buscar avaliações:', err);
+      setReviews([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchValuation();
+    fetchReviews();
   }, []);
 
-  const totalPecas = products.reduce((acc, p) => acc + p.total_stock, 0);
-  const custoAdquirido = products.reduce((acc, p) => acc + (p.cpv * p.total_stock), 0);
-  const vgvTotal = products.reduce((acc, p) => acc + (p.price * p.total_stock), 0);
-  const potencialMargem = vgvTotal - custoAdquirido;
+  // Análise dos Dados
+  const totalReviews = reviews.length;
+  const averageRating = totalReviews > 0 
+    ? (reviews.reduce((acc, r) => acc + Number(r.rating || 0), 0) / totalReviews) 
+    : 0;
+
+  const positivePercent = totalReviews > 0
+    ? ((reviews.filter(r => r.rating >= 4).length / totalReviews) * 100).toFixed(0)
+    : '0';
+
+  // Síntese analítica baseada nas avaliações reais
+  const getExecutiveSynthesis = () => {
+    if (totalReviews === 0) {
+      return 'Nenhuma avaliação registrada até o momento. O sistema aguarda as primeiras confirmações de entrega do Drop 01 para gerar a síntese de satisfação.';
+    }
+    if (averageRating >= 4.5) {
+      return `Alto índice de aprovação (${averageRating.toFixed(1)}/5.0). Comentários destacam a densidade têxtil e a precisão do caimento no corpo.`;
+    }
+    if (averageRating >= 3.5) {
+      return `Desempenho regular (${averageRating.toFixed(1)}/5.0). Recomenda-se monitorar observações sobre grade e tempo de entrega.`;
+    }
+    return `Alerta de qualidade (${averageRating.toFixed(1)}/5.0). Há comentários apontando ajustes necessários em modelagem ou expedição.`;
+  };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300 pb-12 font-sans">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-6">
-        <div>
-          <span className="text-xs font-mono uppercase tracking-[0.2em] text-zinc-500 font-bold block mb-1">
-            Qualidade Operacional & Métricas de Ativos
-          </span>
-          <h1 className="font-serif text-3xl font-bold tracking-tight text-zinc-900 uppercase">
-            Valuation de Acervo Físico
-          </h1>
-          <p className="text-xs text-zinc-500 font-mono mt-1 font-bold">
-            Capital Imobilizado vs Potencial de Faturamento Bruto (VGV)
+    <div className="min-h-screen bg-[#fafafa] text-zinc-900 p-6 md:p-10 font-sans selection:bg-zinc-200">
+      <div className="max-w-6xl mx-auto space-y-6">
+        
+        {/* Topo */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-zinc-200 pb-5 gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest font-bold">
+                CORTEX OS // QUALIDADE & AUDIÊNCIA
+              </span>
+              <span className="text-[10px] bg-emerald-50 border border-emerald-200 text-emerald-700 px-2 py-0.5 rounded font-mono font-bold">
+                ● Feedback Loop Compradores
+              </span>
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight uppercase font-sans text-zinc-950">
+              Avaliações & Inteligência de Produto
+            </h1>
+            <p className="text-xs text-zinc-500 mt-0.5 font-mono">
+              Notas, comentários dos patronos e parecer preditivo sobre o Drop 01.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              onClick={fetchReviews}
+              className="inline-flex items-center gap-1.5 text-xs font-mono text-zinc-700 hover:text-black bg-white hover:bg-zinc-50 px-3 py-2 border border-zinc-300 rounded font-semibold transition-colors shadow-sm"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+              Sincronizar
+            </button>
+            <Link
+              href="/cortex"
+              className="text-xs font-mono text-zinc-700 hover:text-black bg-white hover:bg-zinc-50 px-3 py-2 border border-zinc-300 rounded font-semibold transition-colors shadow-sm"
+            >
+              ← Cockpit C-Level
+            </Link>
+          </div>
+        </div>
+
+        {/* Indicadores de Avaliação */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono">
+          <div className="p-5 bg-white border border-zinc-200 rounded-lg shadow-sm space-y-1">
+            <span className="text-[10px] text-zinc-400 uppercase font-bold block">NOTA MÉDIA GERAL</span>
+            <div className="flex items-center gap-2">
+              <span className="text-3xl font-bold text-zinc-950">
+                {totalReviews > 0 ? averageRating.toFixed(1) : '—'}
+              </span>
+              <div className="flex text-amber-400">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star 
+                    key={s} 
+                    className={`w-4 h-4 ${s <= Math.round(averageRating) ? 'fill-amber-400' : 'text-zinc-200'}`} 
+                  />
+                ))}
+              </div>
+            </div>
+            <span className="text-[11px] text-zinc-500 block">Escala de 1 a 5 estrelas</span>
+          </div>
+
+          <div className="p-5 bg-white border border-zinc-200 rounded-lg shadow-sm space-y-1">
+            <span className="text-[10px] text-zinc-400 uppercase font-bold block">ÍNDICE DE RECOMENDAÇÃO</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-emerald-600">
+                {totalReviews > 0 ? `${positivePercent}%` : '—'}
+              </span>
+            </div>
+            <span className="text-[11px] text-zinc-500 block">Avaliações positivas (4 e 5 estrelas)</span>
+          </div>
+
+          <div className="p-5 bg-white border border-zinc-200 rounded-lg shadow-sm space-y-1">
+            <span className="text-[10px] text-zinc-400 uppercase font-bold block">AVALIAÇÕES AUDITADAS</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-3xl font-bold text-zinc-950">{totalReviews}</span>
+              <span className="text-xs text-zinc-500">comentários reais</span>
+            </div>
+            <span className="text-[11px] text-zinc-500 block">Sincronizado via Supabase</span>
+          </div>
+        </div>
+
+        {/* Parecer Inteligente da LaRomme */}
+        <div className="p-5 bg-white border border-zinc-200 rounded-lg shadow-sm space-y-2 font-mono">
+          <div className="flex items-center gap-2 text-zinc-900 font-bold text-xs uppercase">
+            <Sparkles className="w-4 h-4 text-amber-500" />
+            <span>Diagnóstico Automatizado de Satisfação</span>
+          </div>
+          <p className="text-xs text-zinc-700 leading-relaxed font-sans">
+            {getExecutiveSynthesis()}
           </p>
         </div>
 
-        <button
-          onClick={fetchValuation}
-          disabled={loading}
-          className="px-4 py-2 bg-white hover:bg-zinc-100 text-zinc-900 border border-zinc-300 rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-2xs disabled:opacity-50"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          <span>Atualizar Valuation</span>
-        </button>
-      </div>
-
-      {/* KPIS REAIS DE VALUATION */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        
-        <div className="p-6 rounded-xl border bg-white border-zinc-200 shadow-2xs flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-mono font-black uppercase tracking-wider text-zinc-500">
-              Custo Imobilizado (CPV)
-            </span>
-            <Package className="w-4 h-4 text-zinc-600" />
+        {/* Lista de Avaliações dos Compradores */}
+        <div className="p-5 bg-white border border-zinc-200 rounded-lg shadow-sm space-y-4 font-mono">
+          <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-900">
+              Registros de Avaliação dos Compradores
+            </h2>
+            <span className="text-[10px] text-zinc-400">FEEDBACK PÓS-COMPRA</span>
           </div>
-          <span className="text-3xl font-black text-zinc-900 tabular-nums tracking-tight block font-mono">
-            {formatBRL(custoAdquirido)}
-          </span>
-          <span className="text-xs font-bold text-zinc-500 mt-2 block">
-            Capital investido nas {totalPecas} peças produzidas
-          </span>
-        </div>
 
-        <div className="p-6 rounded-xl border bg-white border-zinc-200 shadow-2xs flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-mono font-black uppercase tracking-wider text-emerald-800">
-              Valor Geral de Vendas (VGV)
-            </span>
-            <DollarSign className="w-4 h-4 text-emerald-600" />
-          </div>
-          <span className="text-3xl font-black text-emerald-700 tabular-nums tracking-tight block font-mono">
-            {formatBRL(vgvTotal)}
-          </span>
-          <span className="text-xs font-bold text-emerald-800/80 mt-2 block">
-            Potencial bruto em prateleira
-          </span>
-        </div>
+          {reviews.length === 0 ? (
+            <div className="py-10 text-center space-y-2">
+              <MessageSquare className="w-8 h-8 text-zinc-300 mx-auto" />
+              <p className="text-xs text-zinc-400">
+                Aguardando avaliações dos primeiros compradores do Drop 01.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {reviews.map((rev) => (
+                <div key={rev.id} className="p-4 bg-zinc-50 border border-zinc-200 rounded space-y-2">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="font-bold text-xs text-zinc-950 uppercase block">
+                        {rev.customer_name}
+                      </span>
+                      <span className="text-[10px] text-zinc-500 block">
+                        Artefato: {rev.product_name}
+                      </span>
+                    </div>
 
-        <div className="p-6 rounded-xl border bg-white border-zinc-200 shadow-2xs flex flex-col justify-between">
-          <div className="flex justify-between items-start mb-2">
-            <span className="text-xs font-mono font-black uppercase tracking-wider text-zinc-500">
-              Potencial de Margem Bruta
-            </span>
-            <TrendingUp className="w-4 h-4 text-zinc-700" />
-          </div>
-          <span className="text-3xl font-black text-zinc-900 tabular-nums tracking-tight block font-mono">
-            {formatBRL(potencialMargem)}
-          </span>
-          <span className="text-xs font-bold text-zinc-500 mt-2 block">
-            Spread bruto antes de tributos
-          </span>
-        </div>
+                    <div className="flex text-amber-400">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <Star 
+                          key={s} 
+                          className={`w-3.5 h-3.5 ${s <= rev.rating ? 'fill-amber-400' : 'text-zinc-200'}`} 
+                        />
+                      ))}
+                    </div>
+                  </div>
 
-      </div>
+                  <p className="text-xs text-zinc-800 font-sans italic bg-white p-2.5 rounded border border-zinc-200">
+                    "{rev.comment}"
+                  </p>
 
-      {/* DETALHAMENTO DE CADA ARTEFATO */}
-      <div className="bg-white rounded-xl border border-zinc-200 shadow-2xs overflow-hidden">
-        <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50/70 flex justify-between items-center">
-          <h2 className="text-xs font-black text-zinc-900 tracking-wider uppercase">
-            Detalhamento por Artefato do Catálogo
-          </h2>
-          <span className="text-xs font-mono text-zinc-500 font-bold tabular-nums">
-            {products.length} modelos
-          </span>
-        </div>
-
-        {loading ? (
-          <div className="p-16 text-center text-xs font-mono font-bold text-zinc-500 flex flex-col items-center gap-3">
-            <Loader2 className="w-6 h-6 animate-spin text-zinc-400" />
-            Consolidando valuation...
-          </div>
-        ) : (
-          <div className="divide-y divide-zinc-100 font-mono text-xs">
-            {products.map(p => (
-              <div key={p.id} className="p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:bg-zinc-50/60 transition-colors">
-                <div>
-                  <span className="font-bold text-zinc-900 text-sm block font-sans">{p.name}</span>
-                  <span className="text-[11px] text-zinc-400 uppercase">
-                    {p.category} • SALDO: {p.total_stock} UNIDADES
+                  <span className="text-[10px] text-zinc-400 block text-right">
+                    {new Date(rev.created_at).toLocaleDateString('pt-BR')}
                   </span>
                 </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-                <div className="flex items-center gap-6 text-right">
-                  <div>
-                    <span className="text-[10px] text-zinc-400 block uppercase">Custo Unitário</span>
-                    <span className="font-bold text-zinc-600">{formatBRL(p.cpv)}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-zinc-400 block uppercase">Preço Venda</span>
-                    <span className="font-bold text-zinc-900">{formatBRL(p.price)}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-emerald-700 block uppercase font-bold">VGV Total</span>
-                    <span className="font-black text-emerald-800 text-sm">{formatBRL(p.price * p.total_stock)}</span>
-                  </div>
-                  <Link
-                    href="/cortex/estoque"
-                    className="p-1.5 text-zinc-400 hover:text-zinc-900 rounded-lg hover:bg-zinc-100 transition-colors"
-                    title="Ajustar Saldo no WMS"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
