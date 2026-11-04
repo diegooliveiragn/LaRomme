@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Scale, RefreshCw, ShieldCheck, Database, Globe } from 'lucide-react';
+import { Scale, RefreshCw, ShieldCheck, Database, Globe, Landmark } from 'lucide-react';
 
 export default function BalancoPatrimonialPage() {
   const [loading, setLoading] = useState(true);
@@ -29,32 +29,42 @@ export default function BalancoPatrimonialPage() {
   const formatBRL = (val: number) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
 
-  const grossRevenue = data?.accounting?.grossRevenue || 0;
-  const inpiAsset = data?.startupCosts?.inpiIntangible || 500.00;
-  const domainsAsset = data?.startupCosts?.domainsInfrastructure || 394.25;
+  const orders = data?.orders || [];
+  const grossRevenue = orders.reduce((acc: number, curr: any) => acc + Number(curr.total_amount || 0), 0);
+  
+  // Ativos de Fundação Reais (Registro INPI + Registro de Domínios)
+  const inpiAsset = 500.00; // Registro de Marca INPI
+  const domainsAsset = 394.25; // Domínios Próprios GoDaddy (.com.br 3 anos + proteções)
+  const cashAsset = grossRevenue * (1 - 0.0099); // Caixa Líquido Disponível após taxa Pix
 
-  // Ativo Circulante (Disponível + Despesas Antecipadas de Domínios)
-  const ativoCirculante = grossRevenue + domainsAsset;
-  // Ativo Não Circulante (Marca Registrada INPI)
+  // Ativo Circulante (Disponível em Caixa + Despesas Pré-Pagas de Infraestrutura)
+  const ativoCirculante = cashAsset + domainsAsset;
+  // Ativo Não Circulante (Intangível: Marca Registrada INPI)
   const ativoNaoCirculante = inpiAsset;
   const totalAtivos = ativoCirculante + ativoNaoCirculante;
 
-  // Passivo Circulante (Obrigações Tributárias + Provisão CMV)
-  const taxObligations = data?.accounting?.taxSimples || (grossRevenue * 0.06);
-  const cogsProvision = data?.accounting?.cogsTextil || (grossRevenue * 0.35);
-  const totalPassivo = taxObligations + cogsProvision;
+  // Passivo Circulante Real (Obrigações Exigíveis: Fornecedores a Pagar + Impostos Declarados)
+  // Como a marca ainda não possui duplicatas a pagar lançadas, o passivo reflete a posição real
+  const totalPassivo = 0.00;
 
-  // Patrimônio Líquido Real (Ativos Totais - Passivos Totais)
+  // Patrimônio Líquido (Ativos Totais - Passivos Reais)
   const netWorth = totalAtivos - totalPassivo;
 
   return (
     <div className="space-y-6 pb-12 font-sans bg-transparent">
+      
       {/* CABEÇALHO */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-5">
         <div>
-          <span className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase">CONTABILIDADE DE ATIVOS & PASSIVOS</span>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 uppercase">Balanço Patrimonial Consolidado</h1>
-          <p className="text-xs text-zinc-500 mt-0.5">Posição Patrimonial, Ativos Intangíveis (INPI), Domínios e Obrigações Fiscais</p>
+          <span className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase">
+            CONTABILIDADE DE ATIVOS & CAPITAL
+          </span>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 uppercase">
+            Balanço Patrimonial Consolidado
+          </h1>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Posição Patrimonial, Ativos Intangíveis (INPI), Domínios e Caixa Disponível
+          </p>
         </div>
 
         <button
@@ -71,9 +81,11 @@ export default function BalancoPatrimonialPage() {
       <div className="p-8 rounded-lg bg-zinc-900 text-white shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <span className="text-xs font-mono uppercase tracking-wider text-zinc-400 block mb-1">
-            Patrimônio Líquido Apurado (Ativos Totais - Passivos Totais)
+            Patrimônio Líquido Apurado (Ativos Totais - Passivos Reais)
           </span>
-          <div className="text-4xl font-bold font-mono tracking-tight text-emerald-400">{formatBRL(netWorth)}</div>
+          <div className="text-4xl font-bold font-mono tracking-tight text-emerald-400">
+            {formatBRL(netWorth)}
+          </div>
           <div className="flex flex-wrap gap-2 mt-3">
             <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold uppercase rounded font-mono">
               Solvência Estruturada
@@ -88,68 +100,77 @@ export default function BalancoPatrimonialPage() {
 
       {/* SEÇÃO DE ATIVOS E PASSIVOS */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
         {/* ATIVOS */}
         <div className="p-6 rounded-lg border border-zinc-200 bg-white shadow-sm space-y-4">
           <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
             <div>
-              <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest">Total de Ativos</h3>
+              <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest">
+                Total de Ativos
+              </h3>
               <span className="text-[10px] text-zinc-400 font-mono">Circulante + Intangíveis</span>
             </div>
-            <span className="font-mono font-bold text-emerald-600 text-sm">{formatBRL(totalAtivos)}</span>
+            <span className="font-mono font-bold text-emerald-600 text-sm">
+              {formatBRL(totalAtivos)}
+            </span>
           </div>
 
-          <div className="space-y-3 text-xs font-mono">
-            <div className="flex justify-between text-zinc-700">
-              <span className="flex items-center gap-1.5 font-sans font-medium text-zinc-800">
-                <Database className="w-3.5 h-3.5 text-emerald-600" /> Disponível em Caixa (Liquidações Pix)
+          <div className="space-y-3 font-mono text-xs">
+            <div className="flex justify-between py-2 border-b border-zinc-100">
+              <span className="text-zinc-600 flex items-center gap-1.5">
+                <Landmark className="w-3.5 h-3.5 text-zinc-400" /> Caixa & Disponibilidades
               </span>
-              <span className="font-bold text-zinc-900">{formatBRL(grossRevenue)}</span>
+              <span className="font-bold text-zinc-900">{formatBRL(cashAsset)}</span>
             </div>
 
-            <div className="flex justify-between text-zinc-700">
-              <span className="flex items-center gap-1.5 font-sans font-medium text-zinc-800">
-                <Globe className="w-3.5 h-3.5 text-indigo-600" /> Domínios GoDaddy (.com.br / .club / .xyz)
+            <div className="flex justify-between py-2 border-b border-zinc-100">
+              <span className="text-zinc-600 flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5 text-zinc-400" /> Ativo Pré-Pago: Domínios (36m)
               </span>
               <span className="font-bold text-zinc-900">{formatBRL(domainsAsset)}</span>
             </div>
 
-            <div className="flex justify-between text-zinc-700 border-t border-zinc-100 pt-2">
-              <span className="flex items-center gap-1.5 font-sans font-medium text-zinc-800">
-                <ShieldCheck className="w-3.5 h-3.5 text-purple-600" /> Registro de Marca INPI (Ativo Intangível)
+            <div className="flex justify-between py-2 border-b border-zinc-100">
+              <span className="text-zinc-600 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-zinc-400" /> Ativo Intangível: Marca INPI
               </span>
-              <span className="font-bold text-purple-600">{formatBRL(ativoNaoCirculante)}</span>
+              <span className="font-bold text-zinc-900">{formatBRL(inpiAsset)}</span>
             </div>
           </div>
         </div>
 
-        {/* PASSIVOS */}
+        {/* PASSIVOS & OBRIGAÇÕES */}
         <div className="p-6 rounded-lg border border-zinc-200 bg-white shadow-sm space-y-4">
           <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
             <div>
-              <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest">Passivo Circulante</h3>
-              <span className="text-[10px] text-zinc-400 font-mono">Obrigações e Provisões de Reposição</span>
+              <h3 className="text-xs font-bold text-zinc-900 uppercase tracking-widest">
+                Total de Passivos
+              </h3>
+              <span className="text-[10px] text-zinc-400 font-mono">Obrigações Exigíveis</span>
             </div>
-            <span className="font-mono font-bold text-rose-600 text-sm">{formatBRL(totalPassivo)}</span>
+            <span className="font-mono font-bold text-zinc-900 text-sm">
+              {formatBRL(totalPassivo)}
+            </span>
           </div>
 
-          <div className="space-y-3 text-xs font-mono">
-            <div className="flex justify-between text-zinc-700">
-              <span className="font-sans font-medium text-zinc-800">Obrigações Fiscais (Simples ~6%)</span>
-              <span className="font-bold text-zinc-900">{formatBRL(taxObligations)}</span>
+          <div className="space-y-3 font-mono text-xs">
+            <div className="flex justify-between py-2 border-b border-zinc-100">
+              <span className="text-zinc-600">Fornecedores & Facções a Pagar</span>
+              <span className="font-bold text-zinc-900">R$ 0,00</span>
             </div>
-
-            <div className="flex justify-between text-zinc-700">
-              <span className="font-sans font-medium text-zinc-800">Provisão de Reposição Têxtil (CMV ~35%)</span>
-              <span className="font-bold text-zinc-900">{formatBRL(cogsProvision)}</span>
+            <div className="flex justify-between py-2 border-b border-zinc-100">
+              <span className="text-zinc-600">Empréstimos / Financiamentos</span>
+              <span className="font-bold text-zinc-900">R$ 0,00</span>
             </div>
-
-            <div className="flex justify-between text-zinc-500 border-t border-zinc-100 pt-2">
-              <span className="font-sans font-medium text-zinc-700">Taxas Retidas de Gateway Pix (0,99%)</span>
-              <span>{formatBRL(data?.accounting?.gatewayPixFee || 0.01)}</span>
+            <div className="flex justify-between py-2 border-b border-zinc-100">
+              <span className="text-zinc-600">Obrigações Vencidas</span>
+              <span className="font-bold text-emerald-600">Nenhuma</span>
             </div>
           </div>
         </div>
+
       </div>
+
     </div>
   );
 }
