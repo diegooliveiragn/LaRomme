@@ -415,9 +415,9 @@ export default function CheckoutPage() {
                     }}
                     customization={{
                       paymentMethods: {
-                        ticket: 'all',
+                        ticket: [],
+                        debitCard: [],
                         creditCard: 'all',
-                        debitCard: 'all',
                         mercadoPago: 'all',
                       },
                       visual: {
