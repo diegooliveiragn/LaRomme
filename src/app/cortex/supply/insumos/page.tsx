@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, X, RefreshCw, Box } from 'lucide-react';
+import { Plus, Edit2, Trash2, X, RefreshCw, Box, Package, DollarSign, Layers } from 'lucide-react';
 
 interface InsumoItem {
   id: string;
@@ -11,7 +11,7 @@ interface InsumoItem {
   estoqueFisico: number;
 }
 
-const DEFAULT_INSUMOS: InsumoItem[] = [
+const INITIAL_INSUMOS: InsumoItem[] = [
   { id: 'INS-01', nome: 'Caixa Rígida Gaveta LaRomme', categoria: 'EMBALAGEM', custoUnit: 4.80, estoqueFisico: 0 },
   { id: 'INS-02', nome: 'Papel de Seda Aromatizado (20g)', categoria: 'EMBALAGEM', custoUnit: 0.65, estoqueFisico: 0 },
   { id: 'INS-03', nome: 'Tag Lacre Termocolante com Cordão', categoria: 'AVIAMENTO', custoUnit: 0.90, estoqueFisico: 0 },
@@ -22,31 +22,33 @@ export default function GestaoInsumosPage() {
   const [insumos, setInsumos] = useState<InsumoItem[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  
+  // Campos do Formulário CRUD
   const [nome, setNome] = useState('');
   const [categoria, setCategoria] = useState('EMBALAGEM');
   const [custo, setCusto] = useState('');
   const [saldo, setSaldo] = useState('0');
 
   useEffect(() => {
-    const saved = localStorage.getItem('laromme_insumos_v1');
+    const saved = localStorage.getItem('laromme_insumos_v2');
     if (saved) {
       try {
         setInsumos(JSON.parse(saved));
-      } catch {
-        setInsumos(DEFAULT_INSUMOS);
+        return;
+      } catch (e) {
+        console.error('Erro ao ler insumos:', e);
       }
-    } else {
-      setInsumos(DEFAULT_INSUMOS);
     }
+    setInsumos(INITIAL_INSUMOS);
   }, []);
 
   const saveToStorage = (updated: InsumoItem[]) => {
     setInsumos(updated);
-    localStorage.setItem('laromme_insumos_v1', JSON.stringify(updated));
+    localStorage.setItem('laromme_insumos_v2', JSON.stringify(updated));
   };
 
   const formatBRL = (val: number) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
 
   const openCreateModal = () => {
     setEditingId(null);
@@ -61,238 +63,259 @@ export default function GestaoInsumosPage() {
     setEditingId(item.id);
     setNome(item.nome);
     setCategoria(item.categoria);
-    setCusto(String(item.custoUnit));
-    setSaldo(String(item.estoqueFisico));
+    setCusto(item.custoUnit.toString());
+    setSaldo(item.estoqueFisico.toString());
     setIsModalOpen(true);
   };
 
-  const handleSaveInsumo = (e: React.FormEvent) => {
+  const handleDelete = (id: string) => {
+    if (confirm('Deseja realmente remover este insumo da matriz de embalagens?')) {
+      const updated = insumos.filter(i => i.id !== id);
+      saveToStorage(updated);
+    }
+  };
+
+  const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    const costVal = parseFloat(custo) || 0;
-    const stockVal = parseInt(saldo) || 0;
+    const cleanCusto = Number(custo.replace(',', '.')) || 0;
+    const cleanSaldo = parseInt(saldo) || 0;
 
     if (editingId) {
-      const updated = insumos.map(i => i.id === editingId ? {
-        ...i,
-        nome,
-        categoria,
-        custoUnit: costVal,
-        estoqueFisico: stockVal
-      } : i);
+      // UPDATE
+      const updated = insumos.map(item => 
+        item.id === editingId 
+          ? { ...item, nome, categoria, custoUnit: cleanCusto, estoqueFisico: cleanSaldo }
+          : item
+      );
       saveToStorage(updated);
     } else {
+      // CREATE
       const newItem: InsumoItem = {
-        id: `INS-${String(Date.now()).slice(-4)}`,
+        id: `INS-${String(insumos.length + 1).padStart(2, '0')}`,
         nome,
         categoria,
-        custoUnit: costVal,
-        estoqueFisico: stockVal
+        custoUnit: cleanCusto,
+        estoqueFisico: cleanSaldo
       };
       saveToStorage([...insumos, newItem]);
     }
+
     setIsModalOpen(false);
   };
 
-  const handleDeleteInsumo = (id: string, itemNome: string) => {
-    if (!confirm(`Remover "${itemNome}" da gestão de insumos?`)) return;
-    const updated = insumos.filter(i => i.id !== id);
-    saveToStorage(updated);
-  };
-
-  const custoTotalUnboxing = insumos.reduce((acc, curr) => acc + curr.custoUnit, 0);
-  const capitalImobilizadoInsumos = insumos.reduce((acc, curr) => acc + (curr.custoUnit * curr.estoqueFisico), 0);
-  const totalPecasInsumos = insumos.reduce((acc, curr) => acc + curr.estoqueFisico, 0);
+  // KPIs
+  const unboxingCost = insumos.reduce((acc, curr) => acc + curr.custoUnit, 0);
+  const totalImobilizado = insumos.reduce((acc, curr) => acc + (curr.custoUnit * curr.estoqueFisico), 0);
+  const totalPecasInsumo = insumos.reduce((acc, curr) => acc + curr.estoqueFisico, 0);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300 pb-12 font-sans">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-6">
+    <div className="space-y-6 pb-12 font-sans bg-transparent">
+      
+      {/* CABEÇALHO */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-5">
         <div>
-          <span className="text-xs font-mono uppercase tracking-[0.2em] text-zinc-500 font-bold block mb-1">
-            Suprimentos & Experiência de Entrega
+          <span className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase">
+            SUPPLY & MATERIAIS DE EMBALAGEM
           </span>
-          <h1 className="font-serif text-3xl font-bold tracking-tight text-zinc-900 uppercase">
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 uppercase">
             Gestão de Insumos & Unboxing
           </h1>
-          <p className="text-xs text-zinc-500 font-mono mt-1 font-bold">
-            Monitoramento de Embalagens, Aviamentos e Cobertura de Lotes
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Cadastro, Edição e Controle de Saldos de Embalagens, Aviamentos e Brindes
           </p>
         </div>
 
         <button
           onClick={openCreateModal}
-          className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-2xs"
+          className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-sm"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5" />
           <span>Cadastrar Insumo</span>
         </button>
       </div>
 
+      {/* KPIS DE UNBOXING */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-6 rounded-xl border bg-white border-zinc-200 shadow-2xs flex flex-col justify-between">
-          <span className="text-xs font-mono font-black uppercase tracking-wider text-zinc-500 block mb-2">
-            Custo Base por Unboxing
+        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500 block mb-2">
+            Custo Base de Unboxing (Por Pacote)
           </span>
-          <span className="text-3xl font-black text-zinc-900 tabular-nums tracking-tight block font-mono">
-            {formatBRL(custoTotalUnboxing)}
-          </span>
-          <span className="text-xs font-bold text-zinc-500 mt-2 block">
-            Custo composto de embalagem por pedido
-          </span>
+          <div className="text-3xl font-bold text-zinc-900 font-mono tracking-tight">
+            {formatBRL(unboxingCost)}
+          </div>
+          <p className="text-[11px] text-zinc-400 mt-1 font-mono">
+            Soma de caixa, seda, tag e fita
+          </p>
         </div>
 
-        <div className="p-6 rounded-xl border bg-white border-zinc-200 shadow-2xs flex flex-col justify-between">
-          <span className="text-xs font-mono font-black uppercase tracking-wider text-zinc-500 block mb-2">
-            Capital Preso em Insumos
+        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500 block mb-2">
+            Capital Imobilizado em Insumos
           </span>
-          <span className="text-3xl font-black text-zinc-900 tabular-nums tracking-tight block font-mono">
-            {formatBRL(capitalImobilizadoInsumos)}
-          </span>
-          <span className="text-xs font-bold text-zinc-500 mt-2 block">
-            {capitalImobilizadoInsumos === 0 ? 'Nenhum lote físico de insumos armazenado' : 'Total imobilizado'}
-          </span>
+          <div className="text-3xl font-bold text-zinc-700 font-mono tracking-tight">
+            {formatBRL(totalImobilizado)}
+          </div>
+          <p className="text-[11px] text-zinc-400 mt-1 font-mono">
+            {totalPecasInsumo} itens em galpão
+          </p>
         </div>
 
-        <div className="p-6 rounded-xl border bg-white border-zinc-200 shadow-2xs flex flex-col justify-between">
-          <span className="text-xs font-mono font-black uppercase tracking-wider text-zinc-500 block mb-2">
-            Status de Suprimentos
+        <div className="p-5 rounded-lg border border-zinc-200 bg-white shadow-sm flex flex-col justify-between">
+          <span className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500 block mb-2">
+            Itens Registrados na Matriz
           </span>
-          <span className="text-3xl font-black text-amber-600 tabular-nums tracking-tight block font-mono">
-            {totalPecasInsumos} un.
-          </span>
-          <span className="text-xs font-bold text-zinc-500 mt-2 block">
-            {totalPecasInsumos === 0 ? 'Aguardando pedido de compra com gráfica' : 'Insumos disponíveis'}
-          </span>
+          <div className="text-3xl font-bold text-zinc-900 font-mono tracking-tight">
+            {insumos.length} <span className="text-base font-normal text-zinc-400">insumos</span>
+          </div>
+          <p className="text-[11px] text-zinc-400 mt-1 font-mono">
+            Modo CRUD ativo para gestão
+          </p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl border border-zinc-200 shadow-2xs overflow-hidden">
-        <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50/70 flex justify-between items-center">
-          <h2 className="text-xs font-black text-zinc-900 tracking-wider uppercase">
-            Inventário de Embalagens e Suprimentos
+      {/* TABELA CRUD DE INSUMOS */}
+      <div className="bg-white rounded-lg border border-zinc-200 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50/50 flex justify-between items-center">
+          <h2 className="text-xs font-bold text-zinc-900 tracking-widest uppercase flex items-center gap-2">
+            <Package className="w-4 h-4 text-zinc-500" /> Inventário de Insumos Físicos
           </h2>
-          <span className="text-xs font-mono text-zinc-500 font-bold">{insumos.length} itens</span>
+          <span className="text-[10px] font-mono text-zinc-500 uppercase">
+            Saldos em Galpão
+          </span>
         </div>
 
-        {insumos.length === 0 ? (
-          <div className="p-16 text-center text-xs font-mono font-bold text-zinc-500">
-            Nenhum insumo cadastrado.
-          </div>
-        ) : (
-          <div className="divide-y divide-zinc-100 font-mono text-xs">
-            {insumos.map(item => (
-              <div key={item.id} className="p-5 flex justify-between items-center hover:bg-zinc-50/60 transition-colors">
-                <div>
-                  <span className="font-bold text-zinc-900 text-sm block font-sans">{item.nome}</span>
-                  <span className="text-[11px] text-zinc-400 uppercase">{item.id} • {item.categoria}</span>
-                </div>
-
-                <div className="flex items-center gap-6 text-right">
-                  <div>
-                    <span className="text-[10px] text-zinc-400 block uppercase">Custo Unitário</span>
-                    <span className="font-bold text-zinc-700">{formatBRL(item.custoUnit)}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-zinc-400 block uppercase">Saldo Físico</span>
-                    <span className="font-black text-zinc-900 text-sm">{item.estoqueFisico} un.</span>
-                  </div>
-                  <div className="flex items-center gap-2 border-l border-zinc-200 pl-4">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs font-mono">
+            <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 uppercase text-[10px] tracking-wider">
+              <tr>
+                <th className="px-6 py-3 font-bold">Código</th>
+                <th className="px-6 py-3 font-bold">Item / Especificação</th>
+                <th className="px-6 py-3 font-bold">Categoria</th>
+                <th className="px-6 py-3 font-bold text-right">Custo Unitário</th>
+                <th className="px-6 py-3 font-bold text-center">Saldo Físico</th>
+                <th className="px-6 py-3 font-bold text-right">Ações</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-zinc-100">
+              {insumos.map((item) => (
+                <tr key={item.id} className="hover:bg-zinc-50/50 transition-colors">
+                  <td className="px-6 py-3.5 font-bold text-zinc-500">
+                    {item.id}
+                  </td>
+                  <td className="px-6 py-3.5 font-bold text-zinc-900 font-sans text-sm">
+                    {item.nome}
+                  </td>
+                  <td className="px-6 py-3.5">
+                    <span className="text-[9px] font-mono px-2 py-0.5 rounded uppercase font-bold bg-zinc-100 text-zinc-700 border border-zinc-200">
+                      {item.categoria}
+                    </span>
+                  </td>
+                  <td className="px-6 py-3.5 text-right font-bold text-zinc-800">
+                    {formatBRL(item.custoUnit)}
+                  </td>
+                  <td className="px-6 py-3.5 text-center font-bold">
+                    <span className={`px-2 py-0.5 rounded text-xs ${item.estoqueFisico === 0 ? 'bg-zinc-100 text-zinc-500' : 'bg-emerald-50 text-emerald-700'}`}>
+                      {item.estoqueFisico} un.
+                    </span>
+                  </td>
+                  <td className="px-6 py-3.5 text-right space-x-1">
                     <button
                       onClick={() => openEditModal(item)}
-                      className="p-1.5 text-zinc-500 hover:text-zinc-900 rounded-lg hover:bg-zinc-100 transition-colors"
+                      className="p-1.5 text-zinc-500 hover:text-zinc-900 rounded hover:bg-zinc-100 transition-colors"
                       title="Editar Insumo"
                     >
-                      <Edit className="w-4 h-4" />
+                      <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button
-                      onClick={() => handleDeleteInsumo(item.id, item.nome)}
-                      className="p-1.5 text-rose-500 hover:text-rose-700 rounded-lg hover:bg-rose-50 transition-colors"
-                      title="Excluir"
+                      onClick={() => handleDelete(item.id)}
+                      className="p-1.5 text-zinc-400 hover:text-rose-600 rounded hover:bg-rose-50 transition-colors"
+                      title="Excluir Insumo"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
+      {/* MODAL CRUD (CADASTRAR OU EDITAR) */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-          <div className="bg-white border border-zinc-200 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 font-sans">
-            <div className="flex justify-between items-center border-b border-zinc-200 pb-3">
-              <h3 className="text-sm font-black text-zinc-900 uppercase tracking-wider">
-                {editingId ? 'Editar Insumo' : 'Novo Insumo / Embalagem'}
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg border border-zinc-200 p-6 max-w-md w-full shadow-xl space-y-4 font-mono text-xs">
+            <div className="flex justify-between items-center border-b border-zinc-100 pb-3">
+              <h3 className="font-serif text-base font-bold uppercase text-zinc-900">
+                {editingId ? 'Editar Insumo' : 'Novo Insumo'}
               </h3>
               <button onClick={() => setIsModalOpen(false)} className="text-zinc-400 hover:text-zinc-700">
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveInsumo} className="space-y-4 text-xs font-mono">
+            <form onSubmit={handleSave} className="space-y-4">
               <div>
-                <label className="text-zinc-600 block mb-1 font-bold">Descrição do Insumo</label>
+                <label className="block text-zinc-600 mb-1 uppercase font-bold">Nome do Item:</label>
                 <input
                   type="text"
                   required
-                  placeholder="Ex: Caixa Rígida Gaveta LaRomme"
                   value={nome}
                   onChange={(e) => setNome(e.target.value)}
-                  className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 focus:outline-none focus:border-zinc-400 font-sans"
+                  placeholder="Ex: Caixa Rígida Gaveta LaRomme"
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded font-sans text-xs focus:outline-none focus:border-zinc-900"
                 />
+              </div>
+
+              <div>
+                <label className="block text-zinc-600 mb-1 uppercase font-bold">Categoria:</label>
+                <select
+                  value={categoria}
+                  onChange={(e) => setCategoria(e.target.value)}
+                  className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded text-xs focus:outline-none focus:border-zinc-900"
+                >
+                  <option value="EMBALAGEM">EMBALAGEM</option>
+                  <option value="AVIAMENTO">AVIAMENTO</option>
+                  <option value="LOGÍSTICA">LOGÍSTICA</option>
+                  <option value="BRINDE">BRINDE</option>
+                </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-zinc-600 block mb-1 font-bold">Categoria</label>
-                  <select
-                    value={categoria}
-                    onChange={(e) => setCategoria(e.target.value)}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 focus:outline-none focus:border-zinc-400 font-sans"
-                  >
-                    <option value="EMBALAGEM">Embalagem</option>
-                    <option value="AVIAMENTO">Aviamento</option>
-                    <option value="LOGÍSTICA">Logística</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-zinc-600 block mb-1 font-bold">Custo Unitário (R$)</label>
+                  <label className="block text-zinc-600 mb-1 uppercase font-bold">Custo Unitário (R$):</label>
                   <input
-                    type="number"
-                    step="0.01"
+                    type="text"
                     required
-                    placeholder="4.80"
                     value={custo}
                     onChange={(e) => setCusto(e.target.value)}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 focus:outline-none focus:border-zinc-400"
+                    placeholder="Ex: 4.80"
+                    className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded text-xs focus:outline-none focus:border-zinc-900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-zinc-600 mb-1 uppercase font-bold">Saldo Físico (un):</label>
+                  <input
+                    type="number"
+                    required
+                    value={saldo}
+                    onChange={(e) => setSaldo(e.target.value)}
+                    className="w-full p-2.5 bg-zinc-50 border border-zinc-200 rounded text-xs focus:outline-none focus:border-zinc-900"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="text-zinc-600 block mb-1 font-bold">Saldo Físico em Galpão (unidades)</label>
-                <input
-                  type="number"
-                  min="0"
-                  required
-                  value={saldo}
-                  onChange={(e) => setSaldo(e.target.value)}
-                  className="w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-zinc-900 focus:outline-none focus:border-zinc-400 font-bold"
-                />
-              </div>
-
-              <div className="pt-4 border-t border-zinc-200 flex justify-end gap-2 font-sans">
+              <div className="pt-2 flex justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 border border-zinc-200 rounded-lg text-xs font-bold text-zinc-600 hover:bg-zinc-100"
+                  className="px-4 py-2 border border-zinc-200 text-zinc-600 rounded text-xs font-bold uppercase tracking-wider hover:bg-zinc-50"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-lg text-xs font-bold uppercase tracking-wider"
+                  className="px-5 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded text-xs font-bold uppercase tracking-wider shadow-sm"
                 >
                   Salvar
                 </button>
@@ -301,6 +324,7 @@ export default function GestaoInsumosPage() {
           </div>
         </div>
       )}
+
     </div>
   );
 }
