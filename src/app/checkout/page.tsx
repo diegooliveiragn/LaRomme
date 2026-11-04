@@ -1,10 +1,10 @@
 ﻿'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useRouter } from 'next/navigation';
 import FadeIn from '@/components/FadeIn';
-import { ShieldCheck, Zap, CreditCard, QrCode, ArrowRight, Loader2 } from 'lucide-react';
+import { ShieldCheck, CreditCard, QrCode, ArrowRight, Loader2 } from 'lucide-react';
 import Script from 'next/script';
 
 declare global {
@@ -20,7 +20,8 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'pix' | 'wallet'>('pix');
-  const [mpLoaded, setMpLoaded] = useState(false);
+  const [brickLoading, setBrickLoading] = useState(false);
+  const brickControllerRef = useRef<any>(null);
 
   const [payer, setPayer] = useState({ fullName: '', email: '', cpf: '', phone: '' });
   const [address, setAddress] = useState({ cep: '', street: '', number: '', neighborhood: '', city: '', state: '' });
@@ -73,87 +74,125 @@ export default function CheckoutPage() {
 
   const subtotal = items.reduce((acc, item) => acc + item.priceNumeric * item.quantity, 0);
 
-  // Inicialização do Brick de Carteiras Digitais (Apple Pay / Google Pay / Cartão)
+  // Inicializa o Brick de Pagamento do Mercado Pago quando selecionado
   useEffect(() => {
-    if (paymentMethod === 'wallet' && mpLoaded && window.MercadoPago) {
-      const publicKey = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY;
-      if (!publicKey) return;
+    if (paymentMethod !== 'wallet') return;
 
+    let isMounted = true;
+    setBrickLoading(true);
+
+    const initBrick = async () => {
+      // Aguarda até o script global do Mercado Pago estar pronto
+      let attempts = 0;
+      while (!window.MercadoPago && attempts < 25) {
+        await new Promise(r => setTimeout(r, 200));
+        attempts++;
+      }
+
+      if (!window.MercadoPago) {
+        if (isMounted) {
+          setBrickLoading(false);
+          setErrorMsg('Não foi possível conectar ao Mercado Pago. Tente o Pix.');
+        }
+        return;
+      }
+
+      const publicKey = process.env.NEXT_PUBLIC_MERCADOPAGO_PUBLIC_KEY || 'APP_USR-242a4078-dc31-4339-b6b9-abfa97bbcaa6';
       const mp = new window.MercadoPago(publicKey, { locale: 'pt-BR' });
       const bricksBuilder = mp.bricks();
 
-      const renderPaymentBrick = async () => {
-        const container = document.getElementById('walletPaymentBrick_container');
-        if (!container) return;
-        container.innerHTML = ''; // Limpa instâncias anteriores
+      const container = document.getElementById('walletPaymentBrick_container');
+      if (!container || !isMounted) return;
 
+      // Desmonta container antigo para evitar instâncias duplicadas
+      if (brickControllerRef.current) {
         try {
-          await bricksBuilder.create('payment', 'walletPaymentBrick_container', {
-            initialization: {
-              amount: subtotal,
-              payer: {
-                email: payer.email || 'patrono@laromme.com.br',
-              },
-            },
-            customization: {
-              paymentMethods: {
-                ticket: 'all',
-                creditCard: 'all',
-                debitCard: 'all',
-                mercadoPago: 'all',
-              },
-            },
-            callbacks: {
-              onReady: () => {
-                // Pronto para interação
-              },
-              onSubmit: async ({ selectedPaymentMethod, formData }: any) => {
-                setLoading(true);
-                setErrorMsg('');
-                try {
-                  const res = await fetch('/api/checkout', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      items,
-                      payer,
-                      address,
-                      shippingCost: 0,
-                      paymentMethod: 'wallet',
-                      walletToken: formData.token,
-                      walletPaymentMethodId: formData.payment_method_id,
-                      installments: formData.installments || 1,
-                    }),
-                  });
+          await brickControllerRef.current.unmount();
+        } catch (e) {}
+      }
+      container.innerHTML = '';
 
-                  const data = await res.json();
-                  if (data.success && data.orderUuid) {
-                    setActiveOrderData({ id: data.orderUuid, shortId: data.orderShortId });
-                    clearCart();
-                    router.push(`/pedido/${data.orderUuid}`);
-                  } else {
-                    setErrorMsg(data.error || 'Erro ao processar carteira digital.');
-                  }
-                } catch (err) {
-                  setErrorMsg('Falha na comunicação com o servidor.');
-                } finally {
-                  setLoading(false);
+      try {
+        const controller = await bricksBuilder.create('payment', 'walletPaymentBrick_container', {
+          initialization: {
+            amount: subtotal > 0 ? subtotal : 1,
+            payer: {
+              email: payer.email || 'patrono@laromme.com.br',
+            },
+          },
+          customization: {
+            paymentMethods: {
+              ticket: 'all',
+              creditCard: 'all',
+              debitCard: 'all',
+              mercadoPago: 'all',
+            },
+            visual: {
+              style: {
+                theme: 'dark',
+                customVariables: {
+                  baseColor: '#ffffff',
                 }
-              },
-              onError: (error: any) => {
-                console.error('Erro no Brick do Mercado Pago:', error);
-                setErrorMsg('Não foi possível carregar a carteira digital. Utilize o Pix.');
-              },
+              }
+            }
+          },
+          callbacks: {
+            onReady: () => {
+              if (isMounted) setBrickLoading(false);
             },
-          });
-        } catch (e) {
-          console.error('Erro ao instanciar Brick:', e);
-        }
-      };
+            onSubmit: async ({ formData }: any) => {
+              setLoading(true);
+              setErrorMsg('');
+              try {
+                const res = await fetch('/api/checkout', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    items,
+                    payer,
+                    address,
+                    shippingCost: 0,
+                    paymentMethod: 'wallet',
+                    walletToken: formData.token,
+                    walletPaymentMethodId: formData.payment_method_id,
+                    installments: formData.installments || 1,
+                  }),
+                });
 
-      renderPaymentBrick();
-    }
-  }, [paymentMethod, mpLoaded, subtotal]);
+                const data = await res.json();
+                if (data.success && data.orderUuid) {
+                  setActiveOrderData({ id: data.orderUuid, shortId: data.orderShortId });
+                  clearCart();
+                  router.push(`/pedido/${data.orderUuid}`);
+                } else {
+                  setErrorMsg(data.error || 'Erro ao processar carteira digital.');
+                }
+              } catch (err) {
+                setErrorMsg('Falha na comunicação com o servidor.');
+              } finally {
+                setLoading(false);
+              }
+            },
+            onError: (error: any) => {
+              console.error('Erro no Brick Mercado Pago:', error);
+              if (isMounted) setBrickLoading(false);
+            },
+          },
+        });
+
+        brickControllerRef.current = controller;
+      } catch (err) {
+        console.error('Erro ao instanciar Brick:', err);
+        if (isMounted) setBrickLoading(false);
+      }
+    };
+
+    initBrick();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [paymentMethod, subtotal]);
 
   // Submissão do fluxo Pix tradicional
   const handlePixSubmit = async (e: React.FormEvent) => {
@@ -189,7 +228,6 @@ export default function CheckoutPage() {
       const data = await res.json();
 
       if (data.success && data.orderUuid) {
-        // Armazena dados do Pix no cache para renderização imediata sem delay
         try {
           localStorage.setItem(`pix_${data.orderUuid}`, JSON.stringify({
             qrCode: data.qrCode,
@@ -231,8 +269,7 @@ export default function CheckoutPage() {
     <>
       <Script
         src="https://sdk.mercadopago.com/js/v2"
-        strategy="afterInteractive"
-        onLoad={() => setMpLoaded(true)}
+        strategy="beforeInteractive"
       />
 
       <div className="pt-32 pb-24 px-6 md:px-12 max-w-4xl mx-auto font-mono text-xs text-white space-y-8">
@@ -405,7 +442,7 @@ export default function CheckoutPage() {
                     onClick={() => setPaymentMethod('pix')}
                     className={`p-4 border rounded text-left transition-all ${
                       paymentMethod === 'pix'
-                        ? 'border-white bg-zinc-900 text-white'
+                        ? 'border-white bg-zinc-900 text-white shadow-md'
                         : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:border-zinc-700'
                     }`}
                   >
@@ -421,7 +458,7 @@ export default function CheckoutPage() {
                     onClick={() => setPaymentMethod('wallet')}
                     className={`p-4 border rounded text-left transition-all ${
                       paymentMethod === 'wallet'
-                        ? 'border-white bg-zinc-900 text-white'
+                        ? 'border-white bg-zinc-900 text-white shadow-md'
                         : 'border-zinc-800 bg-zinc-950 text-zinc-400 hover:border-zinc-700'
                     }`}
                   >
@@ -454,9 +491,13 @@ export default function CheckoutPage() {
                   </button>
                 ) : (
                   <div className="mt-4 pt-2">
-                    <div id="walletPaymentBrick_container" className="min-h-[120px] flex items-center justify-center text-zinc-500 text-[10px]">
-                      {!mpLoaded ? 'Carregando Carteiras Digitais...' : ''}
-                    </div>
+                    {brickLoading && (
+                      <div className="flex items-center justify-center gap-2 py-6 text-zinc-400 font-mono text-xs">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Carregando Carteiras Digitais (Apple Pay / Google Pay)...</span>
+                      </div>
+                    )}
+                    <div id="walletPaymentBrick_container" className="min-h-[160px]" />
                   </div>
                 )}
               </div>
