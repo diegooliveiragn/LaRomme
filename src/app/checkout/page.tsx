@@ -379,9 +379,9 @@ export default function CheckoutPage() {
                 >
                   <div className="flex items-center gap-2 mb-1">
                     <CreditCard className="w-4 h-4 text-zinc-300" />
-                    <span className="font-bold text-xs">CARTEIRAS & CARTÃO</span>
+                    <span className="font-bold text-xs">CARTÃO DE CRÉDITO</span>
                   </div>
-                  <p className="text-[10px] text-zinc-500">Apple Pay, Google Pay ou Cartão</p>
+                  <p className="text-[10px] text-zinc-500">Parcelamento em até 12x • Aprovação imediata</p>
                 </button>
               </div>
 
