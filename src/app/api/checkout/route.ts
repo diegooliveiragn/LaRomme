@@ -22,14 +22,14 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { items, payer, shippingCost } = body;
+    const { items, payer, shippingCost, paymentMethod = 'pix', walletToken, walletPaymentMethodId, installments = 1 } = body;
     const address = body.address || body.shippingAddress || {};
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return NextResponse.json({ success: false, error: 'Sacola vazia.' }, { status: 400 });
     }
 
-    // 1. CHECAGEM RÍGIDA DE ESTOQUE (Se 2 pessoas clicarem juntas, só 1 passa)
+    // 1. CHECAGEM RÍGIDA DE ESTOQUE
     for (const item of items) {
       const { data: variant } = await supabase
         .from('inventory_variants')
@@ -70,11 +70,42 @@ export async function POST(req: Request) {
     const numericShortId = Math.floor(100000 + Math.random() * 900000);
     const orderShortId = `LR-${numericShortId}`;
     const mpAccessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+
+    let paymentId: string | number | null = null;
+    let paymentStatus: string = 'pending';
     let pixData = null;
 
-    // 3. GERAÇÃO DO PIX NO MERCADO PAGO
+    // 3. INTEGRAÇÃO MERCADO PAGO (PIX OU CARTEIRA DIGITAL / CARTÃO)
     if (mpAccessToken) {
       const cleanCpf = (payer.cpf || '').replace(/\D/g, '');
+      const payerFirstName = toTitleCasePt(payer.name || payer.fullName || 'Patrono').split(' ')[0] || 'Patrono';
+      const payerLastName = toTitleCasePt(payer.name || payer.fullName || 'LaRomme').split(' ').slice(1).join(' ') || 'LaRomme';
+
+      const mpPayload: any = {
+        transaction_amount: Number(totalAmount.toFixed(2)),
+        description: `LaRomme - Pedido ${orderShortId}`,
+        external_reference: String(numericShortId),
+        payer: {
+          email: payer.email.trim().toLowerCase(),
+          first_name: payerFirstName,
+          last_name: payerLastName,
+          identification: {
+            type: cleanCpf.length > 11 ? 'CNPJ' : 'CPF',
+            number: cleanCpf || '00000000000',
+          },
+        },
+      };
+
+      if (paymentMethod === 'wallet' && walletToken) {
+        // Fluxo Apple Pay / Google Pay / Token de Cartão
+        mpPayload.token = walletToken;
+        mpPayload.payment_method_id = walletPaymentMethodId || 'credit_card';
+        mpPayload.installments = Number(installments) || 1;
+      } else {
+        // Fluxo Padrão Pix
+        mpPayload.payment_method_id = 'pix';
+      }
+
       const mpResponse = await fetch('https://api.mercadopago.com/v1/payments', {
         method: 'POST',
         headers: {
@@ -82,79 +113,76 @@ export async function POST(req: Request) {
           Authorization: `Bearer ${mpAccessToken}`,
           'X-Idempotency-Key': orderShortId,
         },
-        body: JSON.stringify({
-          transaction_amount: Number(totalAmount.toFixed(2)),
-          description: `LaRomme - Pedido ${orderShortId}`,
-          payment_method_id: 'pix',
-            external_reference: String(numericShortId),
-          payer: {
-            email: payer.email.trim().toLowerCase(),
-            first_name: toTitleCasePt(payer.name || payer.fullName || 'Patrono').split(' ')[0] || 'Patrono',
-            last_name: toTitleCasePt(payer.name || payer.fullName || 'LaRomme').split(' ').slice(1).join(' ') || 'LaRomme',
-            identification: {
-              type: cleanCpf.length > 11 ? 'CNPJ' : 'CPF',
-              number: cleanCpf || '00000000000',
-            },
-          },
-        }),
+        body: JSON.stringify(mpPayload),
       });
 
       const mpData = await mpResponse.json();
 
       if (mpData.id) {
-        pixData = {
-          paymentId: mpData.id,
-          qrCode: mpData.point_of_interaction?.transaction_data?.qr_code,
-          qrCodeBase64: mpData.point_of_interaction?.transaction_data?.qr_code_base64,
-          ticketUrl: mpData.point_of_interaction?.transaction_data?.ticket_url,
-        };
+        paymentId = mpData.id;
+        paymentStatus = mpData.status === 'approved' ? 'approved' : 'pending';
+
+        if (paymentMethod === 'pix') {
+          pixData = {
+            paymentId: mpData.id,
+            qrCode: mpData.point_of_interaction?.transaction_data?.qr_code,
+            qrCodeBase64: mpData.point_of_interaction?.transaction_data?.qr_code_base64,
+            ticketUrl: mpData.point_of_interaction?.transaction_data?.ticket_url,
+          };
+        }
       } else {
-        return NextResponse.json({ success: false, error: mpData.message || 'Falha ao gerar Pix no Mercado Pago.' }, { status: 400 });
+        return NextResponse.json({ 
+          success: false, 
+          error: mpData.message || 'Falha ao autorizar pagamento no Mercado Pago.' 
+        }, { status: 400 });
       }
     }
 
-    // 4. SALVA O PEDIDO NO BANCO
+    // 4. PERSISTÊNCIA DO PEDIDO NO BANCO
     const orderPayload = {
       short_id: numericShortId,
-        mp_payment_id: pixData?.paymentId ? String(pixData.paymentId) : null,
-      status: 'pending',
+      mp_payment_id: paymentId ? String(paymentId) : null,
+      status: paymentStatus,
       total_amount: totalAmount,
       subtotal: calculatedSubtotal,
       shipping_cost: safeShippingCost,
-      payment_method: 'pix',
+      payment_method: paymentMethod,
       customer_name: toTitleCasePt(payer.fullName || payer.name || 'Patrono'),
       customer_email: payer.email.trim().toLowerCase(),
-      customer_cpf: payer.cpf.replace(/\D/g, ''),
-      customer_phone: payer.phone.replace(/\D/g, ''),
-      shipping_cep: address.cep.replace(/\D/g, ''),
-      shipping_street: address.street,
-      shipping_number: address.number,
-      shipping_neighborhood: address.neighborhood,
-      shipping_city: address.city,
-      shipping_state: address.state,
+      customer_cpf: payer.cpf ? payer.cpf.replace(/\D/g, '') : '',
+      customer_phone: payer.phone ? payer.phone.replace(/\D/g, '') : '',
+      shipping_cep: address.cep ? address.cep.replace(/\D/g, '') : '',
+      shipping_street: address.street || '',
+      shipping_number: address.number || '',
+      shipping_neighborhood: address.neighborhood || '',
+      shipping_city: address.city || '',
+      shipping_state: address.state || '',
     };
 
-    const { data: order, error: orderError } = await supabase.from('orders').insert([orderPayload]).select().single();
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert([orderPayload])
+      .select()
+      .single();
 
     if (orderError) {
       return NextResponse.json({ success: false, error: `Supabase: ${orderError.message}` }, { status: 500 });
     }
 
-    // 5. SALVA OS ITENS E RESERVA O ESTOQUE FISICAMENTE
+    // 5. SALVA OS ITENS E ATUALIZA RESERVA DE ESTOQUE
     const orderItems = items.map((item: any) => ({
       order_id: order.id,
       product_id: item.id,
       product_name: item.name,
       product_size: item.size,
-      product_color: item.colorName,
-      product_image: item.image,
-      unit_price: item.priceNumeric || parseFloat(String(item.priceString || item.price).replace(/[^\d,-]/g, '').replace(',', '.')),
-      quantity: item.quantity,
+      product_color: item.colorName || 'Padrão',
+      product_image: item.image || '',
+      unit_price: Number(item.priceNumeric) || 0,
+      quantity: Number(item.quantity) || 1,
     }));
 
     await supabase.from('order_items').insert(orderItems);
 
-    // MOVE O ESTOQUE DE "AVAILABLE" PARA "RESERVED"
     for (const item of items) {
       const { data: currentVariant } = await supabase
         .from('inventory_variants')
@@ -167,8 +195,8 @@ export async function POST(req: Request) {
         await supabase
           .from('inventory_variants')
           .update({
-            stock_available: currentVariant.stock_available - item.quantity,
-            stock_reserved: currentVariant.stock_reserved + item.quantity
+            stock_available: Math.max(0, currentVariant.stock_available - item.quantity),
+            stock_reserved: (currentVariant.stock_reserved || 0) + item.quantity,
           })
           .eq('product_id', item.id)
           .eq('size', item.size);
@@ -176,18 +204,19 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({
-        success: true,
-        orderId: order.id,
-        orderUuid: order.id,
-        orderShortId: order.short_id,
-        paymentId: pixData?.paymentId,
-        qrCode: pixData?.qrCode,
-        qrCodeBase64: pixData?.qrCodeBase64,
-        ticketUrl: pixData?.ticketUrl,
-        totalAmount: totalAmount,
-        pix: pixData,
-      });
+      success: true,
+      orderUuid: order.id,
+      orderShortId: order.short_id,
+      paymentId: paymentId,
+      status: paymentStatus,
+      pix: pixData,
+      qrCode: pixData?.qrCode,
+      qrCodeBase64: pixData?.qrCodeBase64,
+      ticketUrl: pixData?.ticketUrl,
+      totalAmount: totalAmount,
+    });
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: `Erro Crítico: ${err.message}` }, { status: 500 });
+    console.error('Erro na rota de checkout:', err);
+    return NextResponse.json({ success: false, error: err.message || 'Erro interno no servidor.' }, { status: 500 });
   }
 }
