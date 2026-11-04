@@ -51,7 +51,7 @@ const MENU_STRUCTURE: MenuSection[] = [
     items: [
       { name: 'Private Label Matrix', path: '/cortex/supply' },
       { name: 'Gestão de Insumos', path: '/cortex/supply/insumos' },
-      { name: 'Valuation de Estoque', path: '/cortex/qualidade' },
+      { name: 'Valuation de Estoque', path: '/cortex/estoque' },
     ]
   },
   {

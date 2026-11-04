@@ -1,315 +1,259 @@
 ﻿'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { 
-  Users, 
-  MessageCircle, 
-  Sparkles, 
-  Search, 
-  TrendingUp, 
-  Mail, 
-  Phone, 
-  Download, 
-  Filter 
-} from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import { Users, Crown, RefreshCw, Search, ArrowUpRight, MessageCircle, Mail } from 'lucide-react';
+import Link from 'next/link';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface VipMember {
   id: string;
-  name?: string;
-  nome?: string;
+  nome: string;
   email: string;
-  whatsapp?: string;
-  phone?: string;
-  sport?: string;
-  esporte?: string;
-  size?: string;
-  tamanho?: string;
+  esporte: string;
+  tamanho: string;
   created_at: string;
 }
 
-interface OrderCustomer {
-  email: string;
-  name: string;
-  totalOrders: number;
-  ltv: number;
-  lastOrderDate: string;
-}
-
-export default function CortexCRMPage() {
-  const [activeTab, setActiveTab] = useState<'senado' | 'patronos'>('senado');
-  const [vipMembers, setVipMembers] = useState<VipMember[]>([]);
-  const [customers, setCustomers] = useState<OrderCustomer[]>([]);
+export default function CortexCrmPage() {
+  const [activeTab, setActiveTab] = useState<'SENADO' | 'COMPRADORES'>('SENADO');
+  const [members, setMembers] = useState<VipMember[]>([]);
+  const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedSport, setSelectedSport] = useState<string>('all');
 
-  useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      try {
-        // 1. Busca inscritos do Senado VIP
-        const { data: vipData } = await supabase
-          .from('senado_vip')
-          .select('*')
-          .order('created_at', { ascending: false });
+  const fetchCrmData = async () => {
+    setLoading(true);
+    try {
+      // 1. Membros do Senado VIP
+      const { data: vipData } = await supabase
+        .from('lote_zero_leads')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-        if (vipData) setVipMembers(vipData);
+      setMembers(vipData || []);
 
-        // 2. Busca pedidos concluídos para calcular RFM
-        const { data: ordersData } = await supabase
-          .from('orders')
-          .select('*')
-          .eq('status', 'paid');
+      // 2. Pedidos reais
+      const { data: ordersData } = await supabase
+        .from('orders')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-        if (ordersData) {
-          const map: Record<string, OrderCustomer> = {};
-          ordersData.forEach((ord: any) => {
-            const email = ord.customer_email || ord.email || 'desconhecido';
-            const name = ord.customer_name || ord.nome || 'Patrono';
-            const val = Number(ord.total_amount || ord.total || 0);
-            const date = ord.created_at;
-
-            if (!map[email]) {
-              map[email] = {
-                email,
-                name,
-                totalOrders: 0,
-                ltv: 0,
-                lastOrderDate: date
-              };
-            }
-            map[email].totalOrders += 1;
-            map[email].ltv += val;
-            if (new Date(date) > new Date(map[email].lastOrderDate)) {
-              map[email].lastOrderDate = date;
-            }
-          });
-          setCustomers(Object.values(map));
-        }
-      } catch (err) {
-        console.error('Erro ao consultar CRM:', err);
-      } finally {
-        setLoading(false);
-      }
+      setOrders(ordersData || []);
+    } catch (err) {
+      console.error('Erro ao carregar CRM:', err);
+    } finally {
+      setLoading(false);
     }
-    loadData();
-  }, []);
-
-  const openWhatsAppConcierge = (phoneRaw?: string, name?: string) => {
-    if (!phoneRaw) return;
-    const cleanPhone = phoneRaw.replace(/\D/g, '');
-    const clientName = name ? name.split(' ')[0] : 'Patrono';
-    const message = encodeURIComponent(
-      `Olá ${clientName}, saudações da LaRomme. Estamos concluindo a preparação do seu acesso antecipado. Como podemos atendê-lo?`
-    );
-    window.open(`https://wa.me/55${cleanPhone}?text=${message}`, '_blank');
   };
 
-  const filteredVips = vipMembers.filter(m => {
-    const nome = (m.nome || m.name || '').toLowerCase();
-    const email = (m.email || '').toLowerCase();
-    const matchSearch = nome.includes(searchTerm.toLowerCase()) || email.includes(searchTerm.toLowerCase());
-    const esporte = (m.esporte || m.sport || '').toLowerCase();
-    const matchSport = selectedSport === 'all' || esporte.includes(selectedSport.toLowerCase());
-    return matchSearch && matchSport;
-  });
+  useEffect(() => {
+    fetchCrmData();
+  }, []);
+
+  const formatBRL = (val: number) =>
+    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
+
+  const filteredMembers = members.filter((m) =>
+    m.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    m.esporte?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <div className="min-h-screen bg-black text-white p-6 md:p-10 font-sans selection:bg-zinc-800">
-      <div className="max-w-6xl mx-auto space-y-8">
-        
-        {/* Cabeçalho */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-zinc-800 pb-6 gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">
-                CORTEX OS // CONCIERGE & RELACIONAMENTO
-              </span>
-              <span className="text-[9px] bg-zinc-900 border border-zinc-800 text-zinc-400 px-2 py-0.5 rounded font-mono">
-                BASE QUALIFICADA
-              </span>
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight uppercase font-mono">
-              CRM • Senado VIP & Patronos
-            </h1>
-            <p className="text-xs text-zinc-400 mt-1 font-mono">
-              Gestão de relacionamento exclusivo, alistamento prioritário e inteligência de recompra.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/cortex/estoque"
-              className="text-xs font-mono text-zinc-400 hover:text-white px-3 py-2 border border-zinc-800 rounded transition-colors"
-            >
-              ← WMS & Demanda
-            </Link>
-            <Link
-              href="/cortex/financeiro"
-              className="text-xs font-mono text-zinc-400 hover:text-white px-3 py-2 border border-zinc-800 rounded transition-colors"
-            >
-              Cofres 70/30 →
-            </Link>
-          </div>
+    <div className="space-y-6 pb-12 font-sans bg-transparent">
+      
+      {/* CABEÇALHO */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-zinc-200 pb-5">
+        <div>
+          <span className="text-[10px] font-mono tracking-widest text-zinc-400 uppercase">
+            CONCIERGE & RELACIONAMENTO • BASE QUALIFICADA
+          </span>
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 uppercase">
+            CRM • Senado VIP & Patronos
+          </h1>
+          <p className="text-xs text-zinc-500 mt-0.5">
+            Gestão de relacionamento exclusivo, alistamento prioritário e inteligência de recompra
+          </p>
         </div>
 
-        {/* Abas e Controles */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="flex items-center gap-2 border-b border-zinc-800 w-full md:w-auto font-mono text-xs">
-            <button
-              onClick={() => setActiveTab('senado')}
-              className={`pb-3 px-2 border-b-2 font-bold transition-colors ${
-                activeTab === 'senado'
-                  ? 'border-white text-white'
-                  : 'border-transparent text-zinc-500 hover:text-zinc-300'
-              }`}
-            >
-              SENADO VIP ({vipMembers.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('patronos')}
-              className={`pb-3 px-2 border-b-2 font-bold transition-colors ${
-                activeTab === 'patronos'
-                  ? 'border-white text-white'
-                  : 'border-transparent text-zinc-500 hover:text-zinc-300'
-              }`}
-            >
-              PATRONOS COMPRADORES ({customers.length})
-            </button>
-          </div>
-
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="relative flex-1 md:w-64">
-              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-zinc-500" />
-              <input
-                type="text"
-                placeholder="Buscar por nome ou e-mail..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-zinc-500 font-mono"
-              />
-            </div>
-
-            {activeTab === 'senado' && (
-              <select
-                value={selectedSport}
-                onChange={(e) => setSelectedSport(e.target.value)}
-                className="bg-zinc-950 border border-zinc-800 rounded px-2.5 py-1.5 text-xs text-zinc-300 focus:outline-none font-mono"
-              >
-                <option value="all">Todas modalidades</option>
-                <option value="beach">Beach Tennis</option>
-                <option value="corrida">Corrida</option>
-                <option value="futevolei">Futevôlei</option>
-                <option value="ciclismo">Ciclismo</option>
-              </select>
-            )}
-          </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/cortex/estoque"
+            className="px-3.5 py-1.5 border border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 rounded text-xs font-bold uppercase tracking-wider transition-all shadow-sm"
+          >
+            ← WMS & Demanda
+          </Link>
+          <button
+            onClick={fetchCrmData}
+            disabled={loading}
+            className="px-3.5 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-1.5 disabled:opacity-50 shadow-sm"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            <span>Sincronizar</span>
+          </button>
         </div>
-
-        {/* Tabela do Senado VIP */}
-        {activeTab === 'senado' && (
-          <div className="p-6 bg-zinc-950 border border-zinc-800 rounded-lg space-y-4 font-mono">
-            {filteredVips.length === 0 ? (
-              <p className="text-xs text-zinc-500 py-6 text-center">
-                {loading ? 'Consultando alistamento...' : 'Nenhum membro encontrado no filtro selecionado.'}
-              </p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="text-[10px] text-zinc-500 border-b border-zinc-900 uppercase">
-                      <th className="py-2.5">Membro / Patrono</th>
-                      <th className="py-2.5">E-mail</th>
-                      <th className="py-2.5">Modalidade</th>
-                      <th className="py-2.5">Grade</th>
-                      <th className="py-2.5">Data de Ingresso</th>
-                      <th className="py-2.5 text-right">Concierge</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-900 text-zinc-300">
-                    {filteredVips.map((vip, i) => {
-                      const name = vip.nome || vip.name || 'Patrono VIP';
-                      const phone = vip.whatsapp || vip.phone;
-                      const sport = vip.esporte || vip.sport || 'Litoral';
-                      const size = vip.tamanho || vip.size || 'M';
-
-                      return (
-                        <tr key={vip.id || i} className="hover:bg-zinc-900/40">
-                          <td className="py-3 font-bold text-white uppercase">{name}</td>
-                          <td className="py-3 text-zinc-400">{vip.email}</td>
-                          <td className="py-3 text-zinc-300 capitalize">{sport}</td>
-                          <td className="py-3 uppercase text-zinc-400 font-bold">{size}</td>
-                          <td className="py-3 text-zinc-500 text-[11px]">
-                            {new Date(vip.created_at).toLocaleDateString('pt-BR')}
-                          </td>
-                          <td className="py-3 text-right">
-                            {phone ? (
-                              <button
-                                onClick={() => openWhatsAppConcierge(phone, name)}
-                                className="inline-flex items-center gap-1 px-2.5 py-1 bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-emerald-400 text-[11px] rounded transition-colors"
-                              >
-                                <MessageCircle className="w-3 h-3" />
-                                Concierge
-                              </button>
-                            ) : (
-                              <span className="text-zinc-600 text-[11px]">—</span>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Tabela de Patronos Compradores (RFM) */}
-        {activeTab === 'patronos' && (
-          <div className="p-6 bg-zinc-950 border border-zinc-800 rounded-lg space-y-4 font-mono">
-            {customers.length === 0 ? (
-              <p className="text-xs text-zinc-500 py-6 text-center">
-                {loading ? 'Calculando matriz RFM...' : 'Nenhum pedido concluído localizado no momento.'}
-              </p>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead>
-                    <tr className="text-[10px] text-zinc-500 border-b border-zinc-900 uppercase">
-                      <th className="py-2.5">Patrono</th>
-                      <th className="py-2.5">E-mail</th>
-                      <th className="py-2.5">Pedidos Pagos</th>
-                      <th className="py-2.5">LTV Acumulado</th>
-                      <th className="py-2.5 text-right">Último Pedido</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-zinc-900 text-zinc-300">
-                    {customers.map((c, i) => (
-                      <tr key={i} className="hover:bg-zinc-900/40">
-                        <td className="py-3 font-bold text-white uppercase">{c.name}</td>
-                        <td className="py-3 text-zinc-400">{c.email}</td>
-                        <td className="py-3 text-zinc-300">{c.totalOrders} pedido(s)</td>
-                        <td className="py-3 text-emerald-400 font-bold">R$ {c.ltv.toFixed(2)}</td>
-                        <td className="py-3 text-right text-zinc-500 text-[11px]">
-                          {new Date(c.lastOrderDate).toLocaleDateString('pt-BR')}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        )}
-
       </div>
+
+      {/* TABS DE SELEÇÃO */}
+      <div className="flex justify-between items-center border-b border-zinc-200">
+        <div className="flex gap-6 font-mono text-xs">
+          <button
+            onClick={() => setActiveTab('SENADO')}
+            className={`pb-3 font-bold uppercase tracking-wider transition-all relative ${
+              activeTab === 'SENADO'
+                ? 'text-zinc-900 border-b-2 border-zinc-900'
+                : 'text-zinc-400 hover:text-zinc-600'
+            }`}
+          >
+            Senado VIP ({members.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('COMPRADORES')}
+            className={`pb-3 font-bold uppercase tracking-wider transition-all relative ${
+              activeTab === 'COMPRADORES'
+                ? 'text-zinc-900 border-b-2 border-zinc-900'
+                : 'text-zinc-400 hover:text-zinc-600'
+            }`}
+          >
+            Patronos Compradores ({orders.length})
+          </button>
+        </div>
+
+        {/* BUSCA RÁPIDA */}
+        <div className="relative mb-2">
+          <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-2.5" />
+          <input
+            type="text"
+            placeholder="Buscar por nome, email ou esporte..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8 pr-3 py-1.5 text-xs font-mono bg-zinc-50 border border-zinc-200 rounded text-zinc-900 focus:outline-none focus:border-zinc-900 w-64"
+          />
+        </div>
+      </div>
+
+      {/* CONTEÚDO: TABELA SENADO VIP */}
+      {activeTab === 'SENADO' && (
+        <div className="bg-white rounded-lg border border-zinc-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50/50 flex justify-between items-center">
+            <h2 className="text-xs font-bold text-zinc-900 tracking-widest uppercase flex items-center gap-2">
+              <Crown className="w-4 h-4 text-amber-500" /> Membros Alistados no Senado VIP
+            </h2>
+            <span className="text-[10px] font-mono text-zinc-500 uppercase">
+              Acesso Antecipado 24h
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs font-mono">
+              <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 uppercase text-[10px] tracking-wider">
+                <tr>
+                  <th className="px-6 py-3 font-bold">Membro / Patrono</th>
+                  <th className="px-6 py-3 font-bold">E-mail</th>
+                  <th className="px-6 py-3 font-bold">Modalidade</th>
+                  <th className="px-6 py-3 font-bold text-center">Grade</th>
+                  <th className="px-6 py-3 font-bold text-right">Data de Ingresso</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {filteredMembers.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center text-zinc-400">
+                      Nenhum membro encontrado na busca.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredMembers.map((m) => (
+                    <tr key={m.id} className="hover:bg-zinc-50/50 transition-colors">
+                      <td className="px-6 py-3.5 font-bold font-sans text-sm text-zinc-900">
+                        {m.nome}
+                      </td>
+                      <td className="px-6 py-3.5 text-zinc-600">
+                        {m.email}
+                      </td>
+                      <td className="px-6 py-3.5">
+                        <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-zinc-100 text-zinc-700 uppercase font-semibold">
+                          {m.esporte || 'Litoral'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-3.5 text-center font-bold text-zinc-900">
+                        {m.tamanho || '—'}
+                      </td>
+                      <td className="px-6 py-3.5 text-right text-zinc-400">
+                        {m.created_at ? new Date(m.created_at).toLocaleDateString('pt-BR') : '—'}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* CONTEÚDO: TABELA PATRONOS COMPRADORES */}
+      {activeTab === 'COMPRADORES' && (
+        <div className="bg-white rounded-lg border border-zinc-200 shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-zinc-200 bg-zinc-50/50 flex justify-between items-center">
+            <h2 className="text-xs font-bold text-zinc-900 tracking-widest uppercase flex items-center gap-2">
+              <Users className="w-4 h-4 text-zinc-500" /> Histórico de Compras de Patronos
+            </h2>
+            <span className="text-[10px] font-mono text-zinc-500 uppercase">
+              Supabase Orders
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs font-mono">
+              <thead className="bg-zinc-50 border-b border-zinc-200 text-zinc-500 uppercase text-[10px] tracking-wider">
+                <tr>
+                  <th className="px-6 py-3 font-bold">Pedido</th>
+                  <th className="px-6 py-3 font-bold">Cliente</th>
+                  <th className="px-6 py-3 font-bold">E-mail</th>
+                  <th className="px-6 py-3 font-bold text-right">Valor Gasto</th>
+                  <th className="px-6 py-3 font-bold text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {orders.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-12 text-center text-zinc-400">
+                      Nenhum comprador registrado na base.
+                    </td>
+                  </tr>
+                ) : (
+                  orders.map((ord) => (
+                    <tr key={ord.id} className="hover:bg-zinc-50/50 transition-colors">
+                      <td className="px-6 py-3.5 font-bold text-zinc-900">
+                        #{ord.short_id || ord.id.slice(0, 8)}
+                      </td>
+                      <td className="px-6 py-3.5 font-sans font-bold text-zinc-900">
+                        {ord.customer_name || 'Patrono'}
+                      </td>
+                      <td className="px-6 py-3.5 text-zinc-600">
+                        {ord.customer_email || '—'}
+                      </td>
+                      <td className="px-6 py-3.5 text-right font-bold text-emerald-600">
+                        {formatBRL(ord.total_amount)}
+                      </td>
+                      <td className="px-6 py-3.5 text-center">
+                        <span className="text-[9px] font-mono px-2 py-0.5 rounded font-bold uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          {ord.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
